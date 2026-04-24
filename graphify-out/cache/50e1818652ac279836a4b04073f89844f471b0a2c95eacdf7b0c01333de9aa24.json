@@ -1,0 +1,1 @@
+{"nodes": [{"id": "backend_vendor_phpunit_phpunit_tests_end_to_end_extension_files_class_does_not_implement_interface_src_autoload_php", "label": "autoload.php", "file_type": "code", "source_file": "backend\\vendor\\phpunit\\phpunit\\tests\\end-to-end\\extension\\_files\\class-does-not-implement-interface\\src\\autoload.php", "source_location": "L1"}], "edges": []}
