@@ -28,7 +28,7 @@ class DashboardController extends BaseController
 
         try {
             $summary     = $this->dashboardService->getSummary($date);
-            $livePunches = $this->dashboardService->getLivePunches(15);
+            $livePunches = $this->dashboardService->getLivePunches(15, $date);
             $attendance  = $this->dashboardService->getAttendanceTable($date);
         } catch (\Throwable $e) {
             log_message('error', '[Web\\DashboardController] Error: ' . $e->getMessage());

@@ -34,6 +34,7 @@ class DashboardController extends ResourceController
         $date = $this->request->getGet('date') ?? date('Y-m-d');
         try {
             $summary = $this->dashboardService->getSummary($date);
+
             return $this->respond([
                 'status' => 'success',
                 'data'   => $summary,
@@ -65,15 +66,16 @@ class DashboardController extends ResourceController
     /**
      * GET /api/dashboard/live-punches
      * 
-     * Query params: ?limit=20 (optional)
+     * Query params: ?limit=20 (optional), ?date=YYYY-MM-DD (optional; when set, only punches on that calendar day)
      */
     public function livePunches()
     {
         $limit = (int) ($this->request->getGet('limit') ?? 20);
         $limit = min(max($limit, 5), 100); // Clamp between 5 and 100
+        $date  = $this->request->getGet('date');
 
         try {
-            $punches = $this->dashboardService->getLivePunches($limit);
+            $punches = $this->dashboardService->getLivePunches($limit, is_string($date) ? $date : null);
 
             return $this->respond([
                 'status' => 'success',

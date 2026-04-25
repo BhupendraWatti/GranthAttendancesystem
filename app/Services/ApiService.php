@@ -18,6 +18,8 @@ class ApiService
     private string $baseUrl;
     private string $username;
     private string $password;
+    /** eTimeOffice tenant code; also sent as `Companycode` header (see local api_debug.php / project overview). */
+    private string $companyCode;
     private int $maxRetries = 3;
     private CURLRequest $client;
     private bool $useMockInOut;
@@ -25,10 +27,10 @@ class ApiService
     public function __construct()
     {
         $this->baseUrl     = rtrim(env('ETIME_BASE_URL', 'https://api.etimeoffice.com/api'), '/');
-        $companyCode       = env('ETIME_COMPANY_CODE', '');
+        $this->companyCode = (string) env('ETIME_COMPANY_CODE', '');
         $rawUsername       = env('ETIME_USERNAME', '');
-        // Build the full Basic Auth username: "companyCode:username" (e.g. "granthinfotech:sonali_verma")
-        $this->username    = $companyCode ? "{$companyCode}:{$rawUsername}" : $rawUsername;
+        // Basic Auth username: "companyCode:loginName" when company is set (eTimeOffice); Companycode header also sent.
+        $this->username    = $this->companyCode !== '' ? "{$this->companyCode}:{$rawUsername}" : $rawUsername;
         $this->password    = env('ETIME_PASSWORD', '');
         $this->client      = \Config\Services::curlrequest();
         $this->useMockInOut = filter_var(env('ETIME_USE_MOCK_INOUT', false), FILTER_VALIDATE_BOOL);
@@ -38,7 +40,7 @@ class ApiService
      * Override credentials at runtime (used by AuthController for live login).
      * Does NOT affect the default .env-based credentials used by SyncController.
      *
-     * @param string $username eTimeOffice username
+     * @param string $username eTimeOffice username for Basic Auth (often "companyCode:loginName" when company is set)
      * @param string $password eTimeOffice password
      */
     public function setCredentials(string $username, string $password): void
@@ -71,18 +73,25 @@ class ApiService
             'ToDate'   => $today . '_01:00',   // 1-hour window = minimal data
         ];
 
+        $headers = [
+            'Authorization' => $this->getAuthHeader(),
+            'Accept'        => 'application/json',
+        ];
+        if ($this->companyCode !== '') {
+            $headers['Companycode'] = $this->companyCode;
+        }
+
         $options = [
-            'headers' => [
-                'Authorization' => $this->getAuthHeader(),
-                'Accept'        => 'application/json',
-            ],
-            'timeout'    => 20,
-            'verify'     => (bool) env('ETIME_SSL_VERIFY', false),
+            'headers'     => $headers,
+            'timeout'     => 20,
+            'verify'      => (bool) env('ETIME_SSL_VERIFY', false),
             'http_errors' => false,   // Don't throw on 4xx/5xx — we need the status code
         ];
 
         try {
-            $response   = $this->client->request('GET', $url . '?' . http_build_query($params), $options);
+            $query = http_build_query($params);
+            $query = str_replace(['%2F', '%3A', '%24'], ['/', ':', '$'], $query);
+            $response   = $this->client->request('GET', $url . '?' . $query, $options);
             $statusCode = $response->getStatusCode();
 
             log_message('info', "[ApiService::verifyCredentials] HTTP {$statusCode} for user: {$this->username}");
@@ -106,7 +115,10 @@ class ApiService
      */
     private function getAuthHeader(): string
     {
-        $credentials = $this->username . ':' . $this->password;
+        // eTimeOffice strictly expects Basic Auth in the format:
+        // "CompanyCode:Username:Password:true\n"
+        // $this->username already includes the "CompanyCode:" prefix when configured.
+        $credentials = $this->username . ':' . $this->password . ":true\n";
         return 'Basic ' . base64_encode($credentials);
     }
 
@@ -115,14 +127,22 @@ class ApiService
      */
     private function getDefaultOptions(): array
     {
+        $headers = [
+            'Authorization' => $this->getAuthHeader(),
+            'Accept'        => 'application/json',
+            'Content-Type'  => 'application/json',
+        ];
+        if ($this->companyCode !== '') {
+            $headers['Companycode'] = $this->companyCode;
+        }
+
         return [
-            'headers' => [
-                'Authorization' => $this->getAuthHeader(),
-                'Accept'        => 'application/json',
-                'Content-Type'  => 'application/json',
-            ],
-            'timeout'    => 30,
-            'verify'     => (bool) env('ETIME_SSL_VERIFY', false),
+            'headers'     => $headers,
+            'timeout'     => 30,
+            'verify'      => (bool) env('ETIME_SSL_VERIFY', false),
+            // Required: default CURLRequest uses CURLOPT_FAILONERROR; HTTP 500 would throw (curl 22)
+            // before we can read the response body for logging or handle fallbacks in SyncService.
+            'http_errors' => false,
         ];
     }
 
@@ -163,12 +183,11 @@ class ApiService
     public function downloadLastPunchData(string $lastRecordId, string $empCode = 'ALL'): array
     {
         $url = "{$this->baseUrl}/DownloadLastPunchData";
-        $params = [
-            'Empcode'    => $empCode,
-            'LastRecord' => $lastRecordId,
-        ];
+        // LastRecord is MMYYYY$NNNNNNNN with a literal '$'. http_build_query encodes '$' as %24 and
+        // eTimeOffice returns HTTP 500; build this query without encoding the dollar.
+        $queryString = 'Empcode=' . rawurlencode($empCode) . '&LastRecord=' . $lastRecordId;
 
-        return $this->makeRequest($url, $params);
+        return $this->makeRequest($url, [], $queryString);
     }
 
     /**
@@ -197,8 +216,8 @@ class ApiService
     }
 
     /**
-     * Download In/Out punch data (NOT used for core logic per requirements)
-     * 
+     * Download In/Out punch data (date-only params; used as SyncService fallback when DownloadPunchData fails)
+     *
      * API: DownloadInOutPunchData?Empcode=ALL&FromDate=DD/MM/YYYY&ToDate=DD/MM/YYYY
      *
      * @param string $fromDate Start date (Y-m-d format)
@@ -257,14 +276,22 @@ class ApiService
 
     /**
      * Make an HTTP GET request with retry logic
+     *
+     * @param string          $url                 Base URL without query
+     * @param array           $params              Query key/value (uses http_build_query + eTimeOffice decodes)
+     * @param string|null     $queryStringOverride Full query string without leading '?'; skips http_build_query
      */
-    private function makeRequest(string $url, array $params): array
+    private function makeRequest(string $url, array $params = [], ?string $queryStringOverride = null): array
     {
         $options = $this->getDefaultOptions();
-        $queryString = http_build_query($params);
-        // CRITICAL FIX: The older eTimeOffice ASP.NET API crashes with HTTP 500 if the slashes 
-        // in dates are URL-encoded to %2F. We MUST send them as literal slashes in the query string.
-        $queryString = str_replace(['%2F', '%3A'], ['/', ':'], $queryString);
+        if ($queryStringOverride !== null) {
+            $queryString = $queryStringOverride;
+        } else {
+            $queryString = http_build_query($params);
+            // CRITICAL FIX: The older eTimeOffice ASP.NET API crashes with HTTP 500 if the slashes
+            // in dates are URL-encoded to %2F. We MUST send them as literal slashes in the query string.
+            $queryString = str_replace(['%2F', '%3A', '%24'], ['/', ':', '$'], $queryString);
+        }
         $fullUrl = $url . '?' . $queryString;
 
         $attempt = 0;
@@ -274,7 +301,8 @@ class ApiService
             $attempt++;
 
             try {
-                log_message('info', "[ApiService] Attempt {$attempt}: GET {$fullUrl}");
+                $attemptTag = $queryStringOverride !== null ? ' [LastPunch-rawQS]' : '';
+                log_message('info', "[ApiService] Attempt {$attempt}: GET {$fullUrl}{$attemptTag}");
 
                 $response = $this->client->request('GET', $fullUrl, $options);
                 $statusCode = $response->getStatusCode();
@@ -282,6 +310,10 @@ class ApiService
 
                 log_message('info', "[ApiService] Response status: {$statusCode}");
                 log_message('debug', "[ApiService] Response body: " . substr($body, 0, 500));
+                if ($statusCode >= 400) {
+                    // Visible at default log threshold — eTimeOffice often returns HTML/JSON with the real error.
+                    log_message('warning', '[ApiService] HTTP ' . $statusCode . ' body (truncated): ' . substr($body, 0, 1200));
+                }
 
                 if ($statusCode >= 200 && $statusCode < 300) {
                     $decoded = json_decode($body, true);

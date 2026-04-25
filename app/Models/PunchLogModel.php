@@ -137,6 +137,19 @@ class PunchLogModel extends Model
     }
 
     /**
+     * Latest punches on a specific calendar day (Y-m-d), server/DB session timezone for DATE().
+     */
+    public function getLatestPunchesForDate(string $date, int $limit = 20): array
+    {
+        return $this->select('punch_logs.*, employees.name')
+                    ->join('employees', 'employees.emp_code = punch_logs.emp_code', 'left')
+                    ->where('DATE(punch_logs.punch_time)', $date)
+                    ->orderBy('punch_logs.punch_time', 'DESC')
+                    ->limit($limit)
+                    ->findAll();
+    }
+
+    /**
      * Get punches from the last N minutes
      */
     public function getRecentPunches(int $minutes = 30): array

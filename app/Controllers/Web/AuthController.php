@@ -49,7 +49,7 @@ class AuthController extends BaseController
         // ---------------------------------------------------------------
         // Live eTimeOffice Authentication (same logic as API AuthController)
         // ---------------------------------------------------------------
-        $companyCode  = env('ETIME_COMPANY_CODE', '');
+        $companyCode   = env('ETIME_COMPANY_CODE', '');
         $etimeUsername = $companyCode ? "{$companyCode}:{$username}" : $username;
 
         $apiService = new ApiService();

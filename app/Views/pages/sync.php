@@ -1,6 +1,10 @@
 <?= $this->extend('layout/main') ?>
 
 <?= $this->section('content') ?>
+<?php
+$fullSyncToDefault   = date('Y-m-d', strtotime('-1 day'));
+$fullSyncFromDefault = date('Y-m-01', strtotime($fullSyncToDefault));
+?>
 
 <!-- Page Header -->
 <div class="page-header">
@@ -36,7 +40,7 @@
         </div>
         <div class="card-body">
             <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 16px;">
-                Re-fetches all punch data for a date range and reprocesses attendance. Use for corrections.
+                Re-fetches all punch data for a date range and reprocesses attendance. Use for corrections. Defaults use <strong>yesterday</strong> as “To” because the vendor API often errors on the current calendar day.
             </p>
             <form method="POST" action="/sync/run">
                 <?= csrf_field() ?>
@@ -44,11 +48,11 @@
                 <div class="form-inline mb-2">
                     <div class="form-group">
                         <label for="from_date">From Date</label>
-                        <input type="date" name="from_date" id="from_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                        <input type="date" name="from_date" id="from_date" class="form-control" value="<?= esc($fullSyncFromDefault) ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="to_date">To Date</label>
-                        <input type="date" name="to_date" id="to_date" class="form-control" value="<?= date('Y-m-d') ?>" required>
+                        <input type="date" name="to_date" id="to_date" class="form-control" value="<?= esc($fullSyncToDefault) ?>" required>
                     </div>
                 </div>
                 <button type="submit" class="btn btn--success" onclick="this.innerHTML='<span class=spinner></span> Syncing...'; this.disabled=true; this.form.submit();">

@@ -75,9 +75,16 @@ class SyncController extends BaseController
             }
 
             if (($result['status'] ?? '') === 'success') {
-                $fetched = $result['records_fetched'] ?? 0;
-                $saved   = $result['records_saved'] ?? 0;
-                return redirect()->to('/sync')->with('success', "Sync completed! Fetched: {$fetched}, Saved: {$saved}");
+                $fetched = (int) ($result['records_fetched'] ?? 0);
+                $saved   = (int) ($result['records_saved'] ?? 0);
+                $msg     = "Sync completed! Fetched: {$fetched}, Saved: {$saved}";
+                if ($fetched === 0 && $saved === 0) {
+                    $msg .= ' No punch rows were imported. eTimeOffice often returns HTTP 500 for “today”; try Full Sync with From = first of month and To = yesterday (or another past range), then check backend/writable/logs. Incremental only pulls since the last sync cursor.';
+
+                    return redirect()->to('/sync')->with('warning', $msg);
+                }
+
+                return redirect()->to('/sync')->with('success', $msg);
             } else {
                 $error = $result['error'] ?? 'Unknown error';
                 return redirect()->to('/sync')->with('error', "Sync failed: {$error}");

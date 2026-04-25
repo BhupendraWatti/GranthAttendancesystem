@@ -38,9 +38,20 @@ class NormalizationService
             return [];
         }
 
-        // Handle nested response (InOutPunchData wraps differently)
-        if (isset($data['InOutPunchData'])) {
+        // Handle nested responses based on API endpoint
+        if (isset($data['InOutPunchData']) && is_array($data['InOutPunchData'])) {
             $data = $data['InOutPunchData'];
+        } elseif (isset($data['PunchData']) && is_array($data['PunchData'])) {
+            $data = $data['PunchData'];
+        }
+
+        if ($source === 'DownloadPunchDataMCID' && is_array($data)) {
+            foreach (['PunchDataMCID', 'MCIDPunchData'] as $mcidKey) {
+                if (isset($data[$mcidKey]) && is_array($data[$mcidKey])) {
+                    $data = $data[$mcidKey];
+                    break;
+                }
+            }
         }
 
         foreach ($data as $record) {
@@ -215,7 +226,7 @@ class NormalizationService
     {
         // Possible field names for punch datetime
         $timeFields = [
-            'DateTimeRecord', 'PunchTime', 'punchtime', 'punch_time',
+            'PunchDate', 'DateTimeRecord', 'PunchTime', 'punchtime', 'punch_time',
             'DateTime', 'datetime', 'LogDate', 'LogTime',
             'AttendanceDate', 'DateTimeIn', 'PunchDateTime',
         ];

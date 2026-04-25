@@ -13,7 +13,7 @@
 <div class="page-header">
     <div>
         <h2>Salary Management</h2>
-        <p>Review and manage employee compensation records.</p>
+        <p>Review and manage employee compensation records. Totals use <strong>processed daily attendance</strong> for the selected month (not the live punch feed). After <a href="/sync">Sync</a> imports punches, attendance is updated for affected dates—refresh this page to see new figures.</p>
     </div>
     <div class="page-header-actions">
         <form method="GET" action="/salary" class="form-inline" style="gap:8px;">

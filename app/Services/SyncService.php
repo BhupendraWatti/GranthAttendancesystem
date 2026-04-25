@@ -64,6 +64,63 @@ class SyncService
         $this->syncLogModel       = new SyncLogModel();
     }
 
+    /** eTimeOffice may return 500/timeout on one endpoint but succeed on another (see API1.xls). */
+    private function isVendorTransientFailure(?string $error): bool
+    {
+        if ($error === null || $error === '') {
+            return false;
+        }
+
+        return strpos($error, '500') !== false
+            || stripos($error, 'timeout') !== false
+            || stripos($error, 'timed out') !== false
+            || stripos($error, 'Empty reply') !== false;
+    }
+
+    /**
+     * DownloadPunchData → DownloadInOutPunchData → DownloadPunchDataMCID (per vendor API set).
+     *
+     * @return array{success:bool, data:mixed, source:?string, error:?string}
+     */
+    private function fetchPunchRangeWithFallbacks(string $fromDate, string $toDate, string $context = ''): array
+    {
+        $chain = [
+            ['call' => 'downloadPunchData', 'source' => 'DownloadPunchData'],
+            ['call' => 'downloadInOutPunchData', 'source' => 'DownloadInOutPunchData'],
+            ['call' => 'downloadPunchDataMCID', 'source' => 'DownloadPunchDataMCID'],
+        ];
+
+        $lastError = null;
+        foreach ($chain as $step) {
+            $method      = $step['call'];
+            $apiResponse = $this->apiService->$method($fromDate, $toDate);
+            $ok          = (bool) ($apiResponse['success'] ?? false);
+
+            if ($ok) {
+                return [
+                    'success' => true,
+                    'data'    => $apiResponse['data'] ?? [],
+                    'source'  => $step['source'],
+                    'error'   => null,
+                ];
+            }
+
+            $lastError = (string) ($apiResponse['error'] ?? 'Unknown error');
+            log_message('warning', "[SyncService] {$step['source']} failed ({$context}): {$lastError}");
+
+            if (!$this->isVendorTransientFailure($lastError)) {
+                break;
+            }
+        }
+
+        return [
+            'success' => false,
+            'data'    => null,
+            'source'  => null,
+            'error'   => $lastError,
+        ];
+    }
+
     /**
      * Run incremental sync — fetch only new punches since last sync
      * Designed to run every 5 minutes via cron
@@ -81,41 +138,77 @@ class SyncService
         $syncId = $this->syncLogModel->startSync('incremental');
 
         try {
-            // Get last record ID from previous successful sync
-            $lastRecordId = $this->syncLogModel->getLastRecordId();
+            // Cursor from last successful incremental (DownloadLastPunchData only). When absent, do not
+            // call DownloadLastPunchData with a synthetic MMYYYY$NNNNNNNN — runtime logs show eTimeOffice
+            // returns HTTP 500 for that seed; use today's DownloadPunchData first instead.
+            $cursorId     = $this->syncLogModel->getLastRecordId();
+            $lastRecordId = null;
+            $today        = date('Y-m-d');
 
-            if (empty($lastRecordId)) {
-                // No previous sync — generate initial record ID
-                $lastRecordId = $this->apiService->generateLastRecordId(null, 1);
-                log_message('info', "[SyncService] No previous sync, using initial record ID: {$lastRecordId}");
-            }
+            if (empty($cursorId)) {
+                log_message('info', '[SyncService] No LastRecord cursor; skipping DownloadLastPunchData, trying range endpoints for today');
+                $fetch               = $this->fetchPunchRangeWithFallbacks($today, $today, 'incremental_no_cursor');
+                $incrementalSource   = $fetch['source'] ?? self::SOURCE_RANGE;
+                $apiResponse         = ['success' => $fetch['success'], 'data' => $fetch['data'] ?? []];
 
-            log_message('info', "[SyncService] Incremental sync with last_record_id={$lastRecordId}");
-            $apiResponse = $this->apiService->downloadLastPunchData($lastRecordId);
-
-            if (!($apiResponse['success'] ?? false)) {
-                $errorMsg = $apiResponse['error'] ?? 'Unknown error';
-                // The eTimeOffice API returns a 500 error (IndexOutOfRangeException) when there's no data.
-                // We should gracefully handle this as "0 records" rather than crashing the sync.
-                if (strpos($errorMsg, '500') !== false || strpos($errorMsg, 'timeout') !== false) {
-                    log_message('info', "[SyncService] eTimeOffice API returned no data or 500 error. Treating as 0 punches. Error: {$errorMsg}");
+                if (!($apiResponse['success'] ?? false)) {
+                    $finalError = $fetch['error'] ?? 'Unknown error';
+                    log_message('info', "[SyncService] Incremental bootstrap (no cursor) failed. Completing with 0 punches. Error: {$finalError}");
                     $this->syncLogModel->completeSync($syncId, [
                         'records_fetched' => 0,
-                        'last_record_id'  => $lastRecordId,
+                        'last_record_id'  => null,
                     ]);
                     return [
-                        'status' => 'success',
+                        'status'          => 'success',
                         'records_fetched' => 0,
-                        'records_saved' => 0,
-                        'message' => 'Sync completed automatically (No data available)'
+                        'records_saved'   => 0,
+                        'message'         => 'Sync completed automatically (No data available)',
                     ];
                 }
-                throw new \RuntimeException('API call failed: ' . $errorMsg);
+            } else {
+                $lastRecordId = $cursorId;
+                log_message('info', "[SyncService] Incremental sync with last_record_id={$lastRecordId}");
+                $apiResponse       = $this->apiService->downloadLastPunchData($lastRecordId);
+                $incrementalSource = self::SOURCE_INCREMENTAL;
+
+                if (!($apiResponse['success'] ?? false)) {
+                    $errorMsg = $apiResponse['error'] ?? 'Unknown error';
+                    if ($this->isVendorTransientFailure($errorMsg)) {
+                        log_message('warning', "[SyncService] Incremental primary endpoint failed ({$errorMsg}); trying range fallbacks for today");
+                        $fetch               = $this->fetchPunchRangeWithFallbacks($today, $today, 'incremental_after_lastpunch_fail');
+                        $incrementalSource   = $fetch['source'] ?? self::SOURCE_RANGE;
+                        $apiResponse         = ['success' => $fetch['success'], 'data' => $fetch['data'] ?? []];
+                    }
+
+                    if (!($apiResponse['success'] ?? false)) {
+                        $finalError = $apiResponse['error'] ?? (($fetch ?? [])['error'] ?? 'Unknown error');
+                        log_message('info', "[SyncService] All incremental endpoints returned no data/500. Completing with 0 punches. Error: {$finalError}");
+                        $this->syncLogModel->completeSync($syncId, [
+                            'records_fetched' => 0,
+                            // Do not persist a LastPunch cursor when no data was ingested — stale IDs force a 500
+                            // DownloadLastPunchData on every subsequent run (see writable/logs).
+                            'last_record_id' => null,
+                        ]);
+                        return [
+                            'status'          => 'success',
+                            'records_fetched' => 0,
+                            'records_saved'   => 0,
+                            'message'         => 'Sync completed automatically (No data available)',
+                        ];
+                    }
+                }
             }
 
-            $normalized = $this->normalizationService->normalizeLastPunchData($apiResponse['data'] ?? []);
-            $records = $normalized['records'] ?? [];
-            $newLastRecordId = $normalized['last_record_id'] ?? $lastRecordId;
+            if ($incrementalSource === self::SOURCE_INCREMENTAL) {
+                $normalized = $this->normalizationService->normalizeLastPunchData($apiResponse['data'] ?? []);
+                $records = $normalized['records'] ?? [];
+                $newLastRecordId = $normalized['last_record_id'] ?? $lastRecordId;
+            } else {
+                $records = $this->normalizationService->normalizePunchData($apiResponse['data'] ?? [], $incrementalSource);
+                // Range/InOut do not supply a DownloadLastPunchData cursor; never re-save a bogus last_record_id
+                // from a prior failed LastPunch attempt (would block the no-cursor bootstrap path).
+                $newLastRecordId = null;
+            }
 
             // Validate
             $records = $this->validationService->validatePunchRecords($records);
@@ -182,12 +275,14 @@ class SyncService
         try {
             // Fetch full day data
             log_message('info', "[SyncService] Full sync for date: {$date}");
-            $apiResponse = $this->apiService->downloadPunchData($date, $date);
+            $fetch      = $this->fetchPunchRangeWithFallbacks($date, $date, 'full_single_day');
+            $fullSource = $fetch['source'] ?? self::SOURCE_RANGE;
+            $apiResponse = ['success' => $fetch['success'], 'data' => $fetch['data'] ?? []];
 
             if (!($apiResponse['success'] ?? false)) {
-                $errorMsg = $apiResponse['error'] ?? 'Unknown error';
-                if (strpos($errorMsg, '500') !== false || strpos($errorMsg, 'timeout') !== false) {
-                    log_message('info', "[SyncService] Full Sync: API returned no data or 500 error. Treating as 0 punches. Error: {$errorMsg}");
+                $finalError = $fetch['error'] ?? 'Unknown error';
+                if ($this->isVendorTransientFailure($finalError)) {
+                    log_message('info', "[SyncService] Full sync range endpoints returned no data/500. Treating as 0 punches. Error: {$finalError}");
                     $this->syncLogModel->completeSync($syncId, [
                         'records_fetched' => 0,
                     ]);
@@ -198,11 +293,11 @@ class SyncService
                         'message' => 'Full sync completed automatically (No data available)'
                     ];
                 }
-                throw new \RuntimeException('API call failed: ' . $errorMsg);
+                throw new \RuntimeException('API call failed: ' . $finalError);
             }
 
             // Normalize
-            $records = $this->normalizationService->normalizePunchData($apiResponse['data'] ?? [], self::SOURCE_RANGE);
+            $records = $this->normalizationService->normalizePunchData($apiResponse['data'] ?? [], $fullSource);
 
             // Validate
             $records = $this->validationService->validatePunchRecords($records);
@@ -258,13 +353,12 @@ class SyncService
 
         try {
             log_message('info', "[SyncService] Full range sync from {$fromDate} to {$toDate}");
-            $apiResponse = $this->apiService->downloadPunchData($fromDate, $toDate);
+            $fetch = $this->fetchPunchRangeWithFallbacks($fromDate, $toDate, 'full_range');
 
-            if (!($apiResponse['success'] ?? false)) {
-                $errorMsg = $apiResponse['error'] ?? 'Unknown error';
-                // Gracefully handle 500 / timeout from eTimeOffice (consistent with other sync methods)
-                if (strpos($errorMsg, '500') !== false || strpos($errorMsg, 'timeout') !== false) {
-                    log_message('info', "[SyncService] Full Range Sync: API returned no data or 500 error. Treating as 0 punches. Error: {$errorMsg}");
+            if (!($fetch['success'] ?? false)) {
+                $errorMsg = $fetch['error'] ?? 'Unknown error';
+                if ($this->isVendorTransientFailure($errorMsg)) {
+                    log_message('info', "[SyncService] Full Range Sync: all range endpoints failed. Treating as 0 punches. Error: {$errorMsg}");
                     $this->syncLogModel->completeSync($syncId, [
                         'records_fetched' => 0,
                         'records_saved'   => 0,
@@ -279,7 +373,8 @@ class SyncService
                 throw new \RuntimeException('API call failed: ' . $errorMsg);
             }
 
-            $records = $this->normalizationService->normalizePunchData($apiResponse['data'] ?? [], self::SOURCE_RANGE);
+            $rangeSource = $fetch['source'] ?? self::SOURCE_RANGE;
+            $records     = $this->normalizationService->normalizePunchData($fetch['data'] ?? [], $rangeSource);
             $records = $this->validationService->validatePunchRecords($records);
             $saved = $this->storePunchLogs($records);
             $this->discoverEmployees($records);

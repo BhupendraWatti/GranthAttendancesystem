@@ -50,11 +50,10 @@ class AuthController extends ResourceController
         // -------------------------------------------------------------------
         // Live eTimeOffice Authentication (replaces local admins table check)
         //
-        // eTimeOffice Basic Auth format: "COMPANY_CODE:username" as the username.
-        // e.g. "granthinfotech:sonali_verma" with password "Happydiwali@202".
-        // The ETIME_COMPANY_CODE env var holds the prefix (e.g. "granthinfotech").
+        // Basic Auth format: "COMPANY_CODE:username" as the username when ETIME_COMPANY_CODE is set.
+        // Companycode header is also sent by ApiService.
         // -------------------------------------------------------------------
-        $companyCode  = env('ETIME_COMPANY_CODE', '');
+        $companyCode   = env('ETIME_COMPANY_CODE', '');
         $etimeUsername = $companyCode ? "{$companyCode}:{$username}" : $username;
 
         $apiService = new ApiService();

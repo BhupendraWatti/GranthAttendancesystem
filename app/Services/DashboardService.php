@@ -73,9 +73,11 @@ class DashboardService
      * @param int $limit Number of records to return
      * @return array Recent punch entries
      */
-    public function getLivePunches(int $limit = 20): array
+    public function getLivePunches(int $limit = 20, ?string $forDate = null): array
     {
-        $punches = $this->punchLogModel->getLatestPunches($limit);
+        $punches = ($forDate !== null && $forDate !== '')
+            ? $this->punchLogModel->getLatestPunchesForDate($forDate, $limit)
+            : $this->punchLogModel->getLatestPunches($limit);
 
         return array_map(function ($punch) {
             return [

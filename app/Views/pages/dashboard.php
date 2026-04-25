@@ -2,14 +2,18 @@
 
 <?= $this->section('content') ?>
 
+<?php $dashDate = $date ?? date('Y-m-d'); ?>
+<!-- Server calendar day for dashboard refresh (must match PHP; do not derive from JS UTC). -->
+<div id="dashboard-context" data-dashboard-date="<?= esc($dashDate, 'attr') ?>" hidden></div>
+
 <!-- Page Header -->
 <div class="page-header">
     <div>
         <h2>Dashboard</h2>
-        <p>Real-time attendance overview for <?= date('l, d M Y') ?></p>
+        <p>Real-time attendance overview for <?= esc(date('l, d M Y', strtotime($dashDate))) ?></p>
     </div>
     <div class="date-display">
-        📅 <?= esc($date ?? date('d M Y')) ?>
+        📅 <?= esc(date('d M Y', strtotime($dashDate))) ?>
     </div>
 </div>
 

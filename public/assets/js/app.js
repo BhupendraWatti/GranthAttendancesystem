@@ -92,7 +92,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (hasDashboardWidgets) {
         var refreshInterval = 30000; // 30 seconds
         var queryDate = new URLSearchParams(window.location.search).get('date');
-        var dashboardDate = queryDate || (new Date()).toISOString().slice(0, 10);
+        var ctxEl = document.getElementById('dashboard-context');
+        var serverDashDate = ctxEl && ctxEl.getAttribute('data-dashboard-date');
+        function localCalendarYmd(d) {
+            var y = d.getFullYear();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+        // Never use toISOString().slice(0,10) for a "calendar day" — that is UTC and can be wrong vs server/local (e.g. IST).
+        var dashboardDate = queryDate || serverDashDate || localCalendarYmd(new Date());
 
         function fetchJson(url) {
             return fetch(url, { headers: { 'Accept': 'application/json' } })
@@ -108,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
             Promise.all([
                 fetchJson('/api/dashboard/summary?date=' + encodeURIComponent(dashboardDate)),
                 fetchJson('/api/dashboard/attendance?date=' + encodeURIComponent(dashboardDate)),
-                fetchJson('/api/dashboard/live-punches?limit=15')
+                fetchJson('/api/dashboard/live-punches?date=' + encodeURIComponent(dashboardDate) + '&limit=15')
             ])
             .then(function (responses) {
                 renderSummary(responses[0].data || {});
@@ -171,7 +180,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function renderFeed(punches) {
-            if (!feedContainer || !punches.length) return;
+            if (!feedContainer) return;
+            if (!punches.length) {
+                feedContainer.innerHTML = '<li class="feed-item"><div class="text-muted" style="padding:12px 0;text-align:center;width:100%;">No punches for this day.</div></li>';
+                return;
+            }
 
             var html = '';
             punches.forEach(function (p) {
