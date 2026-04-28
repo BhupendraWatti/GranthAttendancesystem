@@ -47,6 +47,7 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
     // Employees
     $routes->get('employees', 'EmployeeController::index');
     $routes->post('employees/salary', 'EmployeeController::updateSalary');
+    $routes->post('employees/email', 'EmployeeController::updateEmail');
     $routes->get('employees/(:segment)', 'EmployeeController::show/$1');
 
     // Salary

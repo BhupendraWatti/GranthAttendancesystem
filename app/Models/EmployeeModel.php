@@ -17,6 +17,7 @@ class EmployeeModel extends Model
 
     protected $allowedFields = [
         'emp_code',
+        'email',
         'name',
         'department',
         'designation',

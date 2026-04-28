@@ -18,7 +18,7 @@
 <!-- Filters -->
 <div class="card mb-3">
     <div class="card-body" style="padding: 14px 20px;">
-        <form method="GET" action="/employees" class="form-inline">
+        <form method="GET" action="<?= site_url('employees') ?>" class="form-inline">
             <div class="form-group">
                 <label for="filter-status">Status</label>
                 <select name="status" id="filter-status" class="form-control">
@@ -39,7 +39,7 @@
             </div>
             <div class="form-group">
                 <button type="submit" class="btn btn--primary btn--sm">Filter</button>
-                <a href="/employees" class="btn btn--outline btn--sm">Reset</a>
+                <a href="<?= site_url('employees') ?>" class="btn btn--outline btn--sm">Reset</a>
             </div>
         </form>
     </div>
@@ -71,7 +71,7 @@
                         <?php foreach ($employees as $emp): ?>
                             <tr>
                                 <td>
-                                    <a href="/employees/<?= esc($emp['emp_code']) ?>" style="font-weight:600;">
+                                    <a href="<?= site_url('employees/' . esc($emp['emp_code'])) ?>" style="font-weight:600;">
                                         <?= esc($emp['name']) ?>
                                     </a>
                                 </td>
@@ -89,7 +89,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <a href="/employees/<?= esc($emp['emp_code']) ?>" class="btn btn--outline btn--sm">View</a>
+                                    <a href="<?= site_url('employees/' . esc($emp['emp_code'])) ?>" class="btn btn--outline btn--sm">View</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

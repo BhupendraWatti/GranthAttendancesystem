@@ -14,7 +14,7 @@
             }
         }
     </script>
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="<?= base_url('assets/css/app.css') ?>">
 </head>
 
 <body>
@@ -70,7 +70,7 @@
         </div>
     </div>
 
-    <script src="/assets/js/app.js"></script>
+    <script src="<?= base_url('assets/js/app.js') ?>"></script>
 </body>
 
 </html>

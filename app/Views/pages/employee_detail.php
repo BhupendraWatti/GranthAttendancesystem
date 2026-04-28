@@ -26,7 +26,7 @@
 
 <!-- Breadcrumb -->
 <div class="emp-breadcrumb">
-    <a href="/employees">Employees</a>
+    <a href="<?= site_url('employees') ?>">Employees</a>
     <span class="sep">›</span>
     <span><?= esc($empCode) ?></span>
 </div>
@@ -46,6 +46,10 @@
                     <div class="emp-meta-item">
                         <span class="emp-meta-label">Department</span>
                         <span class="emp-meta-value"><?= esc($emp['department'] ?? 'General') ?></span>
+                    </div>
+                    <div class="emp-meta-item">
+                        <span class="emp-meta-label">Email</span>
+                        <span class="emp-meta-value"><?= esc($emp['email'] ?? '—') ?></span>
                     </div>
                     <div class="emp-meta-item">
                         <span class="emp-meta-label">Type</span>
@@ -135,7 +139,7 @@
     <div class="tab-content" id="tab-attendance">
         <div class="card-body">
             <!-- Month/Year Filter -->
-            <form method="GET" action="/employees/<?= esc($empCode) ?>" class="form-inline mb-3">
+            <form method="GET" action="<?= site_url('employees/' . esc($empCode)) ?>" class="form-inline mb-3">
                 <div class="form-group">
                     <label for="month">Month</label>
                     <select name="month" id="month" class="form-control">
@@ -258,7 +262,7 @@
                 </div>
 
                 <div class="mt-3">
-                    <a href="/payslip/<?= esc($empCode) ?>?month=<?= $month ?>&year=<?= $year ?>" class="btn btn--primary">
+                    <a href="<?= site_url('payslip/' . esc($empCode) . '?month=' . $month . '&year=' . $year) ?>" class="btn btn--primary">
                         📄 View Payslip
                     </a>
                 </div>
@@ -282,7 +286,7 @@
                         </div>
                     <?php endif; ?>
                     
-                    <form action="/employees/salary" method="POST" class="form-inline">
+                    <form action="<?= site_url('employees/salary') ?>" method="POST" class="form-inline">
                         <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
                         
                         <div class="form-group mb-0">
@@ -300,6 +304,35 @@
                         </div>
                         <div class="form-group mb-0" style="align-self: flex-end;">
                             <button type="submit" class="btn btn--primary">Update Salary</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Email Mapping Form -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h4>Configure Employee Email (Login Mapping)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert--info mb-2">
+                        Email is not provided by eTimeOffice and is stored internally for employee OTP login.
+                    </div>
+                    <form action="<?= site_url('employees/email') ?>" method="POST" class="form-inline">
+                        <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
+                        <div class="form-group mb-0">
+                            <label for="email">Email</label>
+                            <input
+                                type="email"
+                                name="email"
+                                id="email"
+                                class="form-control"
+                                value="<?= esc($employee['email'] ?? '') ?>"
+                                placeholder="employee@company.com"
+                            >
+                        </div>
+                        <div class="form-group mb-0" style="align-self: flex-end;">
+                            <button type="submit" class="btn btn--primary">Update Email</button>
                         </div>
                     </form>
                 </div>

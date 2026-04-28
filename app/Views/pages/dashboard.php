@@ -91,7 +91,7 @@
                             <?php foreach ($attendance as $row): ?>
                             <tr>
                                 <td>
-                                    <a href="/employees/<?= esc($row['emp_code']) ?>" style="font-weight:600;">
+                                    <a href="<?= site_url('employees/' . esc($row['emp_code'])) ?>" style="font-weight:600;">
                                         <?= esc($row['name'] ?? $row['emp_code']) ?>
                                     </a>
                                     <?php if (!empty($row['department'])): ?>

@@ -50,7 +50,7 @@ class SalaryController extends BaseController
     public function payslip($empCode = null)
     {
         if (empty($empCode)) {
-            return redirect()->to('/salary')->with('error', 'Employee code is required.');
+            return redirect()->to(base_url('salary'))->with('error', 'Employee code is required.');
         }
 
         $month = (int) ($this->request->getGet('month') ?? date('n'));
@@ -62,7 +62,7 @@ class SalaryController extends BaseController
 
             $employee = $employeeModel->findByCode($empCode);
             if (!$employee) {
-                return redirect()->to('/salary')->with('error', "Employee {$empCode} not found.");
+                return redirect()->to(base_url('salary'))->with('error', "Employee {$empCode} not found.");
             }
 
             $salaryData = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
@@ -77,7 +77,7 @@ class SalaryController extends BaseController
             ]);
         } catch (\Throwable $e) {
             log_message('error', '[Web\\SalaryController] payslip error: ' . $e->getMessage());
-            return redirect()->to('/salary')->with('error', 'Failed to generate payslip.');
+            return redirect()->to(base_url('salary'))->with('error', 'Failed to generate payslip.');
         }
     }
 
@@ -87,7 +87,7 @@ class SalaryController extends BaseController
     public function payslipPrint($empCode = null)
     {
         if (empty($empCode)) {
-            return redirect()->to('/salary');
+            return redirect()->to(base_url('salary'));
         }
 
         $month = (int) ($this->request->getGet('month') ?? date('n'));
@@ -99,7 +99,7 @@ class SalaryController extends BaseController
 
             $employee = $employeeModel->findByCode($empCode);
             if (!$employee) {
-                return redirect()->to('/salary');
+                return redirect()->to(base_url('salary'));
             }
 
             $salaryData = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
@@ -112,7 +112,7 @@ class SalaryController extends BaseController
             ]);
         } catch (\Throwable $e) {
             log_message('error', '[Web\\SalaryController] payslipPrint error: ' . $e->getMessage());
-            return redirect()->to('/salary');
+            return redirect()->to(base_url('salary'));
         }
     }
 }

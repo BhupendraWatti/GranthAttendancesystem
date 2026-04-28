@@ -130,4 +130,49 @@ class EmployeeController extends BaseController
             return redirect()->back()->with('error', 'Failed to update salary.');
         }
     }
+
+    /**
+     * POST /employees/email — Update employee email (manual mapping)
+     *
+     * IMPORTANT: Email is NOT provided by eTimeOffice API and must never be
+     * overwritten by sync. This endpoint is the only supported way to set it.
+     */
+    public function updateEmail()
+    {
+        $empCode = (string) $this->request->getPost('emp_code');
+        $email = trim((string) $this->request->getPost('email'));
+
+        if ($empCode === '') {
+            return redirect()->back()->with('error', 'Employee code is required.');
+        }
+
+        if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return redirect()->back()->with('error', 'Invalid email format.');
+        }
+
+        try {
+            $employeeModel = new EmployeeModel();
+            $employee = $employeeModel->findByCode($empCode);
+            if (!$employee) {
+                return redirect()->back()->with('error', 'Employee not found.');
+            }
+
+            // Enforce uniqueness manually (DB unique index exists but this gives a nicer message)
+            if ($email !== '') {
+                $existing = $employeeModel->where('email', $email)->first();
+                if ($existing && (int) $existing['id'] !== (int) $employee['id']) {
+                    return redirect()->back()->with('error', 'Email already assigned to another employee.');
+                }
+            }
+
+            $employeeModel->update($employee['id'], [
+                'email' => $email === '' ? null : $email,
+            ]);
+
+            return redirect()->back()->with('success', 'Email updated successfully.');
+        } catch (\Throwable $e) {
+            log_message('error', '[Web\\EmployeeController] updateEmail error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update email.');
+        }
+    }
 }
