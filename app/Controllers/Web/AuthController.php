@@ -49,7 +49,7 @@ class AuthController extends BaseController
         // ---------------------------------------------------------------
         // Live eTimeOffice Authentication (same logic as API AuthController)
         // ---------------------------------------------------------------
-        $companyCode   = env('ETIME_COMPANY_CODE', '');
+        $companyCode = env('ETIME_COMPANY_CODE', '');
         $etimeUsername = $companyCode ? "{$companyCode}:{$username}" : $username;
 
         $apiService = new ApiService();
@@ -68,8 +68,8 @@ class AuthController extends BaseController
         // Create session
         session()->set([
             'logged_in' => true,
-            'username'  => $username,
-            'role'      => 'admin',
+            'username' => $username,
+            'role' => 'admin',
             'login_time' => date('Y-m-d H:i:s'),
         ]);
 

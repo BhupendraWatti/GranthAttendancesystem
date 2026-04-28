@@ -37,6 +37,8 @@ class AttendanceService
 
     private int $fullTimeMinutes;
     private int $internMinutes;
+    private int $fullTimeHalfDayMinutes;
+    private int $internHalfDayMinutes;
     private string $officeStartTime;
 
     /**
@@ -56,8 +58,10 @@ class AttendanceService
         $this->employeeModel  = $employeeModel ?? new EmployeeModel();
         $this->validationService = new ValidationService();
 
-        $this->fullTimeMinutes = (int) env('FULL_TIME_MINUTES', 510);
-        $this->internMinutes   = (int) env('INTERN_MINUTES', 330);
+        $this->fullTimeMinutes = (int) env('FULL_TIME_PRESENT_MINUTES', 420);
+        $this->internMinutes   = (int) env('INTERN_PRESENT_MINUTES', 330);
+        $this->fullTimeHalfDayMinutes = (int) env('FULL_TIME_HALF_DAY_MINUTES', 264);
+        $this->internHalfDayMinutes = (int) env('INTERN_HALF_DAY_MINUTES', 150);
         $this->officeStartTime = env('OFFICE_START_TIME', '10:00');
     }
 
@@ -202,13 +206,16 @@ class AttendanceService
      */
     public function determineStatus(int $workMinutes, int $requiredMinutes): string
     {
-        $percentage = ($requiredMinutes > 0) ? ($workMinutes / $requiredMinutes) : 0;
+        $presentThreshold = $requiredMinutes;
+        $halfDayThreshold = $requiredMinutes === $this->internMinutes
+            ? $this->internHalfDayMinutes
+            : $this->fullTimeHalfDayMinutes;
 
-        if ($percentage >= 0.90) {
+        if ($workMinutes >= $presentThreshold) {
             return 'present';
         }
 
-        if ($percentage >= 0.50) {
+        if ($workMinutes >= $halfDayThreshold) {
             return 'half_day';
         }
 

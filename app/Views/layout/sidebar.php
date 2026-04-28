@@ -10,7 +10,8 @@ $activePage = $activePage ?? '';
 <aside class="sidebar" id="sidebar">
     <!-- Brand -->
     <div class="sidebar-brand">
-        <div class="brand-icon"><img src="/assets/img/image-1776985023902.png" alt="Logo" style="max-width: 32px;" onerror="this.onerror=null; this.parentNode.innerText='G';"></div>
+        <div class="brand-icon"><img src="/assets/img/image-1776985023902.png" alt="Logo" style="max-width: 32px;"
+                onerror="this.onerror=null; this.parentNode.innerText='G';"></div>
         <div>
             <h2 class="text-xl">Granth Infotech</h2>
             <small>System</small>

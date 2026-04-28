@@ -59,6 +59,10 @@ class EmployeeModel extends Model
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     name = COALESCE(VALUES(name), name),
+                    department = VALUES(department),
+                    designation = VALUES(designation),
+                    employee_type = VALUES(employee_type),
+                    status = VALUES(status),
                     updated_at = VALUES(updated_at)";
 
         return $db->query($sql, [

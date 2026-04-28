@@ -33,12 +33,22 @@ class SyncFull extends BaseCommand
     public function run(array $params)
     {
         $date = $params[0] ?? date('Y-m-d');
+        $lockPath = WRITEPATH . 'sync_full.lock';
 
         CLI::write("Starting full sync for date: {$date}...", 'yellow');
 
+        if (is_file($lockPath)) {
+            CLI::write('Another sync:full run is already in progress. Skipping.', 'yellow');
+            log_message('warning', '[SyncFull] Execution skipped due to lock file');
+            return;
+        }
+
         try {
+            file_put_contents($lockPath, (string) time());
+            log_message('info', '[SyncFull] Step start: runFull');
             $syncService = new SyncService();
             $result = $syncService->runFull($date);
+            log_message('info', '[SyncFull] Step end: runFull');
 
             if ($result['status'] === 'success') {
                 CLI::write('Full sync completed successfully!', 'green');
@@ -61,6 +71,10 @@ class SyncFull extends BaseCommand
         } catch (\Throwable $e) {
             CLI::error('Fatal error: ' . $e->getMessage());
             log_message('critical', '[SyncFull] ' . $e->getMessage());
+        } finally {
+            if (is_file($lockPath)) {
+                @unlink($lockPath);
+            }
         }
     }
 }

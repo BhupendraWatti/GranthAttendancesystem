@@ -21,11 +21,11 @@ class EmployeeController extends BaseController
     public function index()
     {
         $status = $this->request->getGet('status');
-        $type   = $this->request->getGet('type');
+        $type = $this->request->getGet('type');
         $employees = [];
 
         try {
-            $model   = new EmployeeModel();
+            $model = new EmployeeModel();
             $builder = $model;
 
             if (!empty($status)) {
@@ -46,13 +46,13 @@ class EmployeeController extends BaseController
         }
 
         return view('pages/employees', [
-            'pageTitle'  => 'Employees',
+            'pageTitle' => 'Employees',
             'activePage' => 'employees',
-            'employees'  => $employees,
-            'total'      => count($employees),
-            'filters'    => [
+            'employees' => $employees,
+            'total' => count($employees),
+            'filters' => [
                 'status' => $status ?? '',
-                'type'   => $type ?? '',
+                'type' => $type ?? '',
             ],
         ]);
     }
@@ -67,9 +67,9 @@ class EmployeeController extends BaseController
         }
 
         try {
-            $employeeModel   = new EmployeeModel();
+            $employeeModel = new EmployeeModel();
             $attendanceModel = new AttendanceDailyModel();
-            $salaryService   = new SalaryService();
+            $salaryService = new SalaryService();
 
             $employee = $employeeModel->findByCode($empCode);
 
@@ -79,7 +79,7 @@ class EmployeeController extends BaseController
 
             // Get month/year from query params (default = current month)
             $month = (int) ($this->request->getGet('month') ?? date('n'));
-            $year  = (int) ($this->request->getGet('year') ?? date('Y'));
+            $year = (int) ($this->request->getGet('year') ?? date('Y'));
 
             // Fetch attendance records for selected month
             $attendanceRecords = $attendanceModel->getMonthly($empCode, $year, $month);
@@ -88,13 +88,13 @@ class EmployeeController extends BaseController
             $salarySummary = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
 
             return view('pages/employee_detail', [
-                'pageTitle'         => $employee['name'],
-                'activePage'        => 'employees',
-                'employee'          => $employee,
+                'pageTitle' => $employee['name'],
+                'activePage' => 'employees',
+                'employee' => $employee,
                 'attendanceRecords' => $attendanceRecords,
-                'salarySummary'     => $salarySummary,
-                'month'             => $month,
-                'year'              => $year,
+                'salarySummary' => $salarySummary,
+                'month' => $month,
+                'year' => $year,
             ]);
         } catch (\Throwable $e) {
             log_message('error', '[Web\\EmployeeController] show error: ' . $e->getMessage());
@@ -108,7 +108,7 @@ class EmployeeController extends BaseController
     public function updateSalary()
     {
         $empCode = $this->request->getPost('emp_code');
-        $salary  = $this->request->getPost('salary');
+        $salary = $this->request->getPost('salary');
 
         if (empty($empCode) || !is_numeric($salary) || $salary <= 0) {
             return redirect()->back()->with('error', 'Invalid salary value provided.');

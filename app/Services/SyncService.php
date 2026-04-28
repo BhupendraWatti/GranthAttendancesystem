@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\PunchLogModel;
 use App\Models\EmployeeModel;
 use App\Models\SyncLogModel;
+use App\Services\EmployeeSyncService;
+use App\Services\AttendancePolicyService;
 
 /**
  * SyncService — Data Synchronization Orchestrator
@@ -40,6 +42,8 @@ class SyncService
     private PunchLogModel $punchLogModel;
     private EmployeeModel $employeeModel;
     private SyncLogModel $syncLogModel;
+    private EmployeeSyncService $employeeSyncService;
+    private AttendancePolicyService $attendancePolicyService;
 
     /**
      * Constructor with dependency injection
@@ -62,6 +66,8 @@ class SyncService
         $this->punchLogModel       = new PunchLogModel();
         $this->employeeModel       = new EmployeeModel();
         $this->syncLogModel       = new SyncLogModel();
+        $this->employeeSyncService = new EmployeeSyncService($this->employeeModel);
+        $this->attendancePolicyService = new AttendancePolicyService();
     }
 
     /** eTimeOffice may return 500/timeout on one endpoint but succeed on another (see API1.xls). */
@@ -216,13 +222,15 @@ class SyncService
             // Store raw punch logs
             $saved = $this->storePunchLogs($records);
 
-            // Auto-discover employees from punch data
-            $this->discoverEmployees($records);
+            // Employee sync (upsert + status reconciliation)
+            $employeeSyncStats = $this->employeeSyncService->syncFromPunchRecords($records);
+            log_message('info', '[SyncService] Employee sync stats: ' . json_encode($employeeSyncStats));
 
             // Determine affected dates and process attendance
             $affectedDates = $this->getAffectedDates($records);
             foreach ($affectedDates as $date) {
                 $this->attendanceService->processDay($date);
+                $this->attendancePolicyService->generateForDate($date);
             }
 
             // Complete sync log
@@ -305,11 +313,13 @@ class SyncService
             // Store raw punch logs (INSERT IGNORE handles duplicates)
             $saved = $this->storePunchLogs($records);
 
-            // Auto-discover employees
-            $this->discoverEmployees($records);
+            // Employee sync (upsert + status reconciliation)
+            $employeeSyncStats = $this->employeeSyncService->syncFromPunchRecords($records);
+            log_message('info', '[SyncService] Employee sync stats: ' . json_encode($employeeSyncStats));
 
             // Reprocess attendance for this date
             $this->attendanceService->processDay($date);
+            $this->attendancePolicyService->generateForDate($date);
 
             // Complete sync log
             $this->syncLogModel->completeSync($syncId, [
@@ -377,11 +387,13 @@ class SyncService
             $records     = $this->normalizationService->normalizePunchData($fetch['data'] ?? [], $rangeSource);
             $records = $this->validationService->validatePunchRecords($records);
             $saved = $this->storePunchLogs($records);
-            $this->discoverEmployees($records);
+            $employeeSyncStats = $this->employeeSyncService->syncFromPunchRecords($records);
+            log_message('info', '[SyncService] Employee sync stats: ' . json_encode($employeeSyncStats));
 
             $affectedDates = $this->getAffectedDates($records);
             foreach ($affectedDates as $date) {
                 $this->attendanceService->processDay($date);
+                $this->attendancePolicyService->generateForDate($date);
             }
 
             $this->syncLogModel->completeSync($syncId, [

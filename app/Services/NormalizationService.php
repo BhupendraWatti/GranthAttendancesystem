@@ -19,7 +19,6 @@ class NormalizationService
         'punch_time' => '',
         'source'     => 'api',
     ];
-
     /**
      * Normalize API response from DownloadPunchData
      * Expected format: array of records with punch timestamp info

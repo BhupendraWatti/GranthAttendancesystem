@@ -162,4 +162,16 @@ class PunchLogModel extends Model
                     ->orderBy('punch_logs.punch_time', 'DESC')
                     ->findAll();
     }
+
+    /**
+     * SQL helper to remove duplicates while preserving smallest id.
+     */
+    public function getDuplicateCleanupQuery(): string
+    {
+        return "DELETE p1 FROM punch_logs p1
+INNER JOIN punch_logs p2
+  ON p1.emp_code = p2.emp_code
+ AND p1.punch_time = p2.punch_time
+ AND p1.id > p2.id";
+    }
 }

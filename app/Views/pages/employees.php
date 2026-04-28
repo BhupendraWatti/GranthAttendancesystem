@@ -24,14 +24,16 @@
                 <select name="status" id="filter-status" class="form-control">
                     <option value="">All Status</option>
                     <option value="active" <?= ($filters['status'] ?? '') === 'active' ? 'selected' : '' ?>>Active</option>
-                    <option value="inactive" <?= ($filters['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive</option>
+                    <option value="inactive" <?= ($filters['status'] ?? '') === 'inactive' ? 'selected' : '' ?>>Inactive
+                    </option>
                 </select>
             </div>
             <div class="form-group">
                 <label for="filter-type">Type</label>
                 <select name="type" id="filter-type" class="form-control">
                     <option value="">All Types</option>
-                    <option value="full_time" <?= ($filters['type'] ?? '') === 'full_time' ? 'selected' : '' ?>>Full Time</option>
+                    <option value="full_time" <?= ($filters['type'] ?? '') === 'full_time' ? 'selected' : '' ?>>Full Time
+                    </option>
                     <option value="intern" <?= ($filters['type'] ?? '') === 'intern' ? 'selected' : '' ?>>Intern</option>
                 </select>
             </div>
@@ -47,7 +49,8 @@
 <div class="card">
     <div class="card-header">
         <h3>👥 Employee Directory</h3>
-        <input type="text" id="table-search" class="form-control" placeholder="Search..." style="max-width:200px; padding: 6px 12px; font-size: 0.82rem;">
+        <input type="text" id="table-search" class="form-control" placeholder="Search..."
+            style="max-width:200px; padding: 6px 12px; font-size: 0.82rem;">
     </div>
     <div class="card-body p-0">
         <div class="table-wrapper">
@@ -66,29 +69,29 @@
                 <tbody>
                     <?php if (!empty($employees)): ?>
                         <?php foreach ($employees as $emp): ?>
-                        <tr>
-                            <td>
-                                <a href="/employees/<?= esc($emp['emp_code']) ?>" style="font-weight:600;">
-                                    <?= esc($emp['name']) ?>
-                                </a>
-                            </td>
-                            <td class="font-mono"><?= esc($emp['emp_code']) ?></td>
-                            <td><?= esc($emp['department'] ?? '—') ?></td>
-                            <td><?= esc($emp['designation'] ?? '—') ?></td>
-                            <td>
-                                <span class="badge badge--info">
-                                    <?= esc(str_replace('_', ' ', $emp['employee_type'] ?? 'full_time')) ?>
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge badge--<?= esc($emp['status'] ?? 'active') ?>">
-                                    <?= esc($emp['status'] ?? 'active') ?>
-                                </span>
-                            </td>
-                            <td>
-                                <a href="/employees/<?= esc($emp['emp_code']) ?>" class="btn btn--outline btn--sm">View</a>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td>
+                                    <a href="/employees/<?= esc($emp['emp_code']) ?>" style="font-weight:600;">
+                                        <?= esc($emp['name']) ?>
+                                    </a>
+                                </td>
+                                <td class="font-mono"><?= esc($emp['emp_code']) ?></td>
+                                <td><?= esc($emp['department'] ?? '—') ?></td>
+                                <td><?= esc($emp['designation'] ?? '—') ?></td>
+                                <td>
+                                    <span class="badge badge--info">
+                                        <?= esc(str_replace('_', ' ', $emp['employee_type'] ?? 'full_time')) ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge--<?= esc($emp['status'] ?? 'active') ?>">
+                                        <?= esc($emp['status'] ?? 'active') ?>
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="/employees/<?= esc($emp['emp_code']) ?>" class="btn btn--outline btn--sm">View</a>
+                                </td>
+                            </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
