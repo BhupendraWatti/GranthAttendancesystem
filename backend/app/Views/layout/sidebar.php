@@ -37,6 +37,28 @@ $activePage = $activePage ?? '';
             Salary
         </a>
 
+        <div class="nav-label">Management</div>
+
+        <a href="<?= site_url('documents/employee') ?>" class="<?= $activePage === 'documents' && service('router')->methodName() === 'employee' ? 'active' : '' ?>">
+            <span class="nav-icon">📄</span>
+            Employee Docs
+        </a>
+
+        <a href="<?= site_url('documents/company') ?>" class="<?= $activePage === 'documents' && service('router')->methodName() === 'company' ? 'active' : '' ?>">
+            <span class="nav-icon">🏢</span>
+            Company Docs
+        </a>
+
+        <a href="<?= site_url('leave') ?>" class="<?= $activePage === 'leave' ? 'active' : '' ?>">
+            <span class="nav-icon">⏳</span>
+            Leave Requests
+        </a>
+
+        <a href="<?= site_url('holidays') ?>" class="<?= $activePage === 'holidays' ? 'active' : '' ?>">
+            <span class="nav-icon">📅</span>
+            Holidays
+        </a>
+
         <div class="nav-label">System</div>
 
         <a href="<?= site_url('sync') ?>" class="<?= $activePage === 'sync' ? 'active' : '' ?>">

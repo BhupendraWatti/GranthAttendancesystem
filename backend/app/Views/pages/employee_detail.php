@@ -72,6 +72,7 @@
             <button class="tab-btn active" data-tab="tab-overview">📊 Overview</button>
             <button class="tab-btn" data-tab="tab-attendance">📋 Attendance</button>
             <button class="tab-btn" data-tab="tab-salary">💰 Salary</button>
+            <button class="tab-btn" data-tab="tab-documents">📄 Documents</button>
         </div>
     </div>
 
@@ -338,6 +339,47 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+</div>
+
+    <!-- Tab: Documents -->
+    <div class="tab-content" id="tab-documents">
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Version</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($documents)): ?>
+                            <?php foreach ($documents as $doc): ?>
+                                <tr>
+                                    <td><strong><?= esc($doc['title']) ?></strong></td>
+                                    <td><span class="badge badge--info"><?= esc(ucfirst($doc['document_type'])) ?></span></td>
+                                    <td>v<?= esc($doc['version']) ?></td>
+                                    <td><?= date('d M Y', strtotime($doc['created_at'])) ?></td>
+                                    <td>
+                                        <a href="<?= site_url('documents/download/employee/' . $doc['id']) ?>" class="btn btn--sm btn--outline">Download</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5" class="text-center py-8">
+                                    No documents found for this employee.
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

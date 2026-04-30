@@ -47,6 +47,14 @@ $routes->group('', ['filter' => 'employeeAuth'], function ($routes) {
     $routes->get('salary/payslip', 'Salary::payslip');
     $routes->get('salary/payslip/print', 'Salary::payslipPrint');
     $routes->get('profile', 'Profile::index');
+
+    // Leave Management
+    $routes->get('leave', 'LeaveController::index');
+    $routes->post('leave/apply', 'LeaveController::apply');
+
+    // Notifications
+    $routes->get('notifications', 'NotificationController::index');
+    $routes->post('notifications/mark-read', 'NotificationController::markRead');
 });
 
 /*

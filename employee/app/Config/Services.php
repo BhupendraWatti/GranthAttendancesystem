@@ -51,6 +51,39 @@ class Services extends BaseService
         return new AttendanceService();
     }
 
+    /**
+     * LeaveService - Leave Management System logic
+     */
+    public static function leaveservice($getShared = true)
+    {
+        if ($getShared) {
+            return static::getSharedInstance('leaveservice');
+        }
+        return new \App\Services\LeaveService();
+    }
+
+    /**
+     * HolidayService - Holiday Calendar logic
+     */
+    public static function holidayservice($getShared = true)
+    {
+        if ($getShared) {
+            return static::getSharedInstance('holidayservice');
+        }
+        return new \App\Services\HolidayService();
+    }
+
+    /**
+     * NotificationService - System notification logic
+     */
+    public static function notificationservice($getShared = true)
+    {
+        if ($getShared) {
+            return static::getSharedInstance('notificationservice');
+        }
+        return new \App\Services\NotificationService();
+    }
+
     /*
      * public static function example($getShared = true)
      * {

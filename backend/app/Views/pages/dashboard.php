@@ -25,7 +25,7 @@
             <div class="stat-value" id="stat-total-employees"><?= esc($summary['total_employees'] ?? 0) ?></div>
             <div class="stat-sub">Active workforce</div>
         </div>
-        <div class="stat-icon">👥</div>
+        <div class="stat-icon"><i class="fa-solid fa-users-viewfinder text-primary opacity-30"></i></div>
     </div>
 
     <div class="stat-card stat-card--success">
@@ -34,7 +34,7 @@
             <div class="stat-value" id="stat-present-today"><?= esc($summary['present_today'] ?? 0) ?></div>
             <div class="stat-sub" id="stat-attendance-rate"><?= esc($summary['attendance_rate'] ?? 0) ?>% attendance rate</div>
         </div>
-        <div class="stat-icon">✅</div>
+        <div class="stat-icon"><i class="fa-solid fa-user-check text-success opacity-30"></i></div>
     </div>
 
     <div class="stat-card stat-card--danger">
@@ -48,7 +48,7 @@
                 ?>
             </div>
         </div>
-        <div class="stat-icon">❌</div>
+        <div class="stat-icon"><i class="fa-solid fa-user-xmark text-danger opacity-30"></i></div>
     </div>
 
     <div class="stat-card stat-card--warning">
@@ -57,7 +57,7 @@
             <div class="stat-value" id="stat-late-today"><?= esc($summary['late_today'] ?? 0) ?></div>
             <div class="stat-sub">After <?= esc(env('OFFICE_START_TIME', '10:00')) ?> AM</div>
         </div>
-        <div class="stat-icon">⏰</div>
+        <div class="stat-icon"><i class="fa-solid fa-clock-rotate-left text-warning opacity-30"></i></div>
     </div>
 </div>
 

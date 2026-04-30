@@ -71,6 +71,8 @@ class EmployeeController extends BaseController
             $attendanceModel = new AttendanceDailyModel();
             $salaryService = new SalaryService();
 
+            $employeeDocModel = new \App\Models\EmployeeDocumentModel();
+
             $employee = $employeeModel->findByCode($empCode);
 
             if (!$employee) {
@@ -87,12 +89,16 @@ class EmployeeController extends BaseController
             // Calculate salary for this employee
             $salarySummary = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
 
+            // Fetch documents
+            $documents = $employeeDocModel->where('emp_code', $empCode)->orderBy('created_at', 'DESC')->findAll();
+
             return view('pages/employee_detail', [
                 'pageTitle' => $employee['name'],
                 'activePage' => 'employees',
                 'employee' => $employee,
                 'attendanceRecords' => $attendanceRecords,
                 'salarySummary' => $salarySummary,
+                'documents' => $documents,
                 'month' => $month,
                 'year' => $year,
             ]);

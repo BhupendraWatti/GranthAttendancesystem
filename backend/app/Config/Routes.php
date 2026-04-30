@@ -56,6 +56,30 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
     // Payslip
     $routes->get('payslip/(:segment)', 'SalaryController::payslip/$1');
     $routes->get('payslip/(:segment)/print', 'SalaryController::payslipPrint/$1');
+
+    // Documents
+    $routes->group('documents', function ($routes) {
+        $routes->get('employee', 'DocumentsController::employee');
+        $routes->get('company', 'DocumentsController::company');
+        $routes->post('upload/employee', 'DocumentsController::uploadEmployee');
+        $routes->post('upload/company', 'DocumentsController::uploadCompany');
+        $routes->get('download/(:segment)/(:num)', 'DocumentsController::download/$1/$2');
+        $routes->post('delete', 'DocumentsController::delete');
+    });
+
+    // Leave Requests
+    $routes->group('leave', function ($routes) {
+        $routes->get('/', 'LeaveController::index');
+        $routes->post('approve', 'LeaveController::approve');
+        $routes->post('reject', 'LeaveController::reject');
+    });
+
+    // Holidays
+    $routes->group('holidays', function ($routes) {
+        $routes->get('/', 'HolidayController::index');
+        $routes->post('add', 'HolidayController::add');
+        $routes->post('delete', 'HolidayController::delete');
+    });
 });
 
 // API ROUTES (explicit mappings for dashboard polling + sync controls)

@@ -34,6 +34,8 @@ class AttendanceService
     private AttendanceDailyModel $attendanceModel;
     private EmployeeModel $employeeModel;
     private ValidationService $validationService;
+    private \App\Models\HolidayModel $holidayModel;
+    private \App\Models\LeaveRequestModel $leaveRequestModel;
 
     private int $fullTimeMinutes;
     private int $internMinutes;
@@ -57,6 +59,8 @@ class AttendanceService
         $this->attendanceModel  = $attendanceModel ?? new AttendanceDailyModel();
         $this->employeeModel  = $employeeModel ?? new EmployeeModel();
         $this->validationService = new ValidationService();
+        $this->holidayModel = new \App\Models\HolidayModel();
+        $this->leaveRequestModel = new \App\Models\LeaveRequestModel();
 
         $this->fullTimeMinutes = (int) env('FULL_TIME_PRESENT_MINUTES', 420);
         $this->internMinutes   = (int) env('INTERN_PRESENT_MINUTES', 330);
@@ -76,6 +80,9 @@ class AttendanceService
     {
         log_message('info', "[AttendanceService] Processing attendance for date: {$date}");
 
+        // 1. Check if date is a global holiday
+        $isGlobalHoliday = $this->holidayModel->isHoliday($date);
+
         // Get all punches for this date
         $allPunches = $this->punchLogModel->getAllPunchesForDate($date);
 
@@ -93,7 +100,20 @@ class AttendanceService
             $punches = $grouped[$empCode] ?? [];
             $employeeType = $employee['employee_type'] ?? 'full_time';
 
-            $result = $this->processEmployee($empCode, $date, $punches, $employeeType);
+            // 2. If global holiday, mark as 'holiday' unless they punched in
+            if ($isGlobalHoliday && empty($punches)) {
+                $result = [
+                    'emp_code'      => $empCode,
+                    'date'          => $date,
+                    'status'        => 'holiday',
+                    'work_minutes'  => 0,
+                    'punch_count'   => 0,
+                    'required_minutes' => $this->getRequiredMinutes($employeeType),
+                    'employee_type'    => $employeeType,
+                ];
+            } else {
+                $result = $this->processEmployee($empCode, $date, $punches, $employeeType);
+            }
 
             // Validate the result
             $validationErrors = $this->validationService->validateAttendance($result);
@@ -130,8 +150,13 @@ class AttendanceService
         $requiredMinutes = $this->getRequiredMinutes($employeeType);
         $punchCount = count($punches);
 
-        // No punches → Absent
+        // No punches → Check for approved Leave before marking Absent
         if ($punchCount === 0) {
+            $leave = $this->leaveRequestModel->where('emp_code', $empCode)
+                ->where('status', 'approved')
+                ->where("'{$date}' BETWEEN from_date AND to_date")
+                ->first();
+
             return [
                 'emp_code'         => $empCode,
                 'date'             => $date,
@@ -139,7 +164,7 @@ class AttendanceService
                 'last_out'         => null,
                 'work_minutes'     => 0,
                 'late_minutes'     => 0,
-                'status'           => 'absent',
+                'status'           => $leave ? 'leave' : 'absent',
                 'punch_count'      => 0,
                 'employee_type'    => $employeeType,
                 'required_minutes' => $requiredMinutes,
@@ -331,6 +356,14 @@ class AttendanceService
                     break;
                 case 'absent':
                     $byEmployee[$empCode]['absent_days']++;
+                    break;
+                case 'leave':
+                    if (!isset($byEmployee[$empCode]['leave_days'])) $byEmployee[$empCode]['leave_days'] = 0;
+                    $byEmployee[$empCode]['leave_days']++;
+                    break;
+                case 'holiday':
+                    if (!isset($byEmployee[$empCode]['holiday_days'])) $byEmployee[$empCode]['holiday_days'] = 0;
+                    $byEmployee[$empCode]['holiday_days']++;
                     break;
             }
 

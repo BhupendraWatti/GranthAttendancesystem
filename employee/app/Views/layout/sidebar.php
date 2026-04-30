@@ -22,26 +22,36 @@ $activePage = $activePage ?? '';
     <nav class="sidebar-nav">
         <div class="nav-label">Main</div>
 
-        <a href="/dashboard" class="<?= $activePage === 'dashboard' ? 'active' : '' ?>">
+        <a href="<?= site_url('/') ?>" class="<?= $activePage === 'dashboard' ? 'active' : '' ?>">
             <span class="nav-icon">📊</span>
             Dashboard
         </a>
 
-        <a href="/employees" class="<?= $activePage === 'employees' ? 'active' : '' ?>">
-            <span class="nav-icon">👥</span>
-            Employees
+        <a href="<?= site_url('attendance') ?>" class="<?= $activePage === 'attendance' ? 'active' : '' ?>">
+            <span class="nav-icon">📋</span>
+            My Attendance
         </a>
 
-        <a href="/salary" class="<?= $activePage === 'salary' ? 'active' : '' ?>">
+        <a href="<?= site_url('salary') ?>" class="<?= $activePage === 'salary' ? 'active' : '' ?>">
             <span class="nav-icon">💰</span>
-            Salary
+            My Salary
         </a>
 
-        <div class="nav-label">System</div>
+        <a href="<?= site_url('leave') ?>" class="<?= $activePage === 'leave' ? 'active' : '' ?>">
+            <span class="nav-icon">📅</span>
+            Leave & Holidays
+        </a>
 
-        <a href="/sync" class="<?= $activePage === 'sync' ? 'active' : '' ?>">
-            <span class="nav-icon">🔄</span>
-            Sync Data
+        <div class="nav-label">Account</div>
+
+        <a href="<?= site_url('notifications') ?>" class="<?= $activePage === 'notifications' ? 'active' : '' ?>">
+            <span class="nav-icon">🔔</span>
+            Notifications
+        </a>
+
+        <a href="<?= site_url('profile') ?>" class="<?= $activePage === 'profile' ? 'active' : '' ?>">
+            <span class="nav-icon">👤</span>
+            My Profile
         </a>
     </nav>
 

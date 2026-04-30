@@ -1,0 +1,56 @@
+﻿
+ M backend/app/Config/Routes.php
+ M backend/app/Config/Services.php
+ M backend/app/Controllers/Web/AuthController.php
+ M backend/app/Controllers/Web/EmployeeController.php
+ M backend/app/Services/AttendanceService.php
+ M backend/app/Views/layout/main.php
+ M backend/app/Views/layout/sidebar.php
+ M backend/app/Views/pages/dashboard.php
+ M backend/app/Views/pages/employee_detail.php
+ M backend/public/assets/css/app.css
+ M backend/public/assets/js/app.js
+ M employee/app/Config/Routes.php
+ M employee/app/Config/Services.php
+ M employee/app/Services/AttendanceService.php
+ M employee/app/Views/layout/sidebar.php
+ M employee/public/debug-6fc754.log
+?? backend/app/Controllers/Web/DocumentsController.php
+?? backend/app/Controllers/Web/HolidayController.php
+?? backend/app/Controllers/Web/LeaveController.php
+?? backend/app/Database/Migrations/2026-04-29-000001_CreateDocumentTables.php
+?? backend/app/Database/Migrations/2026-04-30-000001_CreateFinalPhaseTables.php
+?? backend/app/Models/CompanyDocumentModel.php
+?? backend/app/Models/EmployeeDocumentModel.php
+?? backend/app/Models/HolidayModel.php
+?? backend/app/Models/LeaveBalanceModel.php
+?? backend/app/Models/LeaveRequestModel.php
+?? backend/app/Models/NotificationModel.php
+?? backend/app/Services/DocumentUploadService.php
+?? backend/app/Services/HolidayService.php
+?? backend/app/Services/LeaveService.php
+?? backend/app/Services/NotificationService.php
+?? backend/app/Views/pages/documents_company.php
+?? backend/app/Views/pages/documents_employee.php
+?? backend/app/Views/pages/holidays_admin.php
+?? backend/app/Views/pages/leave_admin.php
+?? changes_for_server.txt
+?? employee/app/Controllers/LeaveController.php
+?? employee/app/Controllers/NotificationController.php
+?? employee/app/Models/HolidayModel.php
+?? employee/app/Models/LeaveBalanceModel.php
+?? employee/app/Models/LeaveRequestModel.php
+?? employee/app/Models/NotificationModel.php
+?? employee/app/Services/HolidayService.php
+?? employee/app/Services/LeaveService.php
+?? employee/app/Services/NotificationService.php
+?? employee/app/Views/pages/leave.php
+?? employee/app/Views/pages/notifications.php
+?? employee/writable/employee_session/emp_session4f3b8533f1ff108026f1cec04e5a519e
+?? employee/writable/employee_session/emp_session6026cee2f886d3bca91e900c7fcd4546
+?? employee/writable/employee_session/emp_sessiona5d83c7e18f6723b3a43fa1dfce23a35
+?? employee/writable/employee_session/emp_sessionddb17a3668a43370e4dc8f2f0ab94f5e
+?? employee/writable/employee_session/emp_sessionea6de3b802fa747c1304803b1d48bba6
+?? file_list.txt
+
+

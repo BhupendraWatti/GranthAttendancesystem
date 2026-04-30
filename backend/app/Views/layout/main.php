@@ -15,6 +15,9 @@
         }
     </script>
     <link rel="stylesheet" href="<?= base_url('assets/css/app.css') ?>">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 </head>
 
 <body>
@@ -31,36 +34,42 @@
             <!-- Header -->
             <?= $this->include('layout/header') ?>
 
-            <!-- Flash Messages -->
-            <div class="main-content">
+            <!-- Flash Messages (Toasts) -->
+            <div class="alert-container">
                 <?php if (session()->getFlashdata('success')): ?>
                     <div class="alert alert--success">
-                        ✅ <?= esc(session()->getFlashdata('success')) ?>
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span><?= esc(session()->getFlashdata('success')) ?></span>
                         <button class="alert-close">&times;</button>
                     </div>
                 <?php endif; ?>
 
                 <?php if (session()->getFlashdata('error')): ?>
                     <div class="alert alert--danger">
-                        ❌ <?= esc(session()->getFlashdata('error')) ?>
+                        <i class="fa-solid fa-circle-xmark"></i>
+                        <span><?= esc(session()->getFlashdata('error')) ?></span>
                         <button class="alert-close">&times;</button>
                     </div>
                 <?php endif; ?>
 
                 <?php if (session()->getFlashdata('warning')): ?>
                     <div class="alert alert--warning">
-                        ⚠️ <?= esc(session()->getFlashdata('warning')) ?>
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span><?= esc(session()->getFlashdata('warning')) ?></span>
                         <button class="alert-close">&times;</button>
                     </div>
                 <?php endif; ?>
 
                 <?php if (session()->getFlashdata('info')): ?>
                     <div class="alert alert--info">
-                        ℹ️ <?= esc(session()->getFlashdata('info')) ?>
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span><?= esc(session()->getFlashdata('info')) ?></span>
                         <button class="alert-close">&times;</button>
                     </div>
                 <?php endif; ?>
+            </div>
 
+            <div class="main-content">
                 <!-- Page Content -->
                 <?= $this->renderSection('content') ?>
             </div>

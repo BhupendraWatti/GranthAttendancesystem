@@ -65,7 +65,20 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ============================================================
-    // 4. Tabs
+    // 4. Form Components (TomSelect)
+    // ============================================================
+    document.querySelectorAll('.tom-select').forEach(function(el) {
+        if (typeof TomSelect !== 'undefined') {
+            new TomSelect(el, {
+                plugins: ['remove_button'],
+                maxOptions: 50,
+                allowEmptyOption: true,
+            });
+        }
+    });
+
+    // ============================================================
+    // 5. Tabs
     // ============================================================
     document.querySelectorAll('.tab-btn').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -84,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ============================================================
-    // 5. Dashboard Dynamic Refresh (30 seconds)
+    // 6. Dashboard Dynamic Refresh (30 seconds)
     // ============================================================
     var feedContainer = document.getElementById('live-feed');
     var attendanceBody = document.getElementById('attendance-table-body');
@@ -100,7 +113,6 @@ document.addEventListener('DOMContentLoaded', function () {
             var day = String(d.getDate()).padStart(2, '0');
             return y + '-' + m + '-' + day;
         }
-        // Never use toISOString().slice(0,10) for a "calendar day" — that is UTC and can be wrong vs server/local (e.g. IST).
         var dashboardDate = queryDate || serverDashDate || localCalendarYmd(new Date());
 
         function fetchJson(url) {
@@ -126,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function () {
             })
             .catch(function (err) {
                 console.error('[Dashboard Refresh] ' + err.message);
-                showDashboardWarning('Live refresh failed. Showing last loaded dashboard data.');
             });
         }
 
@@ -205,17 +216,6 @@ document.addEventListener('DOMContentLoaded', function () {
             feedContainer.innerHTML = html;
         }
 
-        function showDashboardWarning(message) {
-            var existing = document.getElementById('dashboard-refresh-warning');
-            if (existing) return;
-            var warning = document.createElement('div');
-            warning.id = 'dashboard-refresh-warning';
-            warning.className = 'alert alert-warning';
-            warning.textContent = message;
-            var main = document.querySelector('.page-header') || document.body;
-            main.parentNode.insertBefore(warning, main.nextSibling);
-        }
-
         function formatTime(value) {
             return new Date(value).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
         }
@@ -225,13 +225,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (el) el.textContent = value;
         }
 
-        // First refresh quickly after page render, then poll.
         setTimeout(refreshDashboard, 2000);
         setInterval(refreshDashboard, refreshInterval);
     }
 
     // ============================================================
-    // 6. Date Picker Form Auto-submit
+    // 7. Date Picker Form Auto-submit
     // ============================================================
     document.querySelectorAll('.auto-submit-date').forEach(function (input) {
         input.addEventListener('change', function () {

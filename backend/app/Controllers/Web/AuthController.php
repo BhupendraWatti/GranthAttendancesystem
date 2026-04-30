@@ -65,9 +65,14 @@ class AuthController extends BaseController
 
         log_message('info', "[Web\\AuthController] eTimeOffice login succeeded for user: {$username}");
 
+        // Fetch admin ID from DB (admins are created via seeder or manual entry)
+        $adminModel = new \App\Models\AdminModel();
+        $admin = $adminModel->findByUsername($username);
+
         // Create session
         session()->set([
             'logged_in' => true,
+            'user_id' => $admin ? $admin['id'] : null,
             'username' => $username,
             'role' => 'admin',
             'login_time' => date('Y-m-d H:i:s'),
