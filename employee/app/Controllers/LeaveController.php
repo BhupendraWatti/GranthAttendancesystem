@@ -31,7 +31,7 @@ class LeaveController extends BaseController
      */
     public function index()
     {
-        $empCode = session()->get('emp_code');
+        $empCode = session()->get('empcode');
         if (!$empCode) {
             return redirect()->to('/login');
         }
@@ -44,7 +44,7 @@ class LeaveController extends BaseController
             'holidays'     => $this->holidayModel->getUpcoming(),
         ];
 
-        return view('pages/leave', $data);
+        return view('leave', $data);
     }
 
     /**
@@ -52,7 +52,7 @@ class LeaveController extends BaseController
      */
     public function apply()
     {
-        $empCode = session()->get('emp_code');
+        $empCode = session()->get('empcode');
         if (!$empCode) {
             return redirect()->to('/login');
         }

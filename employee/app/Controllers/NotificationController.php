@@ -16,7 +16,7 @@ class NotificationController extends BaseController
 
     public function index()
     {
-        $empCode = session()->get('emp_code');
+        $empCode = session()->get('empcode');
         if (!$empCode) return redirect()->to('/login');
 
         $data = [
@@ -25,12 +25,12 @@ class NotificationController extends BaseController
             'notifications' => $this->notificationModel->getByEmployee($empCode),
         ];
 
-        return view('pages/notifications', $data);
+        return view('notifications', $data);
     }
 
     public function markRead()
     {
-        $empCode = session()->get('emp_code');
+        $empCode = session()->get('empcode');
         if ($empCode) {
             $this->notificationModel->markAllAsRead($empCode);
         }

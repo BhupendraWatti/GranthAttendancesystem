@@ -55,6 +55,10 @@ $routes->group('', ['filter' => 'employeeAuth'], function ($routes) {
     // Notifications
     $routes->get('notifications', 'NotificationController::index');
     $routes->post('notifications/mark-read', 'NotificationController::markRead');
+
+    // Documents
+    $routes->get('documents', 'Documents::index');
+    $routes->get('documents/download/(:segment)/(:num)', 'Documents::download/$1/$2');
 });
 
 /*

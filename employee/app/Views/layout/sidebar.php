@@ -42,6 +42,11 @@ $activePage = $activePage ?? '';
             Leave & Holidays
         </a>
 
+        <a href="<?= site_url('documents') ?>" class="<?= $activePage === 'documents' ? 'active' : '' ?>">
+            <span class="nav-icon">📂</span>
+            My Documents
+        </a>
+
         <div class="nav-label">Account</div>
 
         <a href="<?= site_url('notifications') ?>" class="<?= $activePage === 'notifications' ? 'active' : '' ?>">

@@ -24,6 +24,21 @@
       </a>
     </li>
     <li>
+      <a class="flex items-center gap-3 px-4 py-3 rounded-lg <?= $activePage === 'leave' ? 'text-[#EB5C49] font-bold border-r-4 border-[#EB5C49] bg-[#F5F2EA]/50' : 'text-[#3A3A3A]/60 hover:text-[#3A3A3A] hover:bg-[#F5F2EA]' ?>" href="<?= site_url('leave') ?>">
+        <span class="material-symbols-outlined">event_note</span>Leave
+      </a>
+    </li>
+    <li>
+      <a class="flex items-center gap-3 px-4 py-3 rounded-lg <?= $activePage === 'documents' ? 'text-[#EB5C49] font-bold border-r-4 border-[#EB5C49] bg-[#F5F2EA]/50' : 'text-[#3A3A3A]/60 hover:text-[#3A3A3A] hover:bg-[#F5F2EA]' ?>" href="<?= site_url('documents') ?>">
+        <span class="material-symbols-outlined">folder_open</span>Documents
+      </a>
+    </li>
+    <li>
+      <a class="flex items-center gap-3 px-4 py-3 rounded-lg <?= $activePage === 'notifications' ? 'text-[#EB5C49] font-bold border-r-4 border-[#EB5C49] bg-[#F5F2EA]/50' : 'text-[#3A3A3A]/60 hover:text-[#3A3A3A] hover:bg-[#F5F2EA]' ?>" href="<?= site_url('notifications') ?>">
+        <span class="material-symbols-outlined">notifications</span>Notifications
+      </a>
+    </li>
+    <li>
       <a class="flex items-center gap-3 px-4 py-3 rounded-lg <?= $activePage === 'profile' ? 'text-[#EB5C49] font-bold border-r-4 border-[#EB5C49] bg-[#F5F2EA]/50' : 'text-[#3A3A3A]/60 hover:text-[#3A3A3A] hover:bg-[#F5F2EA]' ?>" href="<?= site_url('profile') ?>">
         <span class="material-symbols-outlined">account_circle</span>Profile
       </a>

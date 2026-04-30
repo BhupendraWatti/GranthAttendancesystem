@@ -84,6 +84,21 @@ class Services extends BaseService
         return new \App\Services\NotificationService();
     }
 
+    /**
+     * DocumentService - Document Management System logic for employees
+     * 
+     * @param bool $getShared Return singleton instance (default: true)
+     * @return \App\Services\DocumentService
+     */
+    public static function documentservice($getShared = true)
+    {
+        if ($getShared) {
+            return static::getSharedInstance('documentservice');
+        }
+
+        return new \App\Services\DocumentService();
+    }
+
     /*
      * public static function example($getShared = true)
      * {
