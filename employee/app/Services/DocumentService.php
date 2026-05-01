@@ -16,21 +16,23 @@ class DocumentService
         $this->employeeDocModel = new EmployeeDocumentModel();
         $this->companyDocModel = new CompanyDocumentModel();
         
-        // Dynamic path resolution for server compatibility.
-        // Priority: 1. Environment Variable, 2. Auto-discovered sibling path, 3. Local fallback.
+        // 1. Check Environment Variable first (Highest priority for server flexibility)
         $configuredPath = env('DOCUMENTS_STORAGE_PATH');
-        
         if ($configuredPath) {
             $this->uploadPath = rtrim($configuredPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+            return;
+        }
+
+        // 2. Verified Server Path (Based on deep diagnostics)
+        // Your server structure: public_html/office/superadmin/backend/writable/...
+        $serverPath = '/home/u415869585/domains/granthtech.com/public_html/office/superadmin/backend/writable/uploads/documents';
+        
+        if (is_dir($serverPath)) {
+            $this->uploadPath = $serverPath . DIRECTORY_SEPARATOR;
         } else {
-            // Discovery: Look for the sibling 'backend' folder dynamically
-            $siblingBackend = realpath(ROOTPATH . '../backend/writable/uploads/documents');
-            if ($siblingBackend && is_dir($siblingBackend)) {
-                $this->uploadPath = $siblingBackend . DIRECTORY_SEPARATOR;
-            } else {
-                // Fallback to local app's writable folder
-                $this->uploadPath = WRITEPATH . 'uploads/documents' . DIRECTORY_SEPARATOR;
-            }
+            // Fallback for local development or if server path changes
+            $this->uploadPath = realpath(ROOTPATH . '../superadmin/backend/writable/uploads/documents') ?: WRITEPATH . 'uploads/documents';
+            $this->uploadPath = rtrim($this->uploadPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
         }
     }
 

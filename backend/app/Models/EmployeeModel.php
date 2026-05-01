@@ -32,11 +32,11 @@ class EmployeeModel extends Model
     ];
 
     /**
-     * Get all active employees
+     * Get all active employees sorted alphabetically
      */
     public function getActive(): array
     {
-        return $this->where('status', 'active')->findAll();
+        return $this->where('status', 'active')->orderBy('name', 'ASC')->findAll();
     }
 
     /**

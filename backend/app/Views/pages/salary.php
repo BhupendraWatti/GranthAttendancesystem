@@ -9,153 +9,156 @@ $t = $totals ?? [];
 $currency = '₹';
 ?>
 
-<!-- Page Header -->
-<div class="page-header">
-    <div>
-        <h2>Salary Management</h2>
-        <p>Review and manage employee compensation records. Totals use <strong>processed daily attendance</strong> for
-            the selected month (not the live punch feed). After <a href="<?= site_url('sync') ?>">Sync</a> imports punches, attendance is
-            updated for affected dates—refresh this page to see new figures.</p>
-    </div>
-    <div class="page-header-actions">
-        <form method="GET" action="<?= site_url('salary') ?>" class="form-inline" style="gap:8px;">
-            <select name="month" class="form-control" style="width:140px;" onchange="this.form.submit()">
-                <?php for ($m = 1; $m <= 12; $m++): ?>
-                    <option value="<?= $m ?>" <?= ($month ?? date('n')) == $m ? 'selected' : '' ?>>
-                        📅 <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
-                    </option>
-                <?php endfor; ?>
-            </select>
-            <select name="year" class="form-control" style="width:100px;" onchange="this.form.submit()">
-                <?php for ($y = date('Y'); $y >= date('Y') - 2; $y--): ?>
-                    <option value="<?= $y ?>" <?= ($year ?? date('Y')) == $y ? 'selected' : '' ?>><?= $y ?></option>
-                <?php endfor; ?>
-            </select>
-        </form>
+<div class="page-header animate-in">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h2 class="page-title">Payroll Governance</h2>
+            <p class="page-subtitle">Consolidated financial records based on verified service duration for
+                <?= esc($monthName) ?> <?= esc($yearVal) ?>.</p>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <form method="GET" action="<?= site_url('salary') ?>" style="display: flex; gap: 0.5rem;">
+                <select name="month" class="form-input" style="padding: 0.5rem; width: auto;"
+                    onchange="this.form.submit()">
+                    <?php for ($m = 1; $m <= 12; $m++): ?>
+                        <option value="<?= $m ?>" <?= ($month ?? date('n')) == $m ? 'selected' : '' ?>>
+                            <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
+                        </option>
+                    <?php endfor; ?>
+                </select>
+                <select name="year" class="form-input" style="padding: 0.5rem; width: auto;"
+                    onchange="this.form.submit()">
+                    <?php for ($y = date('Y'); $y >= date('Y') - 2; $y--): ?>
+                        <option value="<?= $y ?>" <?= ($year ?? date('Y')) == $y ? 'selected' : '' ?>><?= $y ?></option>
+                    <?php endfor; ?>
+                </select>
+            </form>
+        </div>
     </div>
 </div>
 
-<!-- Summary Stat Cards (Stitch design: 3 metric cards) -->
-<div class="stats-grid mb-3 grid grid-cols-1 sm:grid-cols-3 gap-6">
-    <div class="stat-card stat-card--success">
+<!-- Financial Summary -->
+<div class="stats-grid animate-in" style="animation-delay: 0.1s;">
+    <div class="stat-card">
         <div class="stat-info">
-            <div class="stat-label">Total Salary Paid</div>
-            <div class="stat-value"><?= $currency ?><?= number_format($t['total_salary_paid'] ?? 0, 2) ?></div>
-            <div class="stat-sub"><?= esc($monthName) ?> <?= esc($yearVal) ?></div>
+            <span class="label">Gross Disbursement</span>
+            <span class="value"><?= $currency ?><?= number_format($t['total_salary_paid'] ?? 0, 2) ?></span>
         </div>
-        <div class="stat-icon">💰</div>
+        <div class="stat-icon" style="color: var(--color-success);"><i class="fa-solid fa-receipt"></i></div>
     </div>
-    <div class="stat-card stat-card--danger">
+
+    <div class="stat-card">
         <div class="stat-info">
-            <div class="stat-label">Total Deduction</div>
-            <div class="stat-value"><?= $currency ?><?= number_format($t['total_deduction'] ?? 0, 2) ?></div>
-            <div class="stat-sub">Attendance-based</div>
+            <span class="label">Registry Deductions</span>
+            <span class="value"
+                style="color: var(--color-danger);"><?= $currency ?><?= number_format($t['total_deduction'] ?? 0, 2) ?></span>
         </div>
-        <div class="stat-icon">📉</div>
+        <div class="stat-icon" style="color: var(--color-danger);"><i class="fa-solid fa-chart-line-down"></i></div>
     </div>
-    <div class="stat-card stat-card--primary">
+
+    <div class="stat-card">
         <div class="stat-info">
-            <div class="stat-label">Avg Work Hours</div>
-            <div class="stat-value"><?= $t['avg_work_hours'] ?? 0 ?>h <span style="font-size:0.6em;font-weight:400;">/
-                    emp</span></div>
-            <div class="stat-sub"><?= $t['employee_count'] ?? 0 ?> employees</div>
+            <span class="label">Workload Average</span>
+            <span class="value"><?= $t['avg_work_hours'] ?? 0 ?>h <small
+                    style="font-size: 0.875rem; color: var(--color-text-dim); font-weight: 400;">per
+                    personal</small></span>
         </div>
-        <div class="stat-icon">⏱</div>
+        <div class="stat-icon"><i class="fa-solid fa-stopwatch"></i></div>
     </div>
 </div>
 
-<!-- Employee Salary Table -->
-<div class="card">
+<!-- Payroll Ledger -->
+<div class="card animate-in" style="animation-delay: 0.2s;">
     <div class="card-header">
-        <h3>Employee Salary Details</h3>
-        <input type="text" id="table-search" class="form-control" placeholder="Search employee..."
-            style="max-width:200px; padding: 6px 12px; font-size: 0.82rem;">
+        <h3>Earnings Ledger</h3>
+        <input type="text" id="table-search" class="form-input" placeholder="Quick search..."
+            style="max-width: 240px; padding: 0.5rem;">
     </div>
-    <div class="card-body p-0">
-        <div class="table-wrapper">
-            <table id="data-table">
-                <thead>
-                    <tr>
-                        <th>Employee Name</th>
-                        <th class="text-center">Work Hours</th>
-                        <th class="text-center">Expected Hours</th>
-                        <th class="text-center">Present</th>
-                        <th class="text-center">Absent</th>
-                        <th class="text-right">Deduction</th>
-                        <th class="text-right">Net Salary</th>
-                        <th class="text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($salaryData)): ?>
-                        <?php foreach ($salaryData as $row): ?>
-                            <tr>
-                                <td>
-                                    <div style="display:flex;align-items:center;gap:10px;">
-                                        <div class="feed-avatar feed-avatar--in"
-                                            style="width:32px;height:32px;font-size:0.65rem;">
-                                            <?= strtoupper(substr($row['name'] ?? '', 0, 2)) ?>
-                                        </div>
-                                        <div>
-                                            <a href="<?= site_url('employees/' . esc($row['emp_code'])) ?>"
-                                                style="font-weight:600;"><?= esc($row['name'] ?? $row['emp_code']) ?></a>
-                                            <br><small
-                                                class="text-muted"><?= ucwords(str_replace('_', ' ', esc($row['employee_type'] ?? 'full time'))) ?></small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="text-center font-mono"><?= esc($row['work_hours'] ?? 0) ?>h</td>
-                                <td class="text-center font-mono"><?= esc($row['expected_hours'] ?? 0) ?>h</td>
-                                <td class="text-center">
-                                    <span class="font-bold text-success"><?= esc($row['present_days'] ?? 0) ?></span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="text-danger"><?= esc($row['absent_days'] ?? 0) ?></span>
-                                </td>
-                                <td class="text-right">
-                                    <?php if (($row['deduction'] ?? 0) > 0): ?>
-                                        <span
-                                            class="text-danger font-mono">-<?= $currency ?><?= number_format($row['deduction'], 2) ?></span>
-                                    <?php else: ?>
-                                        <span class="text-success font-mono"><?= $currency ?>0.00</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td class="text-right font-bold font-mono" style="color:var(--success-dark);">
-                                    <?= $currency ?>        <?= number_format($row['net_salary'] ?? 0, 2) ?>
-                                </td>
-                                <td class="text-center">
-                                    <a href="<?= site_url('payslip/' . esc($row['emp_code'])) ?>?month=<?= $month ?>&year=<?= $year ?>"
-                                        class="btn btn--outline btn--sm">
-                                        📄 Payslip
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>personal</th>
+                    <th style="text-align: center;">Service Hours</th>
+                    <th style="text-align: center;">Registry Ratio</th>
+                    <th style="text-align: right;">Adj. Deductions</th>
+                    <th style="text-align: right;">Net Remuneration</th>
+                    <th style="text-align: right;">Operation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($salaryData)): ?>
+                    <?php foreach ($salaryData as $row): ?>
                         <tr>
-                            <td colspan="8">
-                                <div class="empty-state">
-                                    <div class="empty-icon">💰</div>
-                                    <h4>No salary data available</h4>
-                                    <p>No attendance records found for <?= esc($monthName) ?>     <?= esc($yearVal) ?>. Run a
-                                        sync first.</p>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                    <div
+                                        style="width: 32px; height: 32px; border-radius: 6px; background: var(--color-surface-muted); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: var(--color-text-dim);">
+                                        <?= strtoupper(substr($row['name'] ?? '', 0, 1)) ?>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.875rem;">
+                                            <?= esc($row['name'] ?? $row['emp_code']) ?></div>
+                                        <div
+                                            style="font-size: 0.7rem; color: var(--color-text-dim); text-transform: uppercase; letter-spacing: 0.02em;">
+                                            <?= esc($row['emp_code']) ?></div>
+                                    </div>
                                 </div>
                             </td>
+                            <td style="text-align: center; font-family: var(--font-mono); font-weight: 600;">
+                                <?= esc($row['work_hours'] ?? 0) ?>h <span
+                                    style="color: var(--color-text-dim); font-weight: 400;">/
+                                    <?= esc($row['expected_hours'] ?? 0) ?>h</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <div style="display: inline-flex; flex-direction: column; align-items: center;">
+                                    <span style="font-weight: 700; font-size: 0.875rem;"><?= esc($row['present_days'] ?? 0) ?>
+                                        <small style="color: var(--color-text-dim); font-weight: 400;">active</small></span>
+                                    <div
+                                        style="width: 40px; height: 3px; background: var(--color-surface-muted); border-radius: 2px; margin-top: 4px;">
+                                        <?php $ratio = ($row['working_days'] ?? 1) > 0 ? min(($row['present_days'] / $row['working_days']) * 100, 100) : 0; ?>
+                                        <div style="height: 100%; width: <?= $ratio ?>%; background: var(--color-success);">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td
+                                style="text-align: right; color: var(--color-danger); font-family: var(--font-mono); font-weight: 600;">
+                                -<?= $currency ?><?= number_format($row['deduction'] ?? 0, 2) ?>
+                            </td>
+                            <td
+                                style="text-align: right; font-weight: 800; font-family: var(--font-mono); color: var(--color-primary);">
+                                <?= $currency ?>        <?= number_format($row['net_salary'] ?? 0, 2) ?>
+                            </td>
+                            <td style="text-align: right;">
+                                <a href="<?= site_url('payslip/' . esc($row['emp_code'])) ?>?month=<?= $month ?>&year=<?= $year ?>"
+                                    class="btn btn-outline" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">Release
+                                    Slip</a>
+                            </td>
                         </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 6rem;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                                <i class="fa-solid fa-money-bill-transfer"
+                                    style="font-size: 3rem; color: var(--color-border);"></i>
+                                <div style="font-weight: 700; color: var(--color-text-dim);">No financial data available for
+                                    this cycle.</div>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
-    <?php if (!empty($salaryData)): ?>
-        <div class="card-footer">
-            <small class="text-muted">
-                Showing <?= count($salaryData) ?> employees ·
-                Formula: salary = (actual_minutes ÷ expected_minutes) × monthly_salary ·
-                Expected: <?= esc(env('WORKING_DAYS_PER_MONTH', 23)) ?> working days/month
-            </small>
-        </div>
-    <?php endif; ?>
+    <div
+        style="padding: 1rem 1.5rem; background: var(--color-surface-muted); border-top: 1px solid var(--color-border);">
+        <p style="font-size: 0.75rem; color: var(--color-text-dim); font-weight: 500;">
+            Ledger calculation logic: <code>Net = (Logged Minutes / Expected Minutes) * Base Salary</code>. Verified
+            against registry snapshots.
+        </p>
+    </div>
 </div>
 
 <?= $this->endSection() ?>

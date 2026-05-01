@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Granth. — Corporate Access</title>
-    
+
     <!-- Professional Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+
     <style>
         :root {
             --color-bg: #FFFFFF;
@@ -20,7 +23,11 @@
             --color-text-dim: #64748B;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             background-color: var(--color-bg);
@@ -111,13 +118,33 @@
             justify-content: center;
         }
 
-        .form-header { margin-bottom: 2.5rem; }
-        .form-header h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .form-header p { color: var(--color-text-dim); font-size: 0.875rem; }
+        .form-header {
+            margin-bottom: 2.5rem;
+        }
 
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--color-text); }
-        
+        .form-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--color-text-dim);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--color-text);
+        }
+
         input {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -146,11 +173,24 @@
             margin-top: 1rem;
         }
 
-        .btn-primary { background: var(--color-accent); color: white; }
-        .btn-primary:hover { background: #1D4ED8; }
+        .btn-primary {
+            background: var(--color-accent);
+            color: white;
+        }
 
-        .btn-secondary { background: #F1F5F9; color: var(--color-text); border: 1px solid var(--color-border); }
-        .btn-secondary:hover { background: #E2E8F0; }
+        .btn-primary:hover {
+            background: #1D4ED8;
+        }
+
+        .btn-secondary {
+            background: #F1F5F9;
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+        }
+
+        .btn-secondary:hover {
+            background: #E2E8F0;
+        }
 
         #msg {
             padding: 1rem;
@@ -159,16 +199,37 @@
             font-size: 0.8125rem;
             display: none;
         }
-        .msg-success { background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0; }
-        .msg-error { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+
+        .msg-success {
+            background: #DCFCE7;
+            color: #166534;
+            border: 1px solid #BBF7D0;
+        }
+
+        .msg-error {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
 
         @media (max-width: 900px) {
-            .login-layout { height: auto; flex-direction: column; }
-            .login-brand { display: none; }
-            .login-form-container { width: 100%; padding: 3rem 2rem; }
+            .login-layout {
+                height: auto;
+                flex-direction: column;
+            }
+
+            .login-brand {
+                display: none;
+            }
+
+            .login-form-container {
+                width: 100%;
+                padding: 3rem 2rem;
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="login-layout">
         <div class="login-brand">
@@ -178,7 +239,7 @@
             </div>
             <div class="brand-content">
                 <h1>Manage your work presence with precision.</h1>
-                <p>Enterprise-grade attendance and personnel management for high-performance teams.</p>
+                <p>Enterprise-grade attendance and personal management for high-performance teams.</p>
             </div>
             <div style="color: rgba(255, 255, 255, 0.3); font-size: 0.75rem; font-weight: 500;">
                 &copy; 2026 Granth Infotech
@@ -195,18 +256,20 @@
 
             <div class="form-group">
                 <label>Email Address</label>
-                <input id="email" type="email" placeholder="name@company.com" autocomplete="email"/>
+                <input id="email" type="email" placeholder="name@company.com" autocomplete="email" />
             </div>
 
             <button id="sendOtp" class="btn btn-primary">Request Access Key</button>
 
             <div style="height: 1px; background: var(--color-border); margin: 2rem 0; position: relative;">
-                <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 0 1rem; color: var(--color-text-dim); font-size: 0.75rem; font-weight: 600;">VERIFICATION</span>
+                <span
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 0 1rem; color: var(--color-text-dim); font-size: 0.75rem; font-weight: 600;">VERIFICATION</span>
             </div>
 
             <div class="form-group">
                 <label>One-Time Key</label>
-                <input id="otp" type="text" inputmode="numeric" maxlength="6" placeholder="0 0 0 0 0 0" style="letter-spacing: 0.5em; text-align: center;"/>
+                <input id="otp" type="text" inputmode="numeric" maxlength="6" placeholder="0 0 0 0 0 0"
+                    style="letter-spacing: 0.5em; text-align: center;" />
             </div>
 
             <button id="verifyOtp" class="btn btn-secondary">Authenticate</button>
@@ -218,7 +281,7 @@
         const emailEl = document.getElementById('email');
         const otpEl = document.getElementById('otp');
 
-        function setMsg(text, isError=false) {
+        function setMsg(text, isError = false) {
             msg.textContent = text;
             msg.className = isError ? 'msg-error' : 'msg-success';
             msg.style.display = 'block';
@@ -240,13 +303,13 @@
             const originalText = btn.textContent;
             btn.textContent = 'Verifying...';
             btn.disabled = true;
-            
+
             const { res, json } = await post('<?= site_url('auth/send-otp') ?>', { email: emailEl.value });
             btn.textContent = originalText;
             btn.disabled = false;
 
             if (!res.ok) return setMsg(json.message || 'Verification failed', true);
-            
+
             if (json.devOtp) {
                 otpEl.value = json.devOtp;
                 setMsg('Access key generated for development environment.');
@@ -272,10 +335,11 @@
                 btn.disabled = false;
                 return setMsg(json.message || 'Authentication failed', true);
             }
-            
+
             setMsg('Access Granted. Entering portal...');
             setTimeout(() => { window.location.href = json.redirect || '<?= site_url('/') ?>'; }, 800);
         });
     </script>
 </body>
+
 </html>

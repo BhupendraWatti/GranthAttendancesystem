@@ -126,10 +126,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         function refreshDashboard() {
+            // Use global siteUrl if available, otherwise fallback to root
+            const base = window.siteUrl || '';
+            
             Promise.all([
-                fetchJson('/api/dashboard/summary?date=' + encodeURIComponent(dashboardDate)),
-                fetchJson('/api/dashboard/attendance?date=' + encodeURIComponent(dashboardDate)),
-                fetchJson('/api/dashboard/live-punches?date=' + encodeURIComponent(dashboardDate) + '&limit=15')
+                fetchJson(base + '/api/dashboard/summary?date=' + encodeURIComponent(dashboardDate)),
+                fetchJson(base + '/api/dashboard/attendance?date=' + encodeURIComponent(dashboardDate)),
+                fetchJson(base + '/api/dashboard/live-punches?date=' + encodeURIComponent(dashboardDate) + '&limit=15')
             ])
             .then(function (responses) {
                 renderSummary(responses[0].data || {});
@@ -176,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     : '<span class="text-muted">—</span>';
 
                 html += '<tr>'
-                    + '<td><a href="/employees/' + encodeURIComponent(row.emp_code) + '" style="font-weight:600;">'
+                    + '<td><a href="' + (window.siteUrl || '') + '/employees/' + encodeURIComponent(row.emp_code) + '" style="font-weight:600;">'
                     + escapeHtml(row.name || row.emp_code) + '</a></td>'
                     + '<td class="font-mono">' + escapeHtml(row.emp_code || '') + '</td>'
                     + '<td>' + firstIn + '</td>'

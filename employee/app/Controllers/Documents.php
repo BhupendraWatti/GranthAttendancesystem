@@ -55,8 +55,8 @@ class Documents extends BaseController
         $filePath = $this->documentService->getFullFilePath($doc['file_path']);
 
         if (!file_exists($filePath)) {
-            log_message('error', "[Storage] File missing on disk: {$filePath} for Doc ID: {$id}");
-            return redirect()->back()->with('error', 'File not found on server.');
+            log_message('error', "[Storage] File missing on disk: {$filePath}");
+            return redirect()->back()->with('error', "File not found on server. Please contact HR.");
         }
 
         // 4. Serve file securely

@@ -58,7 +58,7 @@ $routes->group('', ['filter' => 'employeeAuth'], function ($routes) {
 
     // Documents
     $routes->get('documents', 'Documents::index');
-    $routes->get('documents/download/(:segment)/(:num)', 'Documents::download/$1/$2');
+    $routes->get('documents/download/(:any)/(:num)', 'Documents::download/$1/$2');
 });
 
 /*

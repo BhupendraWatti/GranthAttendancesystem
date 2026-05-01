@@ -6,131 +6,144 @@ $fullSyncToDefault   = date('Y-m-d', strtotime('-1 day'));
 $fullSyncFromDefault = date('Y-m-01', strtotime($fullSyncToDefault));
 ?>
 
-<!-- Page Header -->
-<div class="page-header">
-    <div>
-        <h2>Sync Data</h2>
-        <p>Synchronize attendance data from eTimeOffice cloud</p>
-    </div>
+<div class="page-header animate-in">
+    <h2 class="page-title">Data Integration</h2>
+    <p class="page-subtitle">Synchronize attendance registries with eTimeOffice cloud infrastructure.</p>
 </div>
 
-<!-- Sync Actions -->
-<div class="grid-2 mb-3 grid grid-cols-1 md:grid-cols-2 gap-6">
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2.5rem;" class="animate-in" style="animation-delay: 0.1s;">
+    
+    <!-- Incremental Sync -->
     <div class="card">
         <div class="card-header">
-            <h3>🔄 Incremental Sync</h3>
+            <h3>Standard Delta Sync</h3>
+            <span class="badge badge--info">Recommended</span>
         </div>
         <div class="card-body">
-            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 16px;">
-                Fetches the latest punch data since the last successful sync. Use this for quick updates.
+            <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-bottom: 2rem; line-height: 1.6;">
+                Efficiently retrieves new punch records generated since the last successful handshake. Ideal for periodic daytime updates.
             </p>
             <form method="POST" action="<?= site_url('sync/run') ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="type" value="incremental">
-                <button type="submit" class="btn btn--primary" onclick="this.innerHTML='<span class=spinner></span> Syncing...'; this.disabled=true; this.form.submit();">
-                    ⚡ Run Incremental Sync
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;" onclick="this.innerHTML='<i class=\'fa-solid fa-spinner fa-spin\'></i> Initiating Sync...';">
+                    Execute Delta Synchronization
                 </button>
             </form>
         </div>
     </div>
 
+    <!-- Full Sync -->
     <div class="card">
         <div class="card-header">
-            <h3>📦 Full Sync</h3>
+            <h3>Global Range Re-sync</h3>
+            <span class="badge badge--warning">Heavy Operation</span>
         </div>
         <div class="card-body">
-            <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 16px;">
-                Re-fetches all punch data for a date range and reprocesses attendance. Use for corrections. Defaults use <strong>yesterday</strong> as “To” because the vendor API often errors on the current calendar day.
+            <p style="font-size: 0.8125rem; color: var(--color-text-dim); margin-bottom: 1.5rem; line-height: 1.6;">
+                Force-reprocesses all data within a specific temporal window. Use only for manual corrections or registry audits.
             </p>
             <form method="POST" action="<?= site_url('sync/run') ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="type" value="full_range">
-                <div class="form-inline mb-2">
-                    <div class="form-group">
-                        <label for="from_date">From Date</label>
-                        <input type="date" name="from_date" id="from_date" class="form-control" value="<?= esc($fullSyncFromDefault) ?>" required>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label class="form-label">Inclusive Start</label>
+                        <input type="date" name="from_date" class="form-input" value="<?= esc($fullSyncFromDefault) ?>" required>
                     </div>
-                    <div class="form-group">
-                        <label for="to_date">To Date</label>
-                        <input type="date" name="to_date" id="to_date" class="form-control" value="<?= esc($fullSyncToDefault) ?>" required>
+                    <div>
+                        <label class="form-label">Inclusive End</label>
+                        <input type="date" name="to_date" class="form-input" value="<?= esc($fullSyncToDefault) ?>" required>
                     </div>
                 </div>
-                <button type="submit" class="btn btn--success" onclick="this.innerHTML='<span class=spinner></span> Syncing...'; this.disabled=true; this.form.submit();">
-                    📥 Run Full Sync
+                <button type="submit" class="btn btn-outline" style="width: 100%; padding: 1rem;" onclick="this.innerHTML='<i class=\'fa-solid fa-spinner fa-spin\'></i> Processing Range...';">
+                    Execute Range Synchronization
                 </button>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Sync History -->
-<div class="card">
+<!-- Sync History Ledger -->
+<div class="card animate-in" style="animation-delay: 0.2s;">
     <div class="card-header">
-        <h3>📜 Sync History</h3>
+        <h3>Sync Execution Ledger</h3>
         <?php if ($isRunning ?? false): ?>
-            <span class="badge badge--late"><span class="pulse-dot"></span> Sync in progress</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-warning); animation: pulse 1.5s infinite;"></div>
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-warning); text-transform: uppercase;">Operation in progress</span>
+            </div>
         <?php endif; ?>
     </div>
-    <div class="card-body p-0">
-        <div class="table-wrapper">
-            <table>
-                <thead>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th style="text-align: center;">Fetched</th>
+                    <th style="text-align: center;">Committed</th>
+                    <th>Execution Window</th>
+                    <th>System Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($history)): ?>
+                    <?php foreach ($history as $log): ?>
                     <tr>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Records Fetched</th>
-                        <th>Records Saved</th>
-                        <th>Started</th>
-                        <th>Completed</th>
-                        <th>Error</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($history)): ?>
-                        <?php foreach ($history as $log): ?>
-                        <tr>
-                            <td>
-                                <span class="badge badge--info"><?= esc($log['sync_type'] ?? '') ?></span>
-                            </td>
-                            <td>
-                                <?php
-                                    $statusClass = match($log['status'] ?? '') {
-                                        'success'  => 'badge--present',
-                                        'failed'   => 'badge--absent',
-                                        'running'  => 'badge--late',
-                                        default    => 'badge--info'
-                                    };
-                                ?>
-                                <span class="badge <?= $statusClass ?>"><?= esc($log['status'] ?? '') ?></span>
-                            </td>
-                            <td class="font-mono"><?= esc($log['records_fetched'] ?? 0) ?></td>
-                            <td class="font-mono"><?= esc($log['records_saved'] ?? 0) ?></td>
-                            <td><?= $log['started_at'] ? date('d M h:i A', strtotime($log['started_at'])) : '—' ?></td>
-                            <td><?= $log['completed_at'] ? date('d M h:i A', strtotime($log['completed_at'])) : '—' ?></td>
-                            <td>
-                                <?php if (!empty($log['error_message'])): ?>
-                                    <small class="text-danger"><?= esc(mb_substr($log['error_message'], 0, 80)) ?>...</small>
-                                <?php else: ?>
-                                    <span class="text-muted">—</span>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="7">
-                                <div class="empty-state">
-                                    <div class="empty-icon">📜</div>
-                                    <h4>No sync history</h4>
-                                    <p>Run your first sync to see history here.</p>
+                        <td>
+                            <span style="font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.02em;"><?= esc($log['sync_type'] ?? '') ?></span>
+                        </td>
+                        <td>
+                            <?php
+                                $st = $log['status'] ?? '';
+                                $badgeClass = match($st) {
+                                    'success'  => 'badge--success',
+                                    'failed'   => 'badge--danger',
+                                    'running'  => 'badge--warning',
+                                    default    => 'badge--info'
+                                };
+                            ?>
+                            <span class="badge <?= $badgeClass ?>"><?= esc($st) ?></span>
+                        </td>
+                        <td style="text-align: center; font-family: var(--font-mono); font-weight: 600;"><?= esc($log['records_fetched'] ?? 0) ?></td>
+                        <td style="text-align: center; font-family: var(--font-mono); font-weight: 600; color: var(--color-success);"><?= esc($log['records_saved'] ?? 0) ?></td>
+                        <td style="font-size: 0.8125rem;">
+                            <div style="font-weight: 600;"><?= $log['started_at'] ? date('d M, H:i', strtotime($log['started_at'])) : '—' ?></div>
+                            <div class="text-muted" style="font-size: 0.7rem;"><?= $log['completed_at'] ? 'Finished in ' . round(strtotime($log['completed_at']) - strtotime($log['started_at'])) . 's' : 'Pending completion' ?></div>
+                        </td>
+                        <td>
+                            <?php if (!empty($log['error_message'])): ?>
+                                <div style="color: var(--color-danger); font-size: 0.75rem; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<?= esc($log['error_message']) ?>">
+                                    <i class="fa-solid fa-circle-exclamation"></i> <?= esc($log['error_message']) ?>
                                 </div>
-                            </td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+                            <?php else: ?>
+                                <span class="text-muted" style="font-size: 0.75rem;">Normal completion.</span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 5rem;">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                                <i class="fa-solid fa-clock-rotate-left" style="font-size: 3rem; color: var(--color-border);"></i>
+                                <div style="font-weight: 700; color: var(--color-text-dim);">No synchronization records discovered.</div>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 </div>
+
+<style>
+    @keyframes pulse {
+        0% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.4; transform: scale(1.2); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+</style>
 
 <?= $this->endSection() ?>

@@ -2,30 +2,49 @@
 
 <?= $this->section('content') ?>
 
-<div class="page-header">
-    <div>
-        <h2>Company Documents</h2>
-        <p>Manage company policies, guidelines, and shared resources.</p>
+<div class="page-header animate-in">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <div>
+            <h2 class="page-title">Corporate Policy Registry</h2>
+            <p class="page-subtitle">Centralized repository for company policies, guidelines, and compliance documents.</p>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div style="text-align: right;">
+                <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim);">Total Policies</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-primary);"><?= count($documents ?? []) ?></div>
+            </div>
+            <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--color-accent) 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.25rem;">
+                <i class="fa-solid fa-file-shield"></i>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
     <!-- Upload Form -->
-    <div class="lg:col-span-5">
-        <div class="card h-full">
+    <div class="lg:col-span-5 animate-in" style="animation-delay: 0.1s;">
+        <div class="card h-full" style="background: linear-gradient(135deg, white 0%, var(--color-surface-muted) 100%);">
             <div class="card-header">
-                <h3><i class="fa-solid fa-building-shield mr-2"></i> Upload Policy</h3>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--color-accent) 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0;">Upload Policy Document</h3>
+                        <div style="font-size: 0.75rem; color: var(--color-text-dim);">Add new corporate policies</div>
+                    </div>
+                </div>
             </div>
             <div class="card-body">
                 <form action="<?= site_url('documents/upload/company') ?>" method="POST" enctype="multipart/form-data">
                     <div class="form-group mb-6">
-                        <label for="title">Document Title</label>
-                        <input type="text" name="title" id="title" class="form-control" placeholder="e.g. Leave Policy 2026" required>
+                        <label for="title" class="form-label">Policy Title</label>
+                        <input type="text" name="title" id="title" class="form-input" placeholder="e.g. Employee Handbook 2024" required>
                     </div>
 
                     <div class="form-group mb-6">
-                        <label for="category">Category</label>
-                        <select name="category" id="category" class="form-control" required>
+                        <label for="category" class="form-label">Policy Category</label>
+                        <select name="category" id="category" class="form-input" required>
                             <option value="policy">Policy</option>
                             <option value="guideline">Guideline</option>
                             <option value="form">Form/Template</option>
@@ -34,18 +53,27 @@
                     </div>
 
                     <div class="form-group mb-8">
-                        <label>File Upload</label>
-                        <div class="file-drop-area" id="drop-area">
-                            <i class="fa-solid fa-file-pdf text-4xl mb-3 text-gray-400"></i>
-                            <p class="mb-2 font-medium">Click to upload or drag and drop</p>
-                            <span class="text-xs text-muted">PDF or DOCX (Max 10MB)</span>
+                        <label class="form-label">Document Upload</label>
+                        <div class="premium-upload-area" id="drop-area">
+                            <div class="upload-icon">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <div class="upload-text">
+                                <div style="font-weight: 600; color: var(--color-primary); margin-bottom: 0.5rem;">Drag & drop policy files</div>
+                                <div style="font-size: 0.875rem; color: var(--color-text-dim);">or click to browse from your device</div>
+                            </div>
+                            <div class="upload-hint">
+                                <span>PDF, DOCX</span>
+                                <span>Max 10MB</span>
+                            </div>
                             <input type="file" name="document" id="document" class="file-input" required>
                         </div>
-                        <div id="file-name" class="mt-2 text-sm text-primary font-bold hidden"></div>
+                        <div id="file-name" class="file-name-display"></div>
                     </div>
 
-                    <button type="submit" class="btn btn--accent btn--block btn--lg">
-                        <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Publish Document
+                    <button type="submit" class="btn btn-primary btn-block" style="padding: 0.875rem 1.5rem; gap: 0.5rem;">
+                        <i class="fa-solid fa-upload"></i>
+                        Upload to Registry
                     </button>
                 </form>
             </div>
@@ -53,50 +81,75 @@
     </div>
 
     <!-- Document List -->
-    <div class="lg:col-span-7">
+    <div class="lg:col-span-7 animate-in" style="animation-delay: 0.2s;">
         <div class="card h-full">
             <div class="card-header">
-                <h3><i class="fa-solid fa-library-building mr-2"></i> Resource Library</h3>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 40px; height: 40px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%); display: flex; align-items: center; justify-content: center; color: white;">
+                        <i class="fa-solid fa-folder-open"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0;">Policy Repository</h3>
+                        <div style="font-size: 0.75rem; color: var(--color-text-dim);"><?= count($documents ?? []) ?> documents available</div>
+                    </div>
+                </div>
                 <div class="flex items-center gap-3">
                     <div class="relative">
-                        <input type="text" id="table-search" class="form-control pl-9" placeholder="Search library..." style="max-width:220px;">
-                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" id="table-search" class="form-input" placeholder="Search policies..." style="padding: 0.5rem 1rem 0.5rem 2.5rem; max-width: 220px;">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" style="color: var(--color-text-dim);"></i>
                     </div>
                 </div>
             </div>
             <div class="card-body p-0">
-                <div class="table-wrapper">
-                    <table id="data-table">
+                <div class="table-wrapper" style="border-radius: var(--radius-lg); overflow: hidden;">
+                    <table id="data-table" style="border: none;">
                         <thead>
-                            <tr>
-                                <th>Document Title</th>
-                                <th>Category</th>
-                                <th>Details</th>
-                                <th>Action</th>
+                            <tr style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);">
+                                <th style="color: white; border: none; padding: 1rem 1.5rem;">Policy Document</th>
+                                <th style="color: white; border: none; padding: 1rem 1.5rem;">Category</th>
+                                <th style="color: white; border: none; padding: 1rem 1.5rem;">Version</th>
+                                <th style="color: white; border: none; padding: 1rem 1.5rem; text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if (!empty($documents)): ?>
                                 <?php foreach ($documents as $doc): ?>
-                                    <tr>
-                                        <td><strong><?= esc($doc['title']) ?></strong></td>
-                                        <td>
-                                            <span class="badge badge--<?= $doc['category'] === 'policy' ? 'info' : 'warning' ?>">
+                                    <tr style="border-bottom: 1px solid var(--color-border); transition: all 0.2s;">
+                                        <td style="padding: 1.25rem 1.5rem;">
+                                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                                <div class="file-icon file-icon--default">
+                                                    <i class="fa-solid fa-file-lines"></i>
+                                                </div>
+                                                <div>
+                                                    <div style="font-weight: 700; color: var(--color-primary); font-size: 0.9375rem;"><?= esc($doc['title']) ?></div>
+                                                    <div style="font-size: 0.75rem; color: var(--color-text-dim); margin-top: 0.25rem;">
+                                                <i class="fa-solid fa-calendar" style="margin-right: 0.25rem;"></i>
+                                                <?= date('d M Y', strtotime($doc['created_at'])) ?>
+                                            </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 1.25rem 1.5rem;">
+                                            <span class="tag tag--primary" style="font-size: 0.7rem; padding: 0.375rem 0.875rem;">
                                                 <?= esc(ucfirst($doc['category'])) ?>
                                             </span>
                                         </td>
-                                        <td>
-                                            <div class="text-xs text-muted">v<?= esc($doc['version']) ?> · <?= date('d M Y', strtotime($doc['created_at'])) ?></div>
+                                        <td style="padding: 1.25rem 1.5rem;">
+                                            <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: var(--color-surface-muted); padding: 0.375rem 0.75rem; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.8rem; font-weight: 600; color: var(--color-primary);">
+                                                <i class="fa-solid fa-code-branch" style="font-size: 0.7rem;"></i>
+                                                v<?= esc($doc['version']) ?>
+                                            </div>
                                         </td>
-                                        <td>
-                                            <div class="flex gap-2">
-                                                <a href="<?= site_url('documents/download/company/' . $doc['id']) ?>" class="btn btn--sm btn--outline" title="Download">
+                                        <td style="padding: 1.25rem 1.5rem; text-align: right;">
+                                            <div class="flex gap-2" style="justify-content: flex-end;">
+                                                <a href="<?= site_url('documents/download/company/' . $doc['id']) ?>" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; gap: 0.5rem;" title="Download">
                                                     <i class="fa-solid fa-download"></i>
+                                                    Retrieve
                                                 </a>
-                                                <form action="<?= site_url('documents/delete') ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this document?')" class="inline">
+                                                <form action="<?= site_url('documents/delete') ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this policy document?')" class="inline">
                                                     <input type="hidden" name="id" value="<?= $doc['id'] ?>">
                                                     <input type="hidden" name="type" value="company">
-                                                    <button type="submit" class="btn btn--sm btn--outline text-danger hover:bg-red-50 border-gray-200" title="Delete">
+                                                    <button type="submit" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--color-danger); border-color: var(--color-border);" title="Delete">
                                                         <i class="fa-solid fa-trash-can"></i>
                                                     </button>
                                                 </form>
@@ -106,11 +159,15 @@
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="4" class="text-center py-16">
-                                        <div class="empty-state">
-                                            <i class="fa-solid fa-book text-5xl mb-4 opacity-20"></i>
-                                            <h4>No company documents found</h4>
-                                            <p>Upload policies, guidelines, or templates for your employees.</p>
+                                    <td colspan="4" style="text-align: center; padding: 4rem;">
+                                        <div class="empty-state" style="display: flex; flex-direction: column; align-items: center; gap: 1.5rem;">
+                                            <div style="width: 80px; height: 80px; border-radius: 50%; background: var(--color-surface-muted); display: flex; align-items: center; justify-content: center;">
+                                                <i class="fa-solid fa-folder-open" style="font-size: 2rem; color: var(--color-text-dim);"></i>
+                                            </div>
+                                            <div>
+                                                <div style="font-weight: 700; color: var(--color-text-dim); font-size: 1.125rem; margin-bottom: 0.5rem;">No policies yet</div>
+                                                <p style="font-size: 0.875rem; color: var(--color-text-dim);">Upload your first corporate policy using the form on the left.</p>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
@@ -132,54 +189,151 @@ document.addEventListener('DOMContentLoaded', function() {
 
     fileInput.addEventListener('change', function() {
         if (this.files && this.files.length > 0) {
-            fileName.textContent = 'Selected: ' + this.files[0].name;
-            fileName.classList.remove('hidden');
-            dropArea.classList.add('border-accent');
+            fileName.innerHTML = '<i class="fa-solid fa-check-circle"></i> ' + this.files[0].name;
+            fileName.classList.add('active');
+            dropArea.style.borderColor = 'var(--color-success)';
         }
     });
 
     ['dragenter', 'dragover'].forEach(eventName => {
         dropArea.addEventListener(eventName, e => {
             e.preventDefault();
-            dropArea.classList.add('bg-gray-50', 'border-accent');
+            dropArea.classList.add('dragover');
         });
     });
 
     ['dragleave', 'drop'].forEach(eventName => {
         dropArea.addEventListener(eventName, e => {
             e.preventDefault();
-            dropArea.classList.remove('bg-gray-50', 'border-accent');
+            dropArea.classList.remove('dragover');
         });
     });
 });
 </script>
 
 <style>
-.file-drop-area {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 32px;
-    border: 2px dashed var(--gray-300);
-    border-radius: var(--border-radius);
-    text-align: center;
-    cursor: pointer;
-    transition: var(--transition);
-}
-.file-drop-area:hover {
-    border-color: var(--accent);
-    background: var(--accent-50);
-}
-.file-input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-}
+    .premium-upload-area {
+        position: relative;
+        border: 2px dashed var(--color-border);
+        border-radius: var(--radius-lg);
+        padding: 2.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, var(--color-surface-muted) 0%, white 100%);
+    }
+    .premium-upload-area:hover {
+        border-color: var(--color-accent);
+        background: linear-gradient(135deg, #e0e7ff 0%, white 100%);
+        transform: translateY(-2px);
+    }
+    .premium-upload-area.dragover {
+        border-color: var(--color-accent);
+        background: linear-gradient(135deg, #c7d2fe 0%, #e0e7ff 100%);
+    }
+    .upload-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 1.5rem;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--color-accent) 0%, #6366f1 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+    .upload-hint {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+        font-size: 0.75rem;
+        color: var(--color-text-dim);
+    }
+    .upload-hint span {
+        background: var(--color-surface-muted);
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-weight: 600;
+    }
+    .file-input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    .file-name-display {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+        border: 1px solid #86efac;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #059669;
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .file-name-display.active {
+        display: flex;
+    }
+    .file-name-display i {
+        font-size: 1rem;
+    }
+    .form-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-dim);
+        margin-bottom: 0.5rem;
+    }
+    .form-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-family: var(--font-body);
+        transition: all 0.2s;
+        background: white;
+    }
+    .form-input:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+    .form-input::placeholder {
+        color: var(--color-text-dim);
+    }
+    .btn-block {
+        width: 100%;
+    }
+    .file-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+    .file-icon--pdf {
+        background: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
+    }
+    .file-icon--doc {
+        background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+    }
+    .file-icon--default {
+        background: linear-gradient(135deg, #64748B 0%, #94A3B8 100%);
+    }
 </style>
 
 <?= $this->endSection() ?>
