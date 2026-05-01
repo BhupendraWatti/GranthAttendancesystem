@@ -1,108 +1,97 @@
+<?= $this->extend('layout/main') ?>
+
+<?= $this->section('content') ?>
+
 <?php
-  $name = $employee['name'] ?? 'Employee';
-  $designation = $employee['designation'] ?? '';
+  $name = $employee['name'] ?? 'Associate';
   $status = $todayRow['status'] ?? 'absent';
-  $statusLabel = $status === 'present' ? 'Present' : ($status === 'half_day' ? 'Half Day' : 'Absent');
 ?>
-<!DOCTYPE html>
-<html class="light" lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GranthInfotech Attendance - Dashboard</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
-  <script id="tailwind-config">
-    tailwind.config = { darkMode: "class" }
-  </script>
-  <style> body { background-color: #F5F2EA; } </style>
-</head>
-<body class="font-['Manrope'] text-[#3A3A3A] antialiased">
-  <?= view('partials/employee_topbar') ?>
 
-  <div class="flex min-h-screen">
-    <?= view('partials/employee_sidebar', ['activePage' => 'dashboard']) ?>
-
-    <main class="flex-1 md:ml-64 p-8 pt-24 overflow-y-auto w-full max-w-[1440px] mx-auto">
-      <div class="flex justify-between items-end mb-12">
-        <div>
-          <h2 class="text-4xl font-extrabold tracking-tight">Welcome back, <?= esc($name) ?></h2>
-          <p class="text-lg text-[#3A3A3A]/70 mt-2">Here's your attendance overview for today.</p>
+<div class="page-header">
+    <p class="text-muted" style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">Operational Overview</p>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2 class="font-display">Welcome, <?= esc($name) ?></h2>
+        <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--color-surface); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+            <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); animation: pulse 2s infinite;"></div>
+            <span style="font-size: 0.8125rem; font-weight: 600;"><?= date('l, d M Y') ?></span>
         </div>
-      </div>
+    </div>
+</div>
 
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
-        <div class="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <div class="bg-white rounded-lg p-6 shadow-[0px_40px_40px_rgba(58,58,58,0.04)] border border-[#E5E1D5]">
-            <p class="text-xs font-semibold tracking-wider uppercase text-[#3A3A3A]/60 mb-2">Today's Status</p>
-            <h3 class="text-2xl font-semibold"><?= esc($statusLabel) ?></h3>
-          </div>
-          <div class="bg-white rounded-lg p-6 shadow-[0px_40px_40px_rgba(58,58,58,0.04)] border border-[#E5E1D5]">
-            <p class="text-xs font-semibold tracking-wider uppercase text-[#3A3A3A]/60 mb-2">Working Hours</p>
-            <h3 class="text-2xl font-semibold"><?= esc($todayHours) ?></h3>
-          </div>
-          <div class="bg-white rounded-lg p-6 shadow-[0px_40px_40px_rgba(58,58,58,0.04)] border border-[#E5E1D5]">
-            <p class="text-xs font-semibold tracking-wider uppercase text-[#3A3A3A]/60 mb-2">Monthly Summary</p>
-            <h3 class="text-2xl font-semibold"><?= (int) ($counts['present'] ?? 0) ?> Present</h3>
-            <p class="text-sm text-[#3A3A3A]/60 mt-4"><?= (int) ($counts['half_day'] ?? 0) ?> Half Day • <?= (int) ($counts['absent'] ?? 0) ?> Absent</p>
-          </div>
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-label">Hours Logged Today</span>
+        <span class="stat-value"><?= esc($todayHours ?? '0h 00m') ?></span>
+        <div style="margin-top: 1rem; height: 4px; background: var(--color-surface-muted); border-radius: 2px;">
+            <?php 
+                $h = (float)($todayRow['total_hours'] ?? 0);
+                $progress = min(($h / 8) * 100, 100);
+            ?>
+            <div style="height: 100%; width: <?= $progress ?>%; background: var(--color-accent); border-radius: 2px;"></div>
         </div>
-
-        <div class="md:col-span-4 bg-white rounded-lg p-6 shadow-[0px_40px_40px_rgba(58,58,58,0.04)] border border-[#E5E1D5] flex items-center justify-between">
-          <div>
-            <h4 class="text-lg font-semibold"><?= esc($name) ?></h4>
-            <p class="text-sm text-[#3A3A3A]/60"><?= esc($designation) ?></p>
-            <p class="text-xs text-[#3A3A3A]/60 mt-1">Emp Code: <?= esc($employee['emp_code'] ?? '') ?></p>
-          </div>
-          <a href="<?= site_url('profile') ?>" class="text-[#3A3A3A] hover:bg-[#F5F2EA] p-2 rounded-full transition-colors">
-            <span class="material-symbols-outlined">chevron_right</span>
-          </a>
+        <span class="stat-sub"><?= round($progress) ?>% of 8h daily target</span>
+    </div>
+    
+    <div class="stat-card">
+        <span class="stat-label">Monthly Presence</span>
+        <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+            <span class="stat-value"><?= (int)($counts['present'] ?? 0) ?></span>
+            <span class="text-muted" style="font-size: 0.875rem;">/ <?= (int)(($counts['present'] ?? 0) + ($counts['absent'] ?? 0) + ($counts['half_day'] ?? 0)) ?> days active</span>
         </div>
+        <span class="stat-sub" style="color: var(--color-warning);"><?= (int)($counts['half_day'] ?? 0) ?> half-days recorded</span>
+    </div>
 
-        <div class="md:col-span-12 bg-white rounded-lg p-6 shadow-[0px_40px_40px_rgba(58,58,58,0.04)] border border-[#E5E1D5]">
-          <div class="flex justify-between items-center mb-6 pb-4 border-b border-[#E5E1D5]">
-            <h3 class="text-lg font-semibold">Daily Attendance</h3>
-            <a href="<?= site_url('attendance') ?>" class="text-sm font-medium hover:text-[#EB5C49] transition-colors flex items-center">
-              View All <span class="material-symbols-outlined text-[16px] ml-1">chevron_right</span>
-            </a>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-[#E5E1D5] text-xs font-semibold tracking-wider uppercase text-[#3A3A3A]/60">
-                  <th class="py-3 px-4">Date</th>
-                  <th class="py-3 px-4">Status</th>
-                  <th class="py-3 px-4">Check-in</th>
-                  <th class="py-3 px-4">Check-out</th>
-                  <th class="py-3 px-4">Hours</th>
+    <div class="stat-card">
+        <span class="stat-label">Registry Profile</span>
+        <span class="stat-value" style="font-size: 1.125rem; letter-spacing: 0.02em;"><?= esc($employee['emp_code'] ?? 'N/A') ?></span>
+        <span class="text-muted" style="font-size: 0.8125rem; margin-top: 0.25rem;"><?= esc($employee['designation'] ?? 'Personnel Associate') ?></span>
+        <span class="stat-sub" style="color: var(--color-accent);"><?= esc($employee['department'] ?? 'General Ops') ?></span>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3>Recent Activity Log</h3>
+        <a href="<?= site_url('attendance') ?>" class="btn btn-outline" style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">View Archive</a>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Service Date</th>
+                    <th>Status</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Total Active</th>
                 </tr>
-              </thead>
-              <tbody class="text-sm">
+            </thead>
+            <tbody>
                 <?php foreach ($recent as $row): ?>
-                  <?php
-                    $st = $row['status'] ?? 'absent';
-                    $badge = $st === 'present' ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20' : ($st === 'half_day' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20' : 'bg-red-50 text-red-700 ring-1 ring-red-600/20');
-                    $label = $st === 'present' ? 'Present' : ($st === 'half_day' ? 'Half Day' : 'Absent');
-                  ?>
-                  <tr class="hover:bg-[#F5F2EA] transition-colors border-b border-[#E5E1D5]/50 last:border-0">
-                    <td class="py-4 px-4 font-medium"><?= esc($row['date']) ?></td>
-                    <td class="py-4 px-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold <?= $badge ?>"><?= esc($label) ?></span></td>
-                    <td class="py-4 px-4 text-[#3A3A3A]/80"><?= $row['first_in'] ? date('h:i A', strtotime($row['first_in'])) : '--' ?></td>
-                    <td class="py-4 px-4 text-[#3A3A3A]/80"><?= $row['last_out'] ? date('h:i A', strtotime($row['last_out'])) : '--' ?></td>
-                    <td class="py-4 px-4 text-[#3A3A3A]/80"><?= esc($row['total_hours'] ?? '0') ?></td>
-                  </tr>
+                    <?php $st = $row['status'] ?? 'absent'; ?>
+                    <tr>
+                        <td style="font-weight: 500;"><?= date('D, d M Y', strtotime($row['date'])) ?></td>
+                        <td><span class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span></td>
+                        <td><?= $row['first_in'] ? date('H:i', strtotime($row['first_in'])) : '—' ?></td>
+                        <td><?= $row['last_out'] ? date('H:i', strtotime($row['last_out'])) : '—' ?></td>
+                        <td style="font-weight: 600; color: var(--color-primary);"><?= esc($row['total_hours'] ?? '0') ?>h</td>
+                    </tr>
                 <?php endforeach; ?>
                 <?php if (empty($recent)): ?>
-                  <tr><td class="py-6 px-4 text-[#3A3A3A]/60" colspan="5">No attendance records found.</td></tr>
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 3rem; color: var(--color-text-dim);">No recent activity discovered in the registry.</td>
+                    </tr>
                 <?php endif; ?>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-</body>
-</html>
+            </tbody>
+        </table>
+    </div>
+</div>
 
+<style>
+    @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+</style>
+
+<?= $this->endSection() ?>

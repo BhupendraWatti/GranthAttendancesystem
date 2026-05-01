@@ -16,9 +16,22 @@ class DocumentService
         $this->employeeDocModel = new EmployeeDocumentModel();
         $this->companyDocModel = new CompanyDocumentModel();
         
-        // In production, this path might be shared between admin and employee apps.
-        // We default to the local writable folder as per instructions.
-        $this->uploadPath = WRITEPATH . 'uploads/documents/';
+        // Dynamic path resolution for server compatibility.
+        // Priority: 1. Environment Variable, 2. Auto-discovered sibling path, 3. Local fallback.
+        $configuredPath = env('DOCUMENTS_STORAGE_PATH');
+        
+        if ($configuredPath) {
+            $this->uploadPath = rtrim($configuredPath, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        } else {
+            // Discovery: Look for the sibling 'backend' folder dynamically
+            $siblingBackend = realpath(ROOTPATH . '../backend/writable/uploads/documents');
+            if ($siblingBackend && is_dir($siblingBackend)) {
+                $this->uploadPath = $siblingBackend . DIRECTORY_SEPARATOR;
+            } else {
+                // Fallback to local app's writable folder
+                $this->uploadPath = WRITEPATH . 'uploads/documents' . DIRECTORY_SEPARATOR;
+            }
+        }
     }
 
     /**

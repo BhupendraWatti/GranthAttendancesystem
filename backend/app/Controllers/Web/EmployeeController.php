@@ -63,7 +63,7 @@ class EmployeeController extends BaseController
     public function show($empCode = null)
     {
         if (empty($empCode)) {
-            return redirect()->to('/employees')->with('error', 'Employee code is required.');
+            return redirect()->to(site_url('employees'))->with('error', 'Employee code is required.');
         }
 
         try {
@@ -76,7 +76,7 @@ class EmployeeController extends BaseController
             $employee = $employeeModel->findByCode($empCode);
 
             if (!$employee) {
-                return redirect()->to('/employees')->with('error', "Employee {$empCode} not found.");
+                return redirect()->to(site_url('employees'))->with('error', "Employee {$empCode} not found.");
             }
 
             // Get month/year from query params (default = current month)
@@ -104,7 +104,7 @@ class EmployeeController extends BaseController
             ]);
         } catch (\Throwable $e) {
             log_message('error', '[Web\\EmployeeController] show error: ' . $e->getMessage());
-            return redirect()->to('/employees')->with('error', 'Failed to load employee details. Please ensure the database is connected.');
+            return redirect()->to(site_url('employees'))->with('error', 'Failed to load employee details. Please ensure the database is connected.');
         }
     }
 

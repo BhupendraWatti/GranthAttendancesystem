@@ -1,74 +1,79 @@
-<?php
-  $emp = $employee ?? [];
-  $sal = $salary ?? [];
-  $empName = $emp['name'] ?? 'Unknown';
-  $empCode = $emp['emp_code'] ?? '';
-  $monthName = date('F', mktime(0, 0, 0, $month ?? date('n'), 1));
-  $yearVal = $year ?? date('Y');
-  $currency = '₹';
+<?= $this->extend('layout/main') ?>
 
-  $grossSalary = (float) ($sal['monthly_salary'] ?? 0);
-  $netSalary = (float) ($sal['net_salary'] ?? 0);
-  $deduction = (float) ($sal['deduction'] ?? 0);
-  $ratio = (float) ($sal['ratio'] ?? 0);
-?>
-<!DOCTYPE html>
-<html class="light" lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Payslip - GranthInfotech Attendance</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
-  <style> body { background-color: #F5F2EA; } </style>
-</head>
-<body class="font-['Manrope'] text-[#3A3A3A] antialiased">
-  <?= view('partials/employee_topbar') ?>
-  <?= view('partials/employee_sidebar', ['activePage' => 'salary']) ?>
+<?= $this->section('content') ?>
 
-  <main class="md:pl-64 pt-16 min-h-screen">
-    <div class="max-w-[1200px] mx-auto p-8">
-      <div class="flex items-center justify-between mb-6">
-        <div>
-          <h1 class="text-3xl font-extrabold">Payslip</h1>
-          <p class="text-sm text-[#3A3A3A]/70"><?= esc($monthName) ?> <?= esc((string) $yearVal) ?></p>
-        </div>
-        <a href="<?= site_url('salary/payslip/print?month=' . (int) $month . '&year=' . (int) $year) ?>" target="_blank" class="px-4 py-2 bg-[#3A3A3A] text-white rounded-lg text-sm font-semibold hover:bg-black">
-          Print / Download PDF
-        </a>
-      </div>
-
-      <div class="bg-white rounded-xl border border-[#E5E1D5] shadow-[0px_40px_40px_rgba(58,58,58,0.04)] p-6">
-        <div class="grid grid-cols-2 gap-4 text-sm mb-6">
-          <div><span class="text-[#3A3A3A]/60">Employee Name:</span> <span class="font-semibold"><?= esc($empName) ?></span></div>
-          <div><span class="text-[#3A3A3A]/60">Employee Code:</span> <span class="font-semibold"><?= esc($empCode) ?></span></div>
-          <div><span class="text-[#3A3A3A]/60">Department:</span> <span class="font-semibold"><?= esc($emp['department'] ?? 'General') ?></span></div>
-          <div><span class="text-[#3A3A3A]/60">Designation:</span> <span class="font-semibold"><?= esc($emp['designation'] ?? ucwords(str_replace('_', ' ', $emp['employee_type'] ?? 'Full Time'))) ?></span></div>
+<div style="max-width: 900px; margin: 0 auto;">
+    <div class="card" style="padding: 5rem; background: #fff; color: #000; border-radius: 0; box-shadow: 0 40px 100px rgba(0,0,0,0.2);">
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #000; padding-bottom: 3rem; margin-bottom: 4rem;">
+            <div>
+                <h2 style="font-family: var(--font-display); font-size: 3rem; margin: 0;">Granth.</h2>
+                <p style="text-transform: uppercase; letter-spacing: 0.3em; font-size: 0.7rem; font-weight: 800; margin-top: 0.5rem;">Corporate Payroll</p>
+            </div>
+            <div style="text-align: right;">
+                <h3 style="font-family: var(--font-display); font-size: 1.5rem; margin: 0;">Earnings Statement</h3>
+                <p style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;"><?= date('F Y', mktime(0,0,0,$month,1,$year)) ?></p>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="rounded-lg border border-[#E5E1D5] p-4 h-full flex flex-col">
-            <h3 class="text-xs uppercase tracking-wider text-[#3A3A3A]/60 mb-3">Earnings</h3>
-            <div class="flex justify-between py-1"><span>Gross Monthly Salary</span><span class="font-mono"><?= $currency ?><?= number_format($grossSalary, 2) ?></span></div>
-            <div class="flex justify-between py-1"><span>Attendance Ratio</span><span class="font-mono"><?= number_format($ratio, 2) ?>%</span></div>
-            <div class="mt-auto flex justify-between py-1 border-t border-dashed pt-2"><span class="font-semibold">Gross Earnings</span><span class="font-mono font-semibold"><?= $currency ?><?= number_format($grossSalary, 2) ?></span></div>
-          </div>
-          <div class="rounded-lg border border-[#E5E1D5] p-4 h-full flex flex-col">
-            <h3 class="text-xs uppercase tracking-wider text-[#3A3A3A]/60 mb-3">Deductions</h3>
-            <div class="flex justify-between py-1"><span>Attendance Deduction</span><span class="font-mono"><?= $currency ?><?= number_format($deduction, 2) ?></span></div>
-            <div class="flex justify-between py-1"><span>Late Arrival Fine</span><span class="font-mono"><?= $currency ?>0.00</span></div>
-            <div class="mt-auto flex justify-between py-1 border-t border-dashed pt-2"><span class="font-semibold">Total Deductions</span><span class="font-mono font-semibold"><?= $currency ?><?= number_format($deduction, 2) ?></span></div>
-          </div>
+        <div style="display: grid; grid-cols-1 md:grid-cols-2 gap-12 mb-12;">
+            <div>
+                <label style="display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #999; margin-bottom: 0.5rem;">Employee</label>
+                <div style="font-size: 1.2rem; font-weight: 700;"><?= esc($employee['name']) ?></div>
+                <div style="font-size: 0.9rem; color: #666;"><?= esc($employee['designation']) ?></div>
+            </div>
+            <div style="text-align: right;">
+                <label style="display: block; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: #999; margin-bottom: 0.5rem;">Identity</label>
+                <div style="font-size: 1.1rem; font-weight: 700;"><?= esc($employee['emp_code']) ?></div>
+                <div style="font-size: 0.9rem; color: #666;"><?= esc($employee['department']) ?></div>
+            </div>
         </div>
 
-        <div class="mt-6 rounded-xl bg-[#1f1f1f] text-white px-5 py-4 flex justify-between items-center">
-          <span class="text-sm uppercase tracking-wider">Net Salary Payable</span>
-          <span class="text-3xl font-extrabold"><?= $currency ?><?= number_format($netSalary, 2) ?></span>
+        <div style="margin: 4rem 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #000;">
+                        <th style="padding: 1.5rem 0; color: #000; font-weight: 800;">Description</th>
+                        <th style="padding: 1.5rem 0; text-align: right; color: #000; font-weight: 800;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 2rem 0; background: transparent; border: 0; border-bottom: 1px solid #eee; color: #000;">Base Remuneration</td>
+                        <td style="padding: 2rem 0; text-align: right; background: transparent; border: 0; border-bottom: 1px solid #eee; font-family: var(--font-display); font-size: 1.25rem; color: #000;">₹<?= number_format($salary['base_salary'] ?? 0, 2) ?></td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 2rem 0; background: transparent; border: 0; border-bottom: 1px solid #eee; color: #000;">Attendance Adjustment <small style="color: #999; display: block; font-size: 0.7rem; margin-top: 0.25rem;">Based on <?= $salary['present_days'] ?>/<?= $salary['working_days'] ?> active days</small></td>
+                        <td style="padding: 2rem 0; text-align: right; background: transparent; border: 0; border-bottom: 1px solid #eee; font-family: var(--font-display); font-size: 1.25rem; color: #EF4444;">-₹<?= number_format(($salary['base_salary'] ?? 0) - ($salary['net_salary'] ?? 0), 2) ?></td>
+                    </tr>
+                    <tr style="border-top: 4px solid #000;">
+                        <td style="padding: 3rem 0; background: transparent; border: 0; font-weight: 800; font-size: 1.25rem; color: #000; text-transform: uppercase; letter-spacing: 0.1em;">Net Payable</td>
+                        <td style="padding: 3rem 0; text-align: right; background: transparent; border: 0; font-family: var(--font-display); font-size: 3.5rem; color: #000;">₹<?= number_format($salary['net_salary'] ?? 0, 2) ?></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-      </div>
+
+        <div style="margin-top: 6rem; padding-top: 3rem; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: flex-end;">
+            <div style="font-size: 0.8rem; color: #999; max-width: 400px;">
+                This is a digitally generated document. No physical signature is required. All calculations are subject to statutory compliance and audit.
+            </div>
+            <div>
+                <button onclick="window.print()" style="background: #000; color: #fff; padding: 1rem 2.5rem; border: none; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer;">Print Record</button>
+            </div>
+        </div>
+
     </div>
-  </main>
-</body>
-</html>
+</div>
 
+<style>
+    @media print {
+        .sidebar, footer, .page-header { display: none !important; }
+        .main-wrapper { margin-left: 0 !important; padding: 0 !important; background: #fff !important; }
+        body { background: #fff !important; }
+        .card { box-shadow: none !important; margin: 0 !important; width: 100% !important; max-width: 100% !important; }
+        button { display: none !important; }
+    }
+</style>
+
+<?= $this->endSection() ?>

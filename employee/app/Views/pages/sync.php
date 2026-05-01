@@ -24,7 +24,7 @@ $fullSyncFromDefault = date('Y-m-01', strtotime($fullSyncToDefault));
             <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 16px;">
                 Fetches the latest punch data since the last successful sync. Use this for quick updates.
             </p>
-            <form method="POST" action="/sync/run">
+            <form method="POST" action="<?= site_url('sync/run') ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="type" value="incremental">
                 <button type="submit" class="btn btn--primary" onclick="this.innerHTML='<span class=spinner></span> Syncing...'; this.disabled=true; this.form.submit();">
@@ -42,7 +42,7 @@ $fullSyncFromDefault = date('Y-m-01', strtotime($fullSyncToDefault));
             <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 16px;">
                 Re-fetches all punch data for a date range and reprocesses attendance. Use for corrections. Defaults use <strong>yesterday</strong> as “To” because the vendor API often errors on the current calendar day.
             </p>
-            <form method="POST" action="/sync/run">
+            <form method="POST" action="<?= site_url('sync/run') ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="type" value="full_range">
                 <div class="form-inline mb-2">

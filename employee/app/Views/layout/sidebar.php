@@ -10,7 +10,7 @@ $activePage = $activePage ?? '';
 <aside class="sidebar" id="sidebar">
     <!-- Brand -->
     <div class="sidebar-brand">
-        <div class="brand-icon"><img src="/assets/img/image-1776985023902.png" alt="Logo" style="max-width: 32px;"
+        <div class="brand-icon"><img src="<?= base_url('assets/img/image-1776985023902.png') ?>" alt="Logo" style="max-width: 32px;"
                 onerror="this.onerror=null; this.parentNode.innerText='G';"></div>
         <div>
             <h2 class="text-xl">Granth Infotech</h2>
@@ -62,7 +62,7 @@ $activePage = $activePage ?? '';
 
     <!-- Footer -->
     <div class="sidebar-footer">
-        <a href="/logout">
+        <a href="<?= site_url('auth/logout') ?>">
             <span>🚪</span>
             Sign Out
         </a>

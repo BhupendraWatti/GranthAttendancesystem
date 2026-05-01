@@ -26,7 +26,7 @@
 
 <!-- Breadcrumb -->
 <div class="emp-breadcrumb">
-    <a href="/employees">Employees</a>
+    <a href="<?= site_url('employees') ?>">Employees</a>
     <span class="sep">›</span>
     <span><?= esc($empCode) ?></span>
 </div>
@@ -135,7 +135,7 @@
     <div class="tab-content" id="tab-attendance">
         <div class="card-body">
             <!-- Month/Year Filter -->
-            <form method="GET" action="/employees/<?= esc($empCode) ?>" class="form-inline mb-3">
+            <form method="GET" action="<?= site_url('employees/' . esc($empCode)) ?>" class="form-inline mb-3">
                 <div class="form-group">
                     <label for="month">Month</label>
                     <select name="month" id="month" class="form-control">
@@ -258,7 +258,7 @@
                 </div>
 
                 <div class="mt-3">
-                    <a href="/payslip/<?= esc($empCode) ?>?month=<?= $month ?>&year=<?= $year ?>" class="btn btn--primary">
+                    <a href="<?= site_url('payslip/' . esc($empCode) . '?month=' . $month . '&year=' . $year) ?>" class="btn btn--primary">
                         📄 View Payslip
                     </a>
                 </div>
@@ -282,7 +282,7 @@
                         </div>
                     <?php endif; ?>
                     
-                    <form action="/employees/salary" method="POST" class="form-inline">
+                    <form action="<?= site_url('employees/salary') ?>" method="POST" class="form-inline">
                         <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
                         
                         <div class="form-group mb-0">

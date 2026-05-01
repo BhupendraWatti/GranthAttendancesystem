@@ -6,9 +6,10 @@
     $emp = $employee ?? [];
     $empName = $emp['name'] ?? 'Unknown';
     $empCode = $emp['emp_code'] ?? '';
-    $initials = strtoupper(substr($empName, 0, 1) . (strpos($empName, ' ') !== false ? substr($empName, strpos($empName, ' ') + 1, 1) : substr($empName, 1, 1)));
+    $names = explode(' ', trim($empName));
+    $initials = strtoupper(substr($names[0], 0, 1) . (count($names) > 1 ? substr(end($names), 0, 1) : substr($names[0], 1, 1)));
     $empType = $emp['employee_type'] ?? 'full_time';
-    $empStatus = $emp['status'] ?? 'active';
+    $empStatus = strtolower($emp['status'] ?? 'active');
     $currentMonthName = date('F Y', mktime(0, 0, 0, $month ?? date('n'), 1, $year ?? date('Y')));
 
     // Calculate attendance stats
@@ -23,6 +24,178 @@
     }
     $avgWorkHours = $presentDays > 0 ? round($totalWorkMin / $presentDays / 60, 1) : 0;
 ?>
+
+<style>
+    /* Premium UI Refinements */
+    .emp-profile-card {
+        padding: 32px;
+        background: #fff;
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 32px;
+    }
+
+    .emp-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #6366f1, #4f46e5);
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
+        flex-shrink: 0;
+    }
+
+    .emp-profile-info {
+        flex: 1;
+    }
+
+    .emp-name-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 6px;
+    }
+
+    .emp-name-row h2 {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        margin: 0;
+        color: #111827;
+    }
+
+    .emp-role {
+        font-size: 1.1rem;
+        color: #6b7280;
+        font-weight: 500;
+        margin-bottom: 20px;
+    }
+
+    .emp-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 40px;
+    }
+
+    .emp-meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .emp-meta-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 700;
+        color: #9ca3af;
+    }
+
+    .emp-meta-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    /* Tab Buttons Refinement */
+    .tabs {
+        border-bottom: 1px solid #f3f4f6;
+        margin-bottom: 0;
+    }
+
+    .tab-btn {
+        padding: 16px 24px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: #6b7280;
+        border: none;
+        background: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 3px solid transparent;
+    }
+
+    .tab-btn:hover {
+        color: #4f46e5;
+    }
+
+    .tab-btn.active {
+        color: #4f46e5;
+        border-bottom-color: #4f46e5;
+    }
+
+    /* Stats Refinement */
+    .emp-stats-card {
+        background: #f8fafc;
+        border-radius: 16px;
+        padding: 24px;
+    }
+
+    .emp-stat-box {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        border: 1px solid #f1f5f9;
+    }
+
+    .emp-stat-big {
+        font-size: 2.25rem;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        margin-top: 8px;
+    }
+
+    .emp-stat-total, .emp-stat-unit {
+        font-size: 1rem;
+        color: #9ca3af;
+        margin-left: 2px;
+    }
+
+    .emp-stat-bar {
+        height: 6px;
+        background: #f1f5f9;
+        border-radius: 3px;
+        margin-top: 12px;
+        overflow: hidden;
+    }
+
+    .emp-stat-bar-fill {
+        height: 100%;
+        border-radius: 3px;
+    }
+
+    .emp-quick-summary {
+        padding-left: 12px;
+    }
+
+    .emp-summary-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .emp-summary-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+    }
+</style>
 
 <!-- Breadcrumb -->
 <div class="emp-breadcrumb">
@@ -214,6 +387,46 @@
         </div>
     </div>
 
+    <!-- Tab: Documents -->
+    <div class="tab-content" id="tab-documents">
+        <div class="card-body">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Version</th>
+                            <th>Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($documents)): ?>
+                            <?php foreach ($documents as $doc): ?>
+                                <tr>
+                                    <td><strong><?= esc($doc['title']) ?></strong></td>
+                                    <td><span class="badge badge--info"><?= esc(ucfirst($doc['document_type'])) ?></span></td>
+                                    <td>v<?= esc($doc['version']) ?></td>
+                                    <td><?= date('d M Y', strtotime($doc['created_at'])) ?></td>
+                                    <td>
+                                        <a href="<?= site_url('documents/download/employee/' . $doc['id']) ?>" class="btn btn--sm btn--outline">Download</a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5" class="p-8 text-center">
+                                    <div class="text-muted">No documents discovered for this employee profile yet.</div>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Tab: Salary -->
     <div class="tab-content" id="tab-salary">
         <div class="card-body">
@@ -343,45 +556,6 @@
     </div>
 </div>
 
-    <!-- Tab: Documents -->
-    <div class="tab-content" id="tab-documents">
-        <div class="card-body">
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Version</th>
-                            <th>Date</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (!empty($documents)): ?>
-                            <?php foreach ($documents as $doc): ?>
-                                <tr>
-                                    <td><strong><?= esc($doc['title']) ?></strong></td>
-                                    <td><span class="badge badge--info"><?= esc(ucfirst($doc['document_type'])) ?></span></td>
-                                    <td>v<?= esc($doc['version']) ?></td>
-                                    <td><?= date('d M Y', strtotime($doc['created_at'])) ?></td>
-                                    <td>
-                                        <a href="<?= site_url('documents/download/employee/' . $doc['id']) ?>" class="btn btn--sm btn--outline">Download</a>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="5" class="text-center py-8">
-                                    No documents found for this employee.
-                                </td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <?= $this->endSection() ?>

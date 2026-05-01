@@ -14,11 +14,11 @@ $currency = '₹';
     <div>
         <h2>Salary Management</h2>
         <p>Review and manage employee compensation records. Totals use <strong>processed daily attendance</strong> for
-            the selected month (not the live punch feed). After <a href="/sync">Sync</a> imports punches, attendance is
+            the selected month (not the live punch feed). After <a href="<?= site_url('sync') ?>">Sync</a> imports punches, attendance is
             updated for affected dates—refresh this page to see new figures.</p>
     </div>
     <div class="page-header-actions">
-        <form method="GET" action="/salary" class="form-inline" style="gap:8px;">
+        <form method="GET" action="<?= site_url('salary') ?>" class="form-inline" style="gap:8px;">
             <select name="month" class="form-control" style="width:140px;" onchange="this.form.submit()">
                 <?php for ($m = 1; $m <= 12; $m++): ?>
                     <option value="<?= $m ?>" <?= ($month ?? date('n')) == $m ? 'selected' : '' ?>>
@@ -97,7 +97,7 @@ $currency = '₹';
                                             <?= strtoupper(substr($row['name'] ?? '', 0, 2)) ?>
                                         </div>
                                         <div>
-                                            <a href="/employees/<?= esc($row['emp_code']) ?>"
+                                            <a href="<?= site_url('employees/' . esc($row['emp_code'])) ?>"
                                                 style="font-weight:600;"><?= esc($row['name'] ?? $row['emp_code']) ?></a>
                                             <br><small
                                                 class="text-muted"><?= ucwords(str_replace('_', ' ', esc($row['employee_type'] ?? 'full time'))) ?></small>
@@ -124,7 +124,7 @@ $currency = '₹';
                                     <?= $currency ?>        <?= number_format($row['net_salary'] ?? 0, 2) ?>
                                 </td>
                                 <td class="text-center">
-                                    <a href="/payslip/<?= esc($row['emp_code']) ?>?month=<?= $month ?>&year=<?= $year ?>"
+                                    <a href="<?= site_url('payslip/' . esc($row['emp_code']) . '?month=' . $month . '&year=' . $year) ?>"
                                         class="btn btn--outline btn--sm">
                                         📄 Payslip
                                     </a>

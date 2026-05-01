@@ -81,18 +81,18 @@ class SyncController extends BaseController
                 if ($fetched === 0 && $saved === 0) {
                     $msg .= ' No punch rows were imported. eTimeOffice often returns HTTP 500 for “today”; try Full Sync with From = first of month and To = yesterday (or another past range), then check backend/writable/logs. Incremental only pulls since the last sync cursor.';
 
-                    return redirect()->to('/sync')->with('warning', $msg);
+                    return redirect()->to(site_url('sync'))->with('warning', $msg);
                 }
 
-                return redirect()->to('/sync')->with('success', $msg);
+                return redirect()->to(site_url('sync'))->with('success', $msg);
             } else {
                 $error = $result['error'] ?? 'Unknown error';
-                return redirect()->to('/sync')->with('error', "Sync failed: {$error}");
+                return redirect()->to(site_url('sync'))->with('error', "Sync failed: {$error}");
             }
 
         } catch (\Throwable $e) {
             log_message('error', '[Web\\SyncController] Sync error: ' . $e->getMessage());
-            return redirect()->to('/sync')->with('error', 'Sync failed: ' . $e->getMessage());
+            return redirect()->to(site_url('sync'))->with('error', 'Sync failed: ' . $e->getMessage());
         }
     }
 }

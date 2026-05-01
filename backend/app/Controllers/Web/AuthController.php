@@ -21,7 +21,7 @@ class AuthController extends BaseController
     {
         // If already logged in, redirect to dashboard
         if (session()->get('logged_in')) {
-            return redirect()->to('/dashboard');
+            return redirect()->to(site_url('dashboard'));
         }
 
         return view('auth/login');
@@ -79,7 +79,7 @@ class AuthController extends BaseController
         ]);
 
         // Redirect to intended URL or dashboard
-        $redirectUrl = session()->get('redirect_url') ?? '/dashboard';
+        $redirectUrl = session()->get('redirect_url') ?? site_url('dashboard');
         session()->remove('redirect_url');
 
         return redirect()->to($redirectUrl)->with('success', "Welcome back, {$username}!");
@@ -92,6 +92,6 @@ class AuthController extends BaseController
     {
         session()->destroy();
 
-        return redirect()->to('/login')->with('info', 'You have been signed out.');
+        return redirect()->to(site_url('login'))->with('info', 'You have been signed out.');
     }
 }

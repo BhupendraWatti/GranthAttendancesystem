@@ -19,9 +19,9 @@
 
 <!-- Breadcrumb -->
 <div class="emp-breadcrumb mb-3">
-    <a href="/salary">Salary</a>
+    <a href="<?= site_url('salary') ?>">Salary</a>
     <span class="sep">›</span>
-    <a href="/employees/<?= esc($empCode) ?>"><?= esc($empName) ?></a>
+    <a href="<?= site_url('employees/' . esc($empCode)) ?>"><?= esc($empName) ?></a>
     <span class="sep">›</span>
     <span>Payslip</span>
 </div>
@@ -32,7 +32,7 @@
         <p><?= esc($monthName) ?> <?= esc($yearVal) ?></p>
     </div>
     <div class="page-header-actions">
-        <a href="/payslip/<?= esc($empCode) ?>/print?month=<?= $month ?>&year=<?= $year ?>" target="_blank" class="btn btn--primary">
+        <a href="<?= site_url('payslip/' . esc($empCode) . '/print?month=' . $month . '&year=' . $year) ?>" target="_blank" class="btn btn--primary">
             🖨 Print Payslip
         </a>
     </div>

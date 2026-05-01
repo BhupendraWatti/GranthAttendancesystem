@@ -1,77 +1,74 @@
+<?= $this->extend('layout/main') ?>
+
+<?= $this->section('content') ?>
+
 <?php
-  $name = $employee['name'] ?? 'Employee';
-  $empCode = $employee['emp_code'] ?? '';
-  $email = $employee['email'] ?? '--';
-  $department = $employee['department'] ?? '--';
-  $designation = $employee['designation'] ?? '--';
-  $employeeType = ucwords(strtolower(str_replace('_', ' ', $employee['employee_type'] ?? '--')));
+  $name = $employee['name'] ?? 'Associate';
+  $empCode = $employee['emp_code'] ?? 'N/A';
+  $email = $employee['email'] ?? 'No corporate email assigned';
+  $designation = $employee['designation'] ?? 'Personnel Associate';
 ?>
-<!DOCTYPE html>
-<html class="light" lang="en">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Profile - GranthInfotech Attendance</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
-  <style> body { background-color: #F5F2EA; } </style>
-</head>
-<body class="font-['Manrope'] text-[#3A3A3A] antialiased">
-  <?= view('partials/employee_topbar') ?>
 
-  <?= view('partials/employee_sidebar', ['activePage' => 'profile']) ?>
+<div class="page-header">
+    <p class="text-muted" style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">Identity Profile</p>
+    <h2 class="font-display">Personnel Identity</h2>
+</div>
 
-  <main class="md:ml-64 pt-16 min-h-screen">
-    <div class="max-w-[1440px] mx-auto p-8 space-y-12">
-      <div class="space-y-3">
-        <nav class="flex items-center gap-2 text-sm font-medium text-[#747878] mb-2">
-          <a class="hover:text-[#EB5C49]" href="<?= site_url('/') ?>">Dashboard</a>
-          <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-          <span class="text-[#3A3A3A]">Profile</span>
-        </nav>
-        <h1 class="text-4xl font-extrabold tracking-tight">Employee Profile</h1>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <div class="col-span-12 md:col-span-8 bg-white rounded-xl p-6 shadow-[0px_40px_40px_rgba(58,58,58,0.04)] border border-[#E5E1D5] flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-          <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-[#EB5C49] to-[#f08577] text-white flex items-center justify-center text-3xl font-extrabold shadow-inner border-[3px] border-white ring-1 ring-[#EB5C49]/20">
-            <?= esc(strtoupper(substr($name, 0, 1))) ?>
-          </div>
-          <div class="flex-1 space-y-3">
-            <div>
-              <h2 class="text-2xl font-semibold"><?= esc($name) ?></h2>
-              <p class="text-lg text-[#605e55] mt-1"><?= esc($designation) ?></p>
+<div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem;">
+    <!-- Profile Header Card -->
+    <div style="grid-column: span 8;">
+        <div class="card" style="display: flex; flex-direction: row; gap: 2.5rem; align-items: center; padding: 3rem;">
+            <div style="width: 120px; height: 120px; border-radius: 12px; background: var(--color-surface-muted); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 3rem; color: var(--color-primary); font-weight: 800; box-shadow: var(--shadow-sm);">
+                <?= strtoupper(substr($name, 0, 1)) ?>
             </div>
-            <div class="flex flex-wrap gap-4 text-sm text-[#3A3A3A]/70 pt-2">
-              <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">badge</span><span><?= esc($empCode) ?></span></div>
-              <div class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px]">mail</span><span><?= esc($email) ?></span></div>
+            
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h3 class="font-display" style="font-size: 2rem; margin-bottom: 0.25rem; color: var(--color-primary);"><?= esc($name) ?></h3>
+                        <p style="color: var(--color-accent); font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;"><?= esc($designation) ?></p>
+                    </div>
+                    <span class="badge" style="background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;">Active Service</span>
+                </div>
+                
+                <div style="display: flex; gap: 3rem; margin-top: 2rem;">
+                    <div>
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem; letter-spacing: 0.05em;">Corporate Email</div>
+                        <div style="font-size: 0.9375rem; font-weight: 600; color: var(--color-text-main);"><?= esc($email) ?></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem; letter-spacing: 0.05em;">Personnel Code</div>
+                        <div style="font-size: 0.9375rem; font-weight: 600; color: var(--color-text-main); letter-spacing: 0.05em;"><?= esc($empCode) ?></div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-
-        <div class="col-span-12 md:col-span-4 bg-white rounded-xl p-6 shadow-[0px_40px_40px_rgba(58,58,58,0.04)] border border-[#E5E1D5]">
-          <h3 class="text-lg font-semibold border-b border-[#E5E1D5] pb-4 mb-6">Work Details</h3>
-          <div class="flex flex-col gap-6">
-            <div class="space-y-1">
-              <p class="text-sm font-medium text-[#747878]">Department</p>
-              <p class="text-lg"><?= esc($department) ?></p>
-            </div>
-            <div class="space-y-1">
-              <p class="text-sm font-medium text-[#747878]">Designation</p>
-              <p class="text-lg"><?= esc($designation) ?></p>
-            </div>
-            <div class="space-y-1">
-              <p class="text-sm font-medium text-[#747878]">Employee Type</p>
-              <span class="inline-flex items-center px-3 py-1 rounded-full bg-[#e3dfd4] text-[#656359] text-sm font-medium">
-                <?= esc($employeeType) ?>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
-  </main>
-</body>
-</html>
 
+    <!-- Registry Details -->
+    <div style="grid-column: span 4;">
+        <div class="card" style="height: 100%;">
+            <div class="card-header">
+                <h3>Employment Registry</h3>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                <div>
+                    <label class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Department</label>
+                    <div style="font-size: 1rem; font-weight: 600;"><?= esc($employee['department'] ?? 'General Ops') ?></div>
+                </div>
+                
+                <div>
+                    <label class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Service Category</label>
+                    <div style="font-size: 1rem; font-weight: 600;"><?= ucwords(str_replace('_', ' ', $employee['employee_type'] ?? 'Full Time')) ?></div>
+                </div>
+
+                <div>
+                    <label class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Joining Date</label>
+                    <div style="font-size: 1rem; font-weight: 600;"><?= date('d M Y', strtotime($employee['created_at'] ?? 'now')) ?></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?= $this->endSection() ?>
