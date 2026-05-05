@@ -239,7 +239,7 @@
             </div>
             <div class="brand-content">
                 <h1>Manage your work presence with precision.</h1>
-                <p>Enterprise-grade attendance and personal management for high-performance teams.</p>
+                <p>Enterprise-grade attendance and workforce management for high-performance teams.</p>
             </div>
             <div style="color: rgba(255, 255, 255, 0.3); font-size: 0.75rem; font-weight: 500;">
                 &copy; 2026 Granth Infotech

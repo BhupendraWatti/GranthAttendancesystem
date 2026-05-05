@@ -5,14 +5,14 @@
 <div class="page-header">
     <div>
         <h2><?= esc($pageTitle) ?></h2>
-        <p>Access your personal records and important company policies.</p>
+        <p>Access your employee records and important company policies.</p>
     </div>
 </div>
 
 <div class="card">
     <div class="card-header flex justify-between items-center">
         <div class="tabs flex gap-4" id="document-tabs">
-            <button class="tab-btn active" data-target="personal-docs">
+            <button class="tab-btn active" data-target="employee-docs">
                 <i class="fa-solid fa-user-tag mr-2"></i> My Documents
             </button>
             <button class="tab-btn" data-target="company-docs">
@@ -27,7 +27,7 @@
     
     <div class="card-body p-0">
         <!-- Personal Documents Tab -->
-        <div id="personal-docs" class="tab-content active">
+        <div id="employee-docs" class="tab-content active">
             <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
@@ -69,7 +69,7 @@
                                     <div class="empty-state py-16">
                                         <div class="empty-icon text-5xl mb-4 opacity-20">📂</div>
                                         <h4>No documents available</h4>
-                                        <p class="text-muted">Your personal documents haven't been uploaded yet.</p>
+                                        <p class="text-muted">Your employee documents haven't been uploaded yet.</p>
                                     </div>
                                 </td>
                             </tr>

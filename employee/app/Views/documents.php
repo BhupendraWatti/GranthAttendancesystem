@@ -14,7 +14,7 @@
     <!-- Personal Documents -->
     <div class="card">
         <div class="card-header">
-            <h3>personal Files</h3>
+            <h3>Employee Files</h3>
             <span class="text-muted" style="font-size: 0.75rem;">Private archives</span>
         </div>
 
@@ -46,7 +46,7 @@
                     <div style="padding: 4rem 2rem; text-align: center;">
                         <span class="material-symbols-outlined"
                             style="font-size: 3rem; color: var(--color-border); margin-bottom: 1rem;">folder_open</span>
-                        <p class="text-muted" style="font-size: 0.875rem;">No personal documents discovered in the registry.
+                        <p class="text-muted" style="font-size: 0.875rem;">No employee documents discovered in the registry.
                         </p>
                     </div>
                 <?php endif; ?>

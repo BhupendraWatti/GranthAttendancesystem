@@ -32,10 +32,25 @@ class Dashboard extends BaseController
         $month = (int) date('m');
         $monthRows = $dailyModel->getMonthly($empCode, $year, $month);
 
+        $totalMinutesMonth = 0;
         foreach ($monthRows as &$r) {
             $r['total_hours'] = round(($r['work_minutes'] ?? 0) / 60, 2);
+            $totalMinutesMonth += (int)($r['work_minutes'] ?? 0);
         }
         unset($r);
+
+        // Calculate required hours for the month
+        // Assuming 8 hours per day for all days except Sundays
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $workingDays = 0;
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $time = mktime(0, 0, 0, $month, $d, $year);
+            if (date('N', $time) != 7) { // 7 = Sunday
+                $workingDays++;
+            }
+        }
+        $requiredHoursMonth = $workingDays * 8;
+        $totalHoursMonth = round($totalMinutesMonth / 60, 2);
 
         $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0];
         foreach ($monthRows as $r) {
@@ -53,6 +68,8 @@ class Dashboard extends BaseController
             'todayHours' => $this->formatHours($todayRow['total_hours'] ?? null),
             'counts' => $counts,
             'recent' => $recent,
+            'totalHoursMonth' => $totalHoursMonth,
+            'requiredHoursMonth' => $requiredHoursMonth,
         ]);
     }
 }

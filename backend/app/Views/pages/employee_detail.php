@@ -4,7 +4,7 @@
 
 <?php
 $emp = $employee ?? [];
-$empName = $emp['name'] ?? 'personal';
+$empName = $emp['name'] ?? 'Employee';
 $empCode = $emp['emp_code'] ?? 'N/A';
 $names = explode(' ', trim($empName));
 $initials = strtoupper(substr($names[0], 0, 1));
@@ -55,7 +55,7 @@ $avgWorkHours = $presentDays > 0 ? round($totalWorkMin / $presentDays / 60, 1) :
                     <h2 class="font-display" style="font-size: 2rem; margin-bottom: 0.25rem;"><?= esc($empName) ?></h2>
                     <p
                         style="color: var(--color-accent); font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                        <?= esc($emp['designation'] ?? 'personal Associate') ?>
+                        <?= esc($emp['designation'] ?? 'Associate') ?>
                     </p>
                 </div>
                 <span class="badge badge--<?= $empStatus === 'active' ? 'success' : 'danger' ?>"
@@ -348,7 +348,7 @@ $avgWorkHours = $presentDays > 0 ? round($totalWorkMin / $presentDays / 60, 1) :
                         <h4 class="font-display" style="font-size: 1.25rem; margin-bottom: 0.5rem;">Document Registry
                         </h4>
                         <p style="color: var(--color-text-dim); font-size: 0.875rem;">Centralized repository for
-                            personal records and compliance files</p>
+                            employee records and compliance files</p>
                     </div>
                     <button onclick="document.getElementById('upload-modal').classList.add('active')"
                         class="btn btn-primary" style="padding: 0.75rem 1.5rem; gap: 0.5rem;">
@@ -437,7 +437,7 @@ $avgWorkHours = $presentDays > 0 ? round($totalWorkMin / $presentDays / 60, 1) :
                                                 <div
                                                     style="font-weight: 700; color: var(--color-text-dim); font-size: 1.125rem; margin-bottom: 0.5rem;">
                                                     No Registry Files</div>
-                                                <p style="font-size: 0.875rem; color: var(--color-text-dim);">This personal
+                                                <p style="font-size: 0.875rem; color: var(--color-text-dim);">This employee
                                                     profile has no associated documents in the archive.</p>
                                             </div>
                                             <button

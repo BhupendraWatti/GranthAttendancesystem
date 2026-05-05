@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>personal Admin — Secure Login</title>
+    <title>Admin — Secure Login</title>
 
     <!-- Typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -184,7 +184,7 @@
         <div class="login-card">
             <div class="header">
                 <div class="logo-box">G</div>
-                <h1 class="title">personal Admin</h1>
+                <h1 class="title">Admin</h1>
                 <p class="subtitle">System Management Interface</p>
             </div>
 

@@ -6,7 +6,7 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
             <h2 class="page-title">Employee Document Registry</h2>
-            <p class="page-subtitle">Centralized management of joining letters, offer letters, and personal files.</p>
+            <p class="page-subtitle">Centralized management of joining letters, offer letters, and documents.</p>
         </div>
         <div style="display: flex; gap: 1rem; align-items: center;">
             <div style="text-align: right;">

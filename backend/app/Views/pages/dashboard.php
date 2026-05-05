@@ -67,7 +67,7 @@
     <!-- Primary Activity Log -->
     <div class="card">
         <div class="card-header">
-            <h3>Recent personal Activity</h3>
+            <h3>Recent Employee Activity</h3>
             <a href="<?= site_url('employees') ?>" class="btn btn-outline"
                 style="padding: 0.375rem 0.75rem; font-size: 0.75rem;">Full Logs</a>
         </div>

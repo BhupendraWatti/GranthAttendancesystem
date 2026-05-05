@@ -58,7 +58,7 @@
                 <h2 class="font-display">Granth.</h2>
                 <div
                     style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.2em; color: var(--color-text-dim); margin-top: 0.5rem;">
-                    personal System</div>
+                    Employee System</div>
             </div>
 
             <nav class="sidebar-nav">

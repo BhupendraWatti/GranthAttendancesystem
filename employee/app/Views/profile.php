@@ -6,14 +6,14 @@
 $name = $employee['name'] ?? 'Associate';
 $empCode = $employee['emp_code'] ?? 'N/A';
 $email = $employee['email'] ?? 'No corporate email assigned';
-$designation = $employee['designation'] ?? 'personal Associate';
+$designation = $employee['designation'] ?? 'Personal Associate';
 ?>
 
 <div class="page-header">
     <p class="text-muted"
         style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">
         Identity Profile</p>
-    <h2 class="font-display">personal Identity</h2>
+    <h2 class="font-display">Personal Identity</h2>
 </div>
 
 <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1.5rem;">
@@ -31,9 +31,7 @@ $designation = $employee['designation'] ?? 'personal Associate';
                         <h3 class="font-display"
                             style="font-size: 2rem; margin-bottom: 0.25rem; color: var(--color-primary);">
                             <?= esc($name) ?></h3>
-                        <p
-                            style="color: var(--color-accent); font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                            <?= esc($designation) ?></p>
+                        <!-- <p style="color: var(--color-accent); font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;"><?= esc($designation) ?></p> -->
                     </div>
                     <span class="badge" style="background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;">Active
                         Service</span>
@@ -50,7 +48,7 @@ $designation = $employee['designation'] ?? 'personal Associate';
                     <div>
                         <div
                             style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem; letter-spacing: 0.05em;">
-                            personal Code</div>
+                            Personal Code</div>
                         <div
                             style="font-size: 0.9375rem; font-weight: 600; color: var(--color-text-main); letter-spacing: 0.05em;">
                             <?= esc($empCode) ?></div>
@@ -67,13 +65,11 @@ $designation = $employee['designation'] ?? 'personal Associate';
                 <h3>Employment Registry</h3>
             </div>
             <div class="card-body" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                <div>
-                    <label class="text-muted"
-                        style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Department</label>
-                    <div style="font-size: 1rem; font-weight: 600;"><?= esc($employee['department'] ?? 'General Ops') ?>
-                    </div>
+                <!-- <div>
+                    <label class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Department</label>
+                    <div style="font-size: 1rem; font-weight: 600;"><?= esc($employee['department'] ?? 'General Ops') ?></div>
                 </div>
-
+                 -->
                 <div>
                     <label class="text-muted"
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Service

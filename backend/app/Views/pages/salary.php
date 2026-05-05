@@ -61,7 +61,7 @@ $currency = '₹';
             <span class="label">Workload Average</span>
             <span class="value"><?= $t['avg_work_hours'] ?? 0 ?>h <small
                     style="font-size: 0.875rem; color: var(--color-text-dim); font-weight: 400;">per
-                    personal</small></span>
+                    Employee</small></span>
         </div>
         <div class="stat-icon"><i class="fa-solid fa-stopwatch"></i></div>
     </div>
@@ -78,7 +78,7 @@ $currency = '₹';
         <table>
             <thead>
                 <tr>
-                    <th>personal</th>
+                    <th>Employee</th>
                     <th style="text-align: center;">Service Hours</th>
                     <th style="text-align: center;">Registry Ratio</th>
                     <th style="text-align: right;">Adj. Deductions</th>

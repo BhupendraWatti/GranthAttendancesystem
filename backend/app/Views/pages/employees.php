@@ -6,7 +6,7 @@
     <div style="display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
             <h2 class="page-title">Workforce Registry</h2>
-            <p class="page-subtitle">Centralized directory of all active and inactive personal.</p>
+            <p class="page-subtitle">Centralized directory of all active and inactive employees.</p>
         </div>
         <div style="display: flex; gap: 1rem; align-items: center;">
             <div style="text-align: right;">
@@ -87,8 +87,7 @@
             <thead>
                 <tr
                     style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);">
-                    <th style="color: white; border: none; padding: 1rem 1.5rem;">personal Name</th>
-                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Identity Code</th>
+                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Employee Name</th>                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Identity Code</th>
                     <th style="color: white; border: none; padding: 1rem 1.5rem;">Department</th>
                     <th style="color: white; border: none; padding: 1rem 1.5rem;">Designation</th>
                     <th style="color: white; border: none; padding: 1rem 1.5rem;">Category</th>

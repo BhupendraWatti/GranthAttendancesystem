@@ -5,7 +5,7 @@
 <div class="page-header">
     <p class="text-muted"
         style="text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem;">
-        personal Registry</p>
+        Personal Registry</p>
     <h2 class="font-display">My Attendance</h2>
 </div>
 
@@ -112,7 +112,7 @@
     <div style="grid-column: span 4; display: flex; flex-direction: column; gap: 1.5rem;">
         <div class="card">
             <div class="card-header">
-                <h3>Metrics Summary</h3>
+                <h3>My Summary</h3>
             </div>
             <div class="card-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <?php
@@ -153,14 +153,14 @@
                         <span style="color: var(--color-accent); font-weight: 700;">&bull;</span>
                         <span>Service requirement: 8.0 hours per service day.</span>
                     </li>
-                    <li style="display: flex; gap: 0.75rem;">
+                    <!-- <li style="display: flex; gap: 0.75rem;">
                         <span style="color: var(--color-accent); font-weight: 700;">&bull;</span>
                         <span>Partial attendance: 4.0 to 8.0 hours.</span>
                     </li>
                     <li style="display: flex; gap: 0.75rem;">
                         <span style="color: var(--color-accent); font-weight: 700;">&bull;</span>
                         <span>Threshold for tardiness: Service start + 15 minutes.</span>
-                    </li>
+                    </li> -->
                 </ul>
             </div>
         </div>
