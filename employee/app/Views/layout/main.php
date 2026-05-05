@@ -124,6 +124,13 @@
             </footer>
         </main>
     </div>
+    <script>
+        // Global Routing Configuration
+        window.siteUrl = '<?= site_url() ?>';
+        if (window.siteUrl.endsWith('/')) {
+            window.siteUrl = window.siteUrl.slice(0, -1);
+        }
+    </script>
     <script src="<?= base_url('assets/js/app.js') ?>"></script>
 </body>
 

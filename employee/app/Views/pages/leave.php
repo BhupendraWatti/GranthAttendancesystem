@@ -19,9 +19,10 @@
             <div class="card-body">
                 <?php if (!empty($balances)): ?>
                     <?php foreach ($balances as $bal): ?>
+                        <?php if ($bal['leave_type'] !== 'unified_leave') continue; ?>
                         <div class="mb-4 last:mb-0">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="font-bold"><?= esc(ucwords(str_replace('_', ' ', $bal['leave_type']))) ?></span>
+                                <span class="font-bold">Total Leave Balance</span>
                                 <span class="badge badge--info"><?= esc($bal['remaining']) ?> days left</span>
                             </div>
                             <div class="emp-stat-bar">
@@ -71,9 +72,8 @@
                     <div class="form-group mb-4">
                         <label for="leave_type">Leave Type</label>
                         <select name="leave_type" id="leave_type" class="form-control" required>
-                            <option value="casual_leave">Casual Leave</option>
                             <option value="sick_leave">Sick Leave</option>
-                            <option value="earned_leave">Earned Leave</option>
+                            <option value="other_leave">Other Leave</option>
                         </select>
                     </div>
 

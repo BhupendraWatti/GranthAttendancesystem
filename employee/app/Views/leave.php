@@ -18,9 +18,10 @@
                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                     <?php if (!empty($balances)): ?>
                         <?php foreach ($balances as $bal): ?>
+                            <?php if ($bal['leave_type'] !== 'unified_leave') continue; ?>
                             <div>
                                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-                                    <span style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-main);"><?= esc(ucwords(str_replace('_', ' ', $bal['leave_type']))) ?></span>
+                                    <span style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-main);">Total Leave Balance</span>
                                     <span style="font-size: 0.875rem; font-weight: 700; color: var(--color-accent);"><?= esc($bal['remaining']) ?> days left</span>
                                 </div>
                                 <div style="height: 6px; background: var(--color-surface-muted); border-radius: 3px; overflow: hidden;">
@@ -75,9 +76,8 @@
                     <div style="grid-column: span 2;">
                         <label class="form-label">Absence Category</label>
                         <select name="leave_type" class="form-input" required>
-                            <option value="casual_leave">Casual Leave</option>
                             <option value="sick_leave">Sick Leave</option>
-                            <option value="earned_leave">Earned Leave</option>
+                            <option value="other_leave">Other Leave</option>
                         </select>
                     </div>
 

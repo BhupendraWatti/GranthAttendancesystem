@@ -45,8 +45,8 @@ class LeaveService
             throw new \RuntimeException("This request overlaps with an existing leave request.");
         }
 
-        // 3. Auto-credit balance if missing
-        $this->ensureLeaveBalance($empCode, $leaveType);
+        // 3. Auto-credit balance if missing (Unified balance)
+        $this->ensureLeaveBalance($empCode, 'unified_leave');
 
         // 4. Calculate duration
         $duration = $this->calculateDuration($fromDate, $toDate, $data['from_session'], $data['to_session']);
@@ -55,8 +55,8 @@ class LeaveService
             throw new \RuntimeException("Selected dates are holidays or weekends.");
         }
 
-        // 5. Check balance
-        $balance = $this->leaveBalanceModel->getBalance($empCode, $leaveType);
+        // 5. Check balance (Always check unified_leave)
+        $balance = $this->leaveBalanceModel->getBalance($empCode, 'unified_leave');
         if ($balance['remaining'] < $duration) {
             throw new \RuntimeException("Insufficient leave balance. Available: {$balance['remaining']} days.");
         }
@@ -88,8 +88,13 @@ class LeaveService
 
         $duration = $this->calculateDuration($request['from_date'], $request['to_date'], $request['from_session'], $request['to_session']);
 
-        // Update balance
-        $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], $request['leave_type']);
+        // Update unified balance
+        $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], 'unified_leave');
+        if (!$balance) {
+            $this->ensureLeaveBalance($request['emp_code'], 'unified_leave');
+            $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], 'unified_leave');
+        }
+
         $this->leaveBalanceModel->update($balance['id'], [
             'used'      => $balance['used'] + $duration,
             'remaining' => $balance['remaining'] - $duration,
@@ -161,16 +166,17 @@ class LeaveService
     }
 
     /**
-     * Auto-credit balance (Default 12 days per year)
+     * Auto-credit balance (Unified 4 days)
      */
     private function ensureLeaveBalance(string $empCode, string $leaveType): void
     {
-        $existing = $this->leaveBalanceModel->getBalance($empCode, $leaveType);
+        // We only care about unified_leave now
+        $existing = $this->leaveBalanceModel->getBalance($empCode, 'unified_leave');
         if (!$existing) {
-            $total = 12.0; // Default
+            $total = 4.0; 
             $this->leaveBalanceModel->insert([
                 'emp_code'   => $empCode,
-                'leave_type' => $leaveType,
+                'leave_type' => 'unified_leave',
                 'total'      => $total,
                 'used'       => 0,
                 'remaining'  => $total,

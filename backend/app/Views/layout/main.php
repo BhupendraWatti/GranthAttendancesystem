@@ -13,7 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Design System -->
-    <link rel="stylesheet" href="/assets/css/premium.css">
+    <link rel="stylesheet" href="<?= base_url('assets/css/premium.css') ?>?v=<?= time() ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Third Party -->
@@ -61,12 +61,9 @@
 
     <script>
         // Global Routing Configuration
-        window.siteUrl = '<?= site_url() ?>';
-        if (window.siteUrl.endsWith('/')) {
-            window.siteUrl = window.siteUrl.slice(0, -1);
-        }
+        window.siteUrl = '<?= rtrim(site_url(), '/') ?>';
     </script>
-    <script src="/assets/js/app.js"></script>
+    <script src="<?= base_url('assets/js/app.js') ?>?v=<?= time() ?>"></script>
     <script>
         // Professional Sidebar Toggle
         const toggleBtn = document.getElementById('sidebar-toggle');
