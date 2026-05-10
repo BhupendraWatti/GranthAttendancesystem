@@ -46,6 +46,28 @@ class DashboardController extends ResourceController
     }
 
     /**
+     * GET /api/dashboard/personal-summary
+     */
+    public function personalSummary()
+    {
+        $empCode = (string) session()->get('empcode');
+        if (empty($empCode)) {
+            return $this->failUnauthorized('Employee not logged in');
+        }
+
+        try {
+            $summary = $this->dashboardService->getPersonalSummary($empCode);
+            return $this->respond([
+                'status' => 'success',
+                'data'   => $summary,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', '[DashboardController] Personal summary error: ' . $e->getMessage());
+            return $this->failServerError('Failed to fetch personal summary');
+        }
+    }
+
+    /**
      * GET /api/dashboard/attendance
      */
     public function attendance()

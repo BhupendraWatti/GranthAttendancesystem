@@ -104,6 +104,48 @@ class DashboardService
     }
 
     /**
+     * Get personal summary for an employee
+     */
+    public function getPersonalSummary(string $empCode): array
+    {
+        $year = (int) date('Y');
+        $month = (int) date('m');
+        $monthRows = $this->attendanceModel->getMonthly($empCode, $year, $month);
+
+        $totalMinutesMonth = 0;
+        foreach ($monthRows as $r) {
+            $totalMinutesMonth += (int) ($r['work_minutes'] ?? 0);
+        }
+
+        $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $workingDays = 0;
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $time = mktime(0, 0, 0, $month, $d, $year);
+            if (date('N', $time) != 7) {
+                $workingDays++;
+            }
+        }
+        $requiredHoursMonth = $workingDays * 8;
+        $totalHoursMonth = round($totalMinutesMonth / 60, 2);
+
+        $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0];
+        foreach ($monthRows as $r) {
+            $status = $r['status'] ?? '';
+            if (isset($counts[$status])) {
+                $counts[$status]++;
+            }
+        }
+
+        return [
+            'totalHoursMonth' => $totalHoursMonth,
+            'requiredHoursMonth' => $requiredHoursMonth,
+            'counts' => $counts,
+            'monthProgress' => min(($totalHoursMonth / $requiredHoursMonth) * 100, 100),
+            'remainingHours' => max(0, $requiredHoursMonth - $totalHoursMonth),
+        ];
+    }
+
+    /**
      * Calculate human-readable "time ago" string
      */
     private function timeAgo(string $datetime): string

@@ -25,12 +25,12 @@ $status = $todayRow['status'] ?? 'absent';
     <div class="stat-card" style="grid-column: span 3;">
         <span class="stat-label">Monthly Presence</span>
         <div style="display: flex; align-items: baseline; gap: 0.5rem;">
-            <span class="stat-value"><?= (int) ($counts['present'] ?? 0) ?></span>
+            <span class="stat-value" id="stat-present-count"><?= (int) ($counts['present'] ?? 0) ?></span>
             <span class="text-muted" style="font-size: 0.875rem;">/
-                <?= (int) (($counts['present'] ?? 0) + ($counts['absent'] ?? 0) + ($counts['half_day'] ?? 0)) ?> days
+                <span id="stat-total-days"><?= (int) (($counts['present'] ?? 0) + ($counts['absent'] ?? 0) + ($counts['half_day'] ?? 0)) ?></span> days
             </span>
         </div>
-        <span class="stat-sub" style="color: var(--color-warning);"><?= (int) ($counts['half_day'] ?? 0) ?> half-days recorded</span>
+        <span class="stat-sub" style="color: var(--color-warning);"><span id="stat-halfday-count"><?= (int) ($counts['half_day'] ?? 0) ?></span> half-days recorded</span>
     </div>
 
     <!-- Registry Profile -->
@@ -44,40 +44,79 @@ $status = $todayRow['status'] ?? 'absent';
             style="color: var(--color-accent);"><?= esc($employee['department'] ?? 'General Ops') ?></span>
     </div>
 
-    <!-- Monthly Hourglass (Extended) -->
-    <div class="stat-card" style="grid-column: span 6; border: 1px solid var(--color-accent); position: relative; overflow: hidden; display: flex; flex-direction: row; gap: 2rem; align-items: center; background: linear-gradient(135deg, #fff 0%, var(--color-accent-soft) 100%);">
-        <div style="position: absolute; top: -10px; right: -10px; width: 80px; height: 80px; background: var(--color-accent-soft); border-radius: 50%; z-index: 0;"></div>
+    <!-- Monthly Hours (Redesigned for Urgency) -->
+    <div class="stat-card" style="grid-column: span 6; border: 1px solid var(--color-border); position: relative; overflow: hidden; display: flex; flex-direction: row; gap: 2rem; align-items: center; background: var(--color-surface);">
+        <div style="position: absolute; top: -10px; right: -10px; width: 80px; height: 80px; background: var(--color-surface-muted); border-radius: 50%; z-index: 0;"></div>
         
         <div style="flex: 1; position: relative; z-index: 1;">
-            <span class="stat-label">Monthly Hourglass</span>
+            <span class="stat-label">Work Done</span>
             <div style="display: flex; gap: 0.75rem; align-items: baseline; margin-bottom: 0.25rem;">
-                <span class="stat-value"><?= esc($totalHoursMonth) ?>h</span>
+                <span class="stat-value" style="color: var(--color-text);"><span id="stat-logged-hours"><?= esc($totalHoursMonth) ?></span>h</span>
                 <span class="text-muted" style="font-size: 0.875rem;">logged</span>
             </div>
             
             <div style="margin-top: 0.75rem; height: 8px; background: var(--color-surface-muted); border-radius: 4px; overflow: hidden;">
                 <?php $monthProgress = min(($totalHoursMonth / $requiredHoursMonth) * 100, 100); ?>
-                <div style="height: 100%; width: <?= $monthProgress ?>%; background: linear-gradient(90deg, var(--color-accent) 0%, #6366f1 100%); border-radius: 4px;"></div>
+                <div id="stat-progress-bar" style="height: 100%; width: <?= $monthProgress ?>%; background: var(--color-primary); border-radius: 4px; transition: width 0.5s ease;"></div>
             </div>
             
             <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-accent); text-transform: uppercase;"><?= round($monthProgress) ?>% Completed</span>
+                <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-dim); text-transform: uppercase;"><span id="stat-progress-percent"><?= round($monthProgress) ?></span>% Completed</span>
                 <span style="font-size: 0.7rem; font-weight: 600; color: var(--color-text-dim);">Goal: <?= esc($requiredHoursMonth) ?>h</span>
             </div>
         </div>
 
         <div style="width: 1px; height: 70%; background: var(--color-border); position: relative; z-index: 1;"></div>
 
-        <div style="flex: 0 0 auto; text-align: center; position: relative; z-index: 1; padding-right: 0.5rem;">
+        <div style="flex: 0 0 auto; text-align: center; position: relative; z-index: 1; padding-right: 2rem;">
             <?php $remainingHours = max(0, $requiredHoursMonth - $totalHoursMonth); ?>
             <span class="stat-label" style="color: var(--color-error);">Remaining</span>
             <div style="font-size: 2.25rem; font-weight: 800; color: var(--color-error); line-height: 1; margin: 0.25rem 0;">
-                <?= round($remainingHours, 1) ?>h
+                <span id="stat-remaining-hours"><?= round($remainingHours, 1) ?></span>h
             </div>
-            <span style="font-size: 0.65rem; font-weight: 600; color: var(--color-text-dim); text-transform: uppercase;">To reach goal</span>
+            <span style="font-size: 0.65rem; font-weight: 600; color: var(--color-text-dim); text-transform: uppercase;">To complete monthly goal</span>
         </div>
     </div>
 </div>
+
+<script>
+    function refreshPersonalStats() {
+        const base = (window.siteUrl || '').replace(/\/$/, '');
+        fetch(base + '/api/dashboard/personal-summary', {
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(res => res.json())
+        .then(response => {
+            if (response.status === 'success') {
+                const data = response.data;
+                const elPresent = document.getElementById('stat-present-count');
+                if (elPresent) elPresent.textContent = data.counts.present;
+                
+                const elTotalDays = document.getElementById('stat-total-days');
+                if (elTotalDays) elTotalDays.textContent = data.counts.present + data.counts.absent + data.counts.half_day;
+                
+                const elHalfDay = document.getElementById('stat-halfday-count');
+                if (elHalfDay) elHalfDay.textContent = data.counts.half_day;
+                
+                const elLogged = document.getElementById('stat-logged-hours');
+                if (elLogged) elLogged.textContent = data.totalHoursMonth;
+                
+                const elProgress = document.getElementById('stat-progress-bar');
+                if (elProgress) elProgress.style.width = data.monthProgress + '%';
+                
+                const elPercent = document.getElementById('stat-progress-percent');
+                if (elPercent) elPercent.textContent = Math.round(data.monthProgress);
+                
+                const elRemaining = document.getElementById('stat-remaining-hours');
+                if (elRemaining) elRemaining.textContent = data.remainingHours.toFixed(1);
+            }
+        })
+        .catch(err => console.error('[Dashboard Refresh] Error:', err));
+    }
+
+    // Refresh every 30 seconds
+    setInterval(refreshPersonalStats, 30000);
+</script>
 
 <div class="card">
     <div class="card-header">

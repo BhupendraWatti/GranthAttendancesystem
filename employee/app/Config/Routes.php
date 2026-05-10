@@ -59,6 +59,13 @@ $routes->group('', ['filter' => 'employeeAuth'], function ($routes) {
     // Documents
     $routes->get('documents', 'Documents::index');
     $routes->get('documents/download/(:any)/(:num)', 'Documents::download/$1/$2');
+
+    // API Routes
+    $routes->group('api', ['namespace' => 'App\Controllers\Api'], function ($routes) {
+        $routes->get('dashboard/personal-summary', 'DashboardController::personalSummary');
+        $routes->get('dashboard/summary', 'DashboardController::summary');
+        $routes->get('dashboard/attendance', 'DashboardController::attendance');
+    });
 });
 
 /*
