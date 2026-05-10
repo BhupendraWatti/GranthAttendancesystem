@@ -168,14 +168,14 @@ class LeaveService
     }
 
     /**
-     * Auto-credit balance (Unified 4 days)
+     * Auto-credit balance (Unified 12 days)
      */
     private function ensureLeaveBalance(string $empCode, string $leaveType): void
     {
         // We only care about unified_leave now
         $existing = $this->leaveBalanceModel->getBalance($empCode, 'unified_leave');
         if (!$existing) {
-            $total = 4.0; 
+            $total = 12.0; 
             $this->leaveBalanceModel->insert([
                 'emp_code' => $empCode,
                 'leave_type' => 'unified_leave',
@@ -209,10 +209,15 @@ class LeaveService
             // Upsert attendance record
             $existing = $this->attendanceModel->where('emp_code', $request['emp_code'])->where('date', $ymd)->first();
 
+            $status = 'leave';
+            if (($request['leave_type'] ?? '') === 'comp_off') {
+                $status = 'comp_off';
+            }
+
             $data = [
                 'emp_code' => $request['emp_code'],
                 'date' => $ymd,
-                'status' => 'leave',
+                'status' => $status,
                 'raw_data' => json_encode(['leave_type' => $request['leave_type'], 'request_id' => $request['id']]),
             ];
 

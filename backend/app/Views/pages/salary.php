@@ -155,7 +155,7 @@ $currency = '₹';
     <div
         style="padding: 1rem 1.5rem; background: var(--color-surface-muted); border-top: 1px solid var(--color-border);">
         <p style="font-size: 0.75rem; color: var(--color-text-dim); font-weight: 500;">
-            Ledger calculation logic: <code>Net = (Logged Minutes / Expected Minutes) * Base Salary</code>. Verified
+            Ledger calculation logic: <code>Net = (Base Salary / 30) * Effective Days</code>. Verified
             against registry snapshots.
         </p>
     </div>

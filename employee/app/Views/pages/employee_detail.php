@@ -251,8 +251,9 @@
                         <table>
                             <tr><td><strong>Total Work Hours</strong></td><td class="font-mono"><?php $m=$sal['total_work_minutes']??0;echo floor($m/60).'h '.($m%60).'m'; ?></td></tr>
                             <tr><td><strong>Total Late Minutes</strong></td><td class="font-mono"><?= esc($sal['total_late_minutes'] ?? 0) ?> min</td></tr>
-                            <tr><td><strong>Expected Working Days</strong></td><td class="font-mono"><?= esc(env('WORKING_DAYS_PER_MONTH', 23)) ?></td></tr>
-                            <tr><td><strong>Effective Days</strong></td><td class="font-mono"><?= ($sal['present_days'] ?? 0) + (($sal['half_days'] ?? 0) * 0.5) ?> days</td></tr>
+                            <tr><td><strong>Expected Working Days</strong></td><td class="font-mono"><?= esc(env('MONTHLY_WORKING_DAYS', 24)) ?></td></tr>
+                            <tr><td><strong>Effective Days</strong></td><td class="font-mono"><?= ($sal['present_days'] ?? 0) + (($sal['half_days'] ?? 0) * 0.5) + ($sal['leave_days'] ?? 0) + ($sal['holiday_days'] ?? 0) + ($sal['comp_off_days'] ?? 0) ?> days</td></tr>
+
                         </table>
                     </div>
                 </div>

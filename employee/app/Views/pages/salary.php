@@ -151,8 +151,9 @@ $currency = '₹';
         <div class="card-footer">
             <small class="text-muted">
                 Showing <?= count($salaryData) ?> employees ·
-                Formula: salary = (actual_minutes ÷ expected_minutes) × monthly_salary ·
-                Expected: <?= esc(env('WORKING_DAYS_PER_MONTH', 23)) ?> working days/month
+                Formula: Net = (Base Salary / <?= esc(env('SALARY_BASE_DAYS', 30)) ?>) * Effective Days ·
+                Expected: <?= esc(env('MONTHLY_WORKING_DAYS', 24)) ?> working days/month
+
             </small>
         </div>
     <?php endif; ?>

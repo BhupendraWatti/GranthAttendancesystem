@@ -17,6 +17,9 @@ $presentDays = 0;
 $absentDays = 0;
 $halfDays = 0;
 $lateDays = 0;
+$holidayDays = 0;
+$leaveDays = 0;
+$compOffDays = 0;
 $totalWorkMin = 0;
 $totalDays = count($attendanceRecords ?? []);
 foreach (($attendanceRecords ?? []) as $r) {
@@ -26,11 +29,19 @@ foreach (($attendanceRecords ?? []) as $r) {
         $absentDays++;
     elseif ($r['status'] === 'half_day')
         $halfDays++;
+    elseif ($r['status'] === 'holiday')
+        $holidayDays++;
+    elseif ($r['status'] === 'leave')
+        $leaveDays++;
+    elseif ($r['status'] === 'comp_off')
+        $compOffDays++;
+
     if (($r['late_minutes'] ?? 0) > 0)
         $lateDays++;
     $totalWorkMin += (int) ($r['work_minutes'] ?? 0);
 }
 $avgWorkHours = $presentDays > 0 ? round($totalWorkMin / $presentDays / 60, 1) : 0;
+$effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + $compOffDays;
 ?>
 
 <div class="page-header animate-in">
@@ -288,7 +299,7 @@ $avgWorkHours = $presentDays > 0 ? round($totalWorkMin / $presentDays / 60, 1) :
                             <div class="stat-info">
                                 <span class="label">Handled Days</span>
                                 <span
-                                    class="value"><?= ($salarySummary['present_days'] ?? 0) + (($salarySummary['half_days'] ?? 0) * 0.5) ?></span>
+                                    class="value"><?= ($salarySummary['effective_days'] ?? 0) ?></span>
                             </div>
                         </div>
                         <div class="stat-card" style="background: var(--color-surface-muted); border: none;">

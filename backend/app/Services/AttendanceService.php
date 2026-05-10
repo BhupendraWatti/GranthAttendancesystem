@@ -150,12 +150,17 @@ class AttendanceService
         $requiredMinutes = $this->getRequiredMinutes($employeeType);
         $punchCount = count($punches);
 
-        // No punches → Check for approved Leave before marking Absent
+        // No punches → Check for approved Leave/Comp-off before marking Absent
         if ($punchCount === 0) {
             $leave = $this->leaveRequestModel->where('emp_code', $empCode)
                 ->where('status', 'approved')
                 ->where("'{$date}' BETWEEN from_date AND to_date")
                 ->first();
+
+            $status = 'absent';
+            if ($leave) {
+                $status = ($leave['leave_type'] === 'comp_off') ? 'comp_off' : 'leave';
+            }
 
             return [
                 'emp_code'         => $empCode,
@@ -164,7 +169,7 @@ class AttendanceService
                 'last_out'         => null,
                 'work_minutes'     => 0,
                 'late_minutes'     => 0,
-                'status'           => $leave ? 'leave' : 'absent',
+                'status'           => $status,
                 'punch_count'      => 0,
                 'employee_type'    => $employeeType,
                 'required_minutes' => $requiredMinutes,
@@ -364,6 +369,10 @@ class AttendanceService
                 case 'holiday':
                     if (!isset($byEmployee[$empCode]['holiday_days'])) $byEmployee[$empCode]['holiday_days'] = 0;
                     $byEmployee[$empCode]['holiday_days']++;
+                    break;
+                case 'comp_off':
+                    if (!isset($byEmployee[$empCode]['comp_off_days'])) $byEmployee[$empCode]['comp_off_days'] = 0;
+                    $byEmployee[$empCode]['comp_off_days']++;
                     break;
             }
 

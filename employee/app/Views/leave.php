@@ -96,6 +96,7 @@
                         <select name="leave_type" class="form-input" required>
                             <option value="sick_leave">Paid Leave</option>
                             <option value="other_leave">Unpaid Leave</option>
+                            <option value="comp_off">Comp-off</option>
                         </select>
                     </div>
 
