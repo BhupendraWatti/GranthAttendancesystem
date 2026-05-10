@@ -52,7 +52,7 @@ class Dashboard extends BaseController
         $requiredHoursMonth = $workingDays * 8;
         $totalHoursMonth = round($totalMinutesMonth / 60, 2);
 
-        $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0];
+        $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];
         foreach ($monthRows as $r) {
             $status = $r['status'] ?? '';
             if (isset($counts[$status])) {

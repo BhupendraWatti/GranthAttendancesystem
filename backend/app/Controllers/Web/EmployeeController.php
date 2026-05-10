@@ -181,4 +181,61 @@ class EmployeeController extends BaseController
             return redirect()->back()->with('error', 'Failed to update email.');
         }
     }
+
+    /**
+     * POST /employees/attendance — Update employee attendance manually
+     */
+    public function updateAttendance()
+    {
+        $empCode = $this->request->getPost('emp_code');
+        $date = $this->request->getPost('date');
+        $status = $this->request->getPost('status');
+        $firstIn = $this->request->getPost('first_in') ?: null;
+        $lastOut = $this->request->getPost('last_out') ?: null;
+
+        if (empty($empCode) || empty($date) || empty($status)) {
+            return redirect()->back()->with('error', 'Employee code, date, and status are required.');
+        }
+
+        try {
+            $attendanceModel = new AttendanceDailyModel();
+            
+            // Calculate work minutes if times are provided
+            $workMinutes = 0;
+            if ($firstIn && $lastOut) {
+                $inTime = strtotime($date . ' ' . $firstIn);
+                $outTime = strtotime($date . ' ' . $lastOut);
+                if ($outTime > $inTime) {
+                    $workMinutes = round(($outTime - $inTime) / 60);
+                }
+            } else if ($status === 'work_from_home') {
+                $workMinutes = 480; // 8 hours default for WFH
+            } else if ($status === 'half_day') {
+                $workMinutes = 240; // 4 hours default
+            } else if ($status === 'present') {
+                $workMinutes = 480;
+            }
+
+            // Format times for DB if provided
+            $formattedFirstIn = $firstIn ? $date . ' ' . $firstIn . ':00' : null;
+            $formattedLastOut = $lastOut ? $date . ' ' . $lastOut . ':00' : null;
+
+            $data = [
+                'emp_code' => $empCode,
+                'date' => $date,
+                'first_in' => $formattedFirstIn,
+                'last_out' => $formattedLastOut,
+                'status' => $status,
+                'work_minutes' => $workMinutes,
+                'punch_count' => ($firstIn || $lastOut) ? 2 : 0, 
+            ];
+
+            $attendanceModel->upsertAttendance($data);
+
+            return redirect()->back()->with('success', 'Attendance record for ' . $date . ' updated successfully.');
+        } catch (\Throwable $e) {
+            log_message('error', '[Web\\EmployeeController] updateAttendance error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update attendance.');
+        }
+    }
 }

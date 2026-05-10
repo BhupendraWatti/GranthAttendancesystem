@@ -52,6 +52,14 @@
 
     <div class="stat-card">
         <div class="stat-info">
+            <span class="label">Work From Home</span>
+            <span class="value" id="stat-wfh-today" style="color: #6366f1;"><?= esc((string) ($wfh_today ?? 0)) ?></span>
+        </div>
+        <div class="stat-icon" style="color: #6366f1;"><i class="fa-solid fa-house-laptop"></i></div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-info">
             <span class="label">Absent / Leave</span>
             <span class="value" id="stat-absent-today"><?= esc((string) ($absent_today ?? 0)) ?></span>
             <div style="font-size: 0.7rem; margin-top: 0.5rem; color: var(--color-text-dim);" id="stat-halfday-note">

@@ -11,11 +11,20 @@ $status = $todayRow['status'] ?? 'absent';
     <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2 class="font-display">Welcome, <?= esc($name) ?></h2>
         <div
-            style="display: flex; align-items: center; gap: 0.5rem; background: var(--color-surface); padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
-            <div
-                style="width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); animation: pulse 2s infinite;">
+            style="display: flex; align-items: center; gap: 0.75rem; background: var(--color-surface); padding: 0.5rem 1.25rem; border-radius: 999px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+            <?php 
+                $dotColor = 'var(--color-danger)';
+                if ($status === 'present') $dotColor = 'var(--color-success)';
+                elseif ($status === 'work_from_home') $dotColor = '#6366f1';
+                elseif ($status === 'half_day') $dotColor = 'var(--color-warning)';
+            ?>
+            <div id="stat-status-dot"
+                style="width: 10px; height: 10px; border-radius: 50%; background: <?= $dotColor ?>; animation: pulse 2s infinite;">
             </div>
-            <span style="font-size: 0.8125rem; font-weight: 600;"><?= date('l, d M Y') ?></span>
+            <div style="display: flex; flex-direction: column;">
+                <span style="font-size: 0.8125rem; font-weight: 800; color: var(--color-primary); line-height: 1.2;"><?= date('l, d M') ?></span>
+                <span id="stat-status-text" style="font-size: 0.65rem; font-weight: 700; color: <?= $dotColor ?>; text-transform: uppercase; letter-spacing: 0.05em;"><?= str_replace('_', ' ', $status) ?></span>
+            </div>
         </div>
     </div>
 </div>
@@ -25,12 +34,17 @@ $status = $todayRow['status'] ?? 'absent';
     <div class="stat-card" style="grid-column: span 3;">
         <span class="stat-label">Monthly Presence</span>
         <div style="display: flex; align-items: baseline; gap: 0.5rem;">
-            <span class="stat-value" id="stat-present-count"><?= (int) ($counts['present'] ?? 0) ?></span>
+            <span class="stat-value" id="stat-present-count"><?= (int) (($counts['present'] ?? 0) + ($counts['work_from_home'] ?? 0)) ?></span>
             <span class="text-muted" style="font-size: 0.875rem;">/
-                <span id="stat-total-days"><?= (int) (($counts['present'] ?? 0) + ($counts['absent'] ?? 0) + ($counts['half_day'] ?? 0)) ?></span> days
+                <span id="stat-total-days"><?= (int) (($counts['present'] ?? 0) + ($counts['absent'] ?? 0) + ($counts['half_day'] ?? 0) + ($counts['work_from_home'] ?? 0)) ?></span> days
             </span>
         </div>
-        <span class="stat-sub" style="color: var(--color-warning);"><span id="stat-halfday-count"><?= (int) ($counts['half_day'] ?? 0) ?></span> half-days recorded</span>
+        <div style="display: flex; flex-direction: column; gap: 0.125rem;">
+            <span class="stat-sub" style="color: var(--color-warning);"><span id="stat-halfday-count"><?= (int) ($counts['half_day'] ?? 0) ?></span> half-days recorded</span>
+            <?php if (($counts['work_from_home'] ?? 0) > 0): ?>
+                <span class="stat-sub" style="color: #6366f1; font-weight: 700;"><span id="stat-wfh-count"><?= (int) ($counts['work_from_home']) ?></span> remote sessions</span>
+            <?php endif; ?>
+        </div>
     </div>
 
     <!-- Registry Profile -->
@@ -90,10 +104,13 @@ $status = $todayRow['status'] ?? 'absent';
             if (response.status === 'success') {
                 const data = response.data;
                 const elPresent = document.getElementById('stat-present-count');
-                if (elPresent) elPresent.textContent = data.counts.present;
+                if (elPresent) elPresent.textContent = data.counts.present + (data.counts.work_from_home || 0);
                 
+                const elWfh = document.getElementById('stat-wfh-count');
+                if (elWfh) elWfh.textContent = data.counts.work_from_home || 0;
+
                 const elTotalDays = document.getElementById('stat-total-days');
-                if (elTotalDays) elTotalDays.textContent = data.counts.present + data.counts.absent + data.counts.half_day;
+                if (elTotalDays) elTotalDays.textContent = data.counts.present + data.counts.absent + data.counts.half_day + (data.counts.work_from_home || 0);
                 
                 const elHalfDay = document.getElementById('stat-halfday-count');
                 if (elHalfDay) elHalfDay.textContent = data.counts.half_day;
@@ -109,6 +126,21 @@ $status = $todayRow['status'] ?? 'absent';
                 
                 const elRemaining = document.getElementById('stat-remaining-hours');
                 if (elRemaining) elRemaining.textContent = data.remainingHours.toFixed(1);
+
+                // Update Status Header
+                const elDot = document.getElementById('stat-status-dot');
+                const elTxt = document.getElementById('stat-status-text');
+                if (elDot && elTxt) {
+                    const st = data.todayStatus;
+                    let color = 'var(--color-danger)';
+                    if (st === 'present') color = 'var(--color-success)';
+                    else if (st === 'work_from_home') color = '#6366f1';
+                    else if (st === 'half_day') color = 'var(--color-warning)';
+                    
+                    elDot.style.background = color;
+                    elTxt.style.color = color;
+                    elTxt.textContent = st.replace('_', ' ');
+                }
             }
         })
         .catch(err => console.error('[Dashboard Refresh] Error:', err));

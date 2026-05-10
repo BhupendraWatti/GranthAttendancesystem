@@ -58,7 +58,7 @@
                                     style="font-size: 0.9375rem; font-weight: <?= $st ? '700' : '400' ?>; color: <?= $st ? 'var(--color-primary)' : 'var(--color-text-dim)' ?>;"><?= $dayNum ?></span>
                                 <?php if ($st): ?>
                                     <div
-                                        style="width: 4px; height: 4px; border-radius: 50%; background: <?= $st === 'present' ? 'var(--color-success)' : ($st === 'half_day' ? 'var(--color-warning)' : 'var(--color-error)') ?>; margin-top: 0.25rem;">
+                                        style="width: 4px; height: 4px; border-radius: 50%; background: <?= $st === 'present' ? 'var(--color-success)' : ($st === 'work_from_home' ? '#6366f1' : ($st === 'half_day' ? 'var(--color-warning)' : 'var(--color-error)')) ?>; margin-top: 0.25rem;">
                                     </div>
                                 <?php endif; ?>
                             </div>
@@ -116,7 +116,7 @@
             </div>
             <div class="card-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <?php
-                $summaryCounts = ['present' => 0, 'half_day' => 0, 'absent' => 0];
+                $summaryCounts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];
                 foreach ($rows as $r)
                     if (isset($summaryCounts[$r['status']]))
                         $summaryCounts[$r['status']]++;
@@ -126,6 +126,12 @@
                     <span style="font-size: 0.8125rem; font-weight: 600; color: #166534;">Present Days</span>
                     <span
                         style="font-size: 1.25rem; font-weight: 700; color: #166534;"><?= $summaryCounts['present'] ?></span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #EEF2FF; border-radius: 8px;">
+                    <span style="font-size: 0.8125rem; font-weight: 600; color: #4338CA;">Work from Home</span>
+                    <span
+                        style="font-size: 1.25rem; font-weight: 700; color: #4338CA;"><?= $summaryCounts['work_from_home'] ?></span>
                 </div>
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #FFFBEB; border-radius: 8px;">
@@ -153,14 +159,6 @@
                         <span style="color: var(--color-accent); font-weight: 700;">&bull;</span>
                         <span>Service requirement: 8.0 hours per service day.</span>
                     </li>
-                    <!-- <li style="display: flex; gap: 0.75rem;">
-                        <span style="color: var(--color-accent); font-weight: 700;">&bull;</span>
-                        <span>Partial attendance: 4.0 to 8.0 hours.</span>
-                    </li>
-                    <li style="display: flex; gap: 0.75rem;">
-                        <span style="color: var(--color-accent); font-weight: 700;">&bull;</span>
-                        <span>Threshold for tardiness: Service start + 15 minutes.</span>
-                    </li> -->
                 </ul>
             </div>
         </div>

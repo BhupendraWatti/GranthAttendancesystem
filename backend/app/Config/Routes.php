@@ -48,6 +48,7 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
     $routes->get('employees', 'EmployeeController::index');
     $routes->post('employees/salary', 'EmployeeController::updateSalary');
     $routes->post('employees/email', 'EmployeeController::updateEmail');
+    $routes->post('employees/attendance', 'EmployeeController::updateAttendance');
     $routes->get('employees/(:segment)', 'EmployeeController::show/$1');
 
     // Salary
@@ -60,6 +61,7 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
     // Documents
     $routes->group('documents', function ($routes) {
         $routes->get('employee', 'DocumentsController::employee');
+        $routes->get('credentials', 'DocumentsController::credentials');
         $routes->get('company', 'DocumentsController::company');
         $routes->post('upload/employee', 'DocumentsController::uploadEmployee');
         $routes->post('upload/company', 'DocumentsController::uploadCompany');

@@ -260,6 +260,7 @@ tr:last-child td {
 .badge--present { background: #DCFCE7; color: #166534; }
 .badge--absent { background: #FEE2E2; color: #991B1B; }
 .badge--half_day { background: #FEF3C7; color: #92400E; }
+.badge--work_from_home { background: #EEF2FF; color: #4338CA; }
 
 /* Buttons */
 .btn {

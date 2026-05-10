@@ -25,22 +25,43 @@ class DocumentsController extends BaseController
     }
 
     /**
-     * Employee Documents Management Page
+     * Employee Documents Management Page (Core)
      */
     public function employee()
     {
         $data = [
-            'pageTitle'  => 'Employee Documents',
+            'pageTitle'  => 'Core Employee Documents',
             'activePage' => 'documents',
             'employees'  => $this->employeeModel->getActive(),
             'documents'  => $this->employeeDocModel
                 ->select('employee_documents.*, employees.name as employee_name')
                 ->join('employees', 'employees.emp_code = employee_documents.emp_code')
+                ->whereIn('document_type', ['joining', 'offer', 'incentive', 'id_proof', 'performance', 'contract'])
                 ->orderBy('created_at', 'DESC')
                 ->findAll(),
         ];
 
         return view('pages/documents_employee', $data);
+    }
+
+    /**
+     * Employee Credentials Management Page (Other Files)
+     */
+    public function credentials()
+    {
+        $data = [
+            'pageTitle'  => 'Employee Credentials',
+            'activePage' => 'credentials',
+            'employees'  => $this->employeeModel->getActive(),
+            'documents'  => $this->employeeDocModel
+                ->select('employee_documents.*, employees.name as employee_name')
+                ->join('employees', 'employees.emp_code = employee_documents.emp_code')
+                ->whereNotIn('document_type', ['joining', 'offer', 'incentive', 'id_proof', 'performance', 'contract'])
+                ->orderBy('created_at', 'DESC')
+                ->findAll(),
+        ];
+
+        return view('pages/documents_credentials', $data);
     }
 
     /**

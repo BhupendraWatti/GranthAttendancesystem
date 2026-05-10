@@ -31,6 +31,7 @@ class Attendance extends BaseController
             'byDate' => $byDate,
             'daysInMonth' => $daysInMonth,
             'firstDow' => $firstDow,
+            'empCode' => $empCode,
         ]);
     }
 }

@@ -16,6 +16,7 @@ $currentMonthName = date('F Y', mktime(0, 0, 0, $month ?? date('n'), 1, $year ??
 $presentDays = 0;
 $absentDays = 0;
 $halfDays = 0;
+$wfhDays = 0;
 $lateDays = 0;
 $holidayDays = 0;
 $leaveDays = 0;
@@ -29,6 +30,8 @@ foreach (($attendanceRecords ?? []) as $r) {
         $absentDays++;
     elseif ($r['status'] === 'half_day')
         $halfDays++;
+    elseif ($r['status'] === 'work_from_home')
+        $wfhDays++;
     elseif ($r['status'] === 'holiday')
         $holidayDays++;
     elseif ($r['status'] === 'leave')
@@ -40,8 +43,8 @@ foreach (($attendanceRecords ?? []) as $r) {
         $lateDays++;
     $totalWorkMin += (int) ($r['work_minutes'] ?? 0);
 }
-$avgWorkHours = $presentDays > 0 ? round($totalWorkMin / $presentDays / 60, 1) : 0;
-$effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + $compOffDays;
+$avgWorkHours = ($presentDays + $wfhDays) > 0 ? round($totalWorkMin / ($presentDays + $wfhDays) / 60, 1) : 0;
+$effectiveDays = $presentDays + $wfhDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + $compOffDays;
 ?>
 
 <div class="page-header animate-in">
@@ -133,9 +136,12 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
                             <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
                                 <div class="stat-info">
                                     <span class="label">Presence Ratio</span>
-                                    <span class="value"><?= $presentDays ?> <small
+                                    <span class="value"><?= $presentDays + $wfhDays ?> <small
                                             style="font-size: 1rem; color: var(--color-text-dim);">/ <?= $totalDays ?>
                                             DAYS</small></span>
+                                    <?php if ($wfhDays > 0): ?>
+                                        <div style="font-size: 0.65rem; color: #6366f1; font-weight: 700; margin-top: 0.25rem;">INCL. <?= $wfhDays ?> REMOTE SESSIONS</div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
@@ -159,7 +165,9 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
                             <?php $perc = $totalDays > 0 ? round($presentDays / $totalDays * 100) : 0; ?>
                             <div
                                 style="height: 12px; background: var(--color-surface-muted); border-radius: 6px; overflow: hidden; display: flex;">
-                                <div style="width: <?= $perc ?>%; background: var(--color-success);" title="Present">
+                                <div style="width: <?= $totalDays > 0 ? round($presentDays / $totalDays * 100) : 0 ?>%; background: var(--color-success);" title="Present">
+                                </div>
+                                <div style="width: <?= $totalDays > 0 ? round($wfhDays / $totalDays * 100) : 0 ?>%; background: #6366f1;" title="Work From Home">
                                 </div>
                                 <div style="width: <?= $totalDays > 0 ? round($halfDays / $totalDays * 100) : 0 ?>%; background: var(--color-warning);"
                                     title="Half Day"></div>
@@ -172,6 +180,11 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
                                     <div
                                         style="width: 8px; height: 8px; border-radius: 2px; background: var(--color-success);">
                                     </div> PRESENT
+                                </span>
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div
+                                        style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1;">
+                                    </div> WFH
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                                     <div
@@ -243,6 +256,7 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
                                 <th>Logged Hours</th>
                                 <th>Registry Status</th>
                                 <th>Tardiness</th>
+                                <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -268,6 +282,16 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
                                         <?php else: ?>
                                             <span class="text-muted" style="font-size: 0.8125rem;">Handled.</span>
                                         <?php endif; ?>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <button class="btn btn-outline edit-attendance-btn" 
+                                            style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                                            data-date="<?= esc($rec['date']) ?>"
+                                            data-status="<?= esc($rec['status']) ?>"
+                                            data-in="<?= $rec['first_in'] ? date('H:i', strtotime($rec['first_in'])) : '' ?>"
+                                            data-out="<?= $rec['last_out'] ? date('H:i', strtotime($rec['last_out'])) : '' ?>">
+                                            <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
+                                        </button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -469,8 +493,59 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
     </div>
 </div>
 
-<!-- Upload Modal -->
-<div id="upload-modal" class="modal-overlay">
+<!-- Edit Attendance Modal -->
+<div id="edit-attendance-modal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Manual Attendance Edit</h3>
+                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;" id="edit-date-display"></p>
+            </div>
+            <button onclick="document.getElementById('edit-attendance-modal').classList.remove('active')" class="modal-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form action="<?= site_url('employees/attendance') ?>" method="POST">
+                <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
+                <input type="hidden" name="date" id="edit-date-input">
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="form-label">Check In</label>
+                        <input type="time" name="first_in" id="edit-in-input" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Check Out</label>
+                        <input type="time" name="last_out" id="edit-out-input" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group mb-6">
+                    <label class="form-label">Attendance Status</label>
+                    <select name="status" id="edit-status-input" class="form-input" required>
+                        <option value="present">Present</option>
+                        <option value="absent">Absent</option>
+                        <option value="half_day">Half Day</option>
+                        <option value="work_from_home">Work from Home</option>
+                    </select>
+                    <small class="text-muted mt-1 block" style="font-size: 0.75rem;">WFH defaults to 8 full working hours if no times are set.</small>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="document.getElementById('edit-attendance-modal').classList.remove('active')"
+                        class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; gap: 0.5rem; background: var(--color-accent); border-color: var(--color-accent);">
+                        <i class="fa-solid fa-check-double"></i>
+                        Commit Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal --><div id="upload-modal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
             <div>
@@ -688,6 +763,11 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
         font-weight: 600;
     }
 
+    .badge--work_from_home {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+    }
+
     .file-input {
         position: absolute;
         inset: 0;
@@ -762,6 +842,32 @@ $effectiveDays = $presentDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + 
             document.querySelectorAll('.tab-trigger, .tab-pane').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
             document.getElementById(btn.dataset.target).classList.add('active');
+        });
+    });
+
+    // Attendance Manual Edit Logic
+    const editBtns = document.querySelectorAll('.edit-attendance-btn');
+    const editModal = document.getElementById('edit-attendance-modal');
+    const editDateDisplay = document.getElementById('edit-date-display');
+    const editDateInput = document.getElementById('edit-date-input');
+    const editInInput = document.getElementById('edit-in-input');
+    const editOutInput = document.getElementById('edit-out-input');
+    const editStatusInput = document.getElementById('edit-status-input');
+
+    editBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const date = btn.getAttribute('data-date');
+            const status = btn.getAttribute('data-status');
+            const inTime = btn.getAttribute('data-in');
+            const outTime = btn.getAttribute('data-out');
+
+            editDateDisplay.textContent = 'Updating records for ' + date;
+            editDateInput.value = date;
+            editInInput.value = inTime;
+            editOutInput.value = outTime;
+            editStatusInput.value = status;
+
+            editModal.classList.add('active');
         });
     });
 

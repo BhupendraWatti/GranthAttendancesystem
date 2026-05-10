@@ -9,19 +9,25 @@
     <h2 class="font-display">Corporate Documents</h2>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+
+    <?php 
+        $coreTypes = ['joining', 'offer', 'contract', 'id_proof', 'performance', 'incentive'];
+        $personalDocs = array_filter($employeeDocuments, fn($d) => in_array($d['document_type'], $coreTypes));
+        $otherDocs = array_filter($employeeDocuments, fn($d) => !in_array($d['document_type'], $coreTypes));
+    ?>
 
     <!-- Personal Documents -->
     <div class="card">
         <div class="card-header">
-            <h3>Employee Files</h3>
+            <h3>Personal Files</h3>
             <span class="text-muted" style="font-size: 0.75rem;">Private archives</span>
         </div>
 
         <div class="card-body" style="padding: 0;">
             <div style="display: flex; flex-direction: column;">
-                <?php if (!empty($employeeDocuments)): ?>
-                    <?php foreach ($employeeDocuments as $doc): ?>
+                <?php if (!empty($personalDocs)): ?>
+                    <?php foreach ($personalDocs as $doc): ?>
                         <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;"
                             onmouseover="this.style.background='var(--color-surface-muted)'"
                             onmouseout="this.style.background='transparent'">
@@ -46,8 +52,49 @@
                     <div style="padding: 4rem 2rem; text-align: center;">
                         <span class="material-symbols-outlined"
                             style="font-size: 3rem; color: var(--color-border); margin-bottom: 1rem;">folder_open</span>
-                        <p class="text-muted" style="font-size: 0.875rem;">No employee documents discovered in the registry.
-                        </p>
+                        <p class="text-muted" style="font-size: 0.875rem;">No personal documents discovered.</p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- Other Documents -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Other Files</h3>
+            <span class="text-muted" style="font-size: 0.75rem;">Academic & Credentials</span>
+        </div>
+
+        <div class="card-body" style="padding: 0;">
+            <div style="display: flex; flex-direction: column;">
+                <?php if (!empty($otherDocs)): ?>
+                    <?php foreach ($otherDocs as $doc): ?>
+                        <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-border); display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;"
+                            onmouseover="this.style.background='var(--color-surface-muted)'"
+                            onmouseout="this.style.background='transparent'">
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div
+                                    style="width: 40px; height: 40px; border-radius: 8px; background: #FFF7ED; display: flex; align-items: center; justify-content: center; color: #F97316;">
+                                    <span class="material-symbols-outlined">school</span>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; font-weight: 600;"><?= esc($doc['title']) ?></div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">
+                                        <?= strtoupper(str_replace('_', ' ', $doc['document_type'])) ?></div>
+                                </div>
+                            </div>
+                            <a href="<?= site_url("documents/download/employee/{$doc['id']}") ?>" class="btn btn-outline"
+                                style="padding: 0.5rem; border-radius: 50%; min-width: 36px; height: 36px;">
+                                <span class="material-symbols-outlined" style="font-size: 1.25rem;">download</span>
+                            </a>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div style="padding: 4rem 2rem; text-align: center;">
+                        <span class="material-symbols-outlined"
+                            style="font-size: 3rem; color: var(--color-border); margin-bottom: 1rem;">badge</span>
+                        <p class="text-muted" style="font-size: 0.875rem;">No other files discovered.</p>
                     </div>
                 <?php endif; ?>
             </div>

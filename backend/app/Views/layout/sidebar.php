@@ -42,7 +42,13 @@ $methodName = service('router')->methodName();
         <a href="<?= site_url('documents/employee') ?>"
             class="<?= $activePage === 'documents' && $methodName === 'employee' ? 'active' : '' ?>">
             <i class="fa-solid fa-file-invoice nav-icon"></i>
-            Documents
+            Core Documents
+        </a>
+
+        <a href="<?= site_url('documents/credentials') ?>"
+            class="<?= $activePage === 'credentials' ? 'active' : '' ?>">
+            <i class="fa-solid fa-id-card-clip nav-icon"></i>
+            Employee Credentials
         </a>
 
         <a href="<?= site_url('documents/company') ?>"

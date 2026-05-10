@@ -122,7 +122,7 @@ class AttendanceDailyModel extends Model
                         ->groupBy('status')
                         ->findAll();
 
-        $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0];
+        $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];
         foreach ($results as $row) {
             $counts[$row['status']] = (int) $row['count'];
         }

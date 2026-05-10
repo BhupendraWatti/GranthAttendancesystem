@@ -42,13 +42,14 @@ class DashboardService
         $statusCounts = $this->attendanceModel->countByStatus($date);
         $lateCount    = $this->attendanceModel->countLate($date);
 
-        // Calculate absent (total active - present - half_day)
+        // Calculate counts
         $presentCount = $statusCounts['present'] ?? 0;
         $halfDayCount = $statusCounts['half_day'] ?? 0;
         $absentCount  = $statusCounts['absent'] ?? 0;
+        $wfhCount     = $statusCounts['work_from_home'] ?? 0;
 
         // If attendance hasn't been processed yet, everyone is absent
-        $processedCount = $presentCount + $halfDayCount + $absentCount;
+        $processedCount = $presentCount + $halfDayCount + $absentCount + $wfhCount;
         if ($processedCount === 0 && $totalEmployees > 0) {
             $absentCount = $totalEmployees;
         }
@@ -60,9 +61,10 @@ class DashboardService
             'present_today'    => $presentCount,
             'half_day_today'   => $halfDayCount,
             'absent_today'     => $absentCount,
+            'wfh_today'        => $wfhCount,
             'late_today'       => $lateCount,
             'attendance_rate'  => $totalEmployees > 0
-                ? round(($presentCount + $halfDayCount * 0.5) / $totalEmployees * 100, 1)
+                ? round(($presentCount + $wfhCount + $halfDayCount * 0.5) / $totalEmployees * 100, 1)
                 : 0,
         ];
     }
