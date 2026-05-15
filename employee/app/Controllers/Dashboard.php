@@ -39,17 +39,24 @@ class Dashboard extends BaseController
         }
         unset($r);
 
-        // Calculate required hours for the month
-        // Assuming 8 hours per day for all days except Sundays
+        // Calculate required hours for the month (TARGET TO DATE logic)
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $todayDay = (int)date('d');
+        
         $workingDays = 0;
-        for ($d = 1; $d <= $daysInMonth; $d++) {
+        $satCount = 0;
+        for ($d = 1; $d <= $todayDay; $d++) {
             $time = mktime(0, 0, 0, $month, $d, $year);
-            if (date('N', $time) != 7) { // 7 = Sunday
-                $workingDays++;
+            $dow = (int)date('w', $time);
+            
+            if ($dow === 0) continue; // Sunday OFF
+            if ($dow === 6) { // Saturday
+                $satCount++;
+                if ($satCount === 1 || $satCount === 3) continue; // 1st/3rd Sat OFF
             }
+            $workingDays++;
         }
-        $requiredHoursMonth = $workingDays * 8;
+        $requiredHoursMonth = $workingDays * 8.5;
         $totalHoursMonth = round($totalMinutesMonth / 60, 2);
 
         $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];

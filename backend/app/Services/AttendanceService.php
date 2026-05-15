@@ -62,10 +62,10 @@ class AttendanceService
         $this->holidayModel = new \App\Models\HolidayModel();
         $this->leaveRequestModel = new \App\Models\LeaveRequestModel();
 
-        $this->fullTimeMinutes = (int) env('FULL_TIME_PRESENT_MINUTES', 420);
+        $this->fullTimeMinutes = (int) env('FULL_TIME_PRESENT_MINUTES', 510);
         $this->internMinutes   = (int) env('INTERN_PRESENT_MINUTES', 330);
-        $this->fullTimeHalfDayMinutes = (int) env('FULL_TIME_HALF_DAY_MINUTES', 264);
-        $this->internHalfDayMinutes = (int) env('INTERN_HALF_DAY_MINUTES', 150);
+        $this->fullTimeHalfDayMinutes = (int) env('FULL_TIME_HALF_DAY_MINUTES', 255);
+        $this->internHalfDayMinutes = (int) env('INTERN_HALF_DAY_MINUTES', 165);
         $this->officeStartTime = env('OFFICE_START_TIME', '10:00');
     }
 

@@ -91,9 +91,12 @@ class AttendanceDailyModel extends Model
      */
     public function getMonthly(string $empCode, int $year, int $month): array
     {
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-t', strtotime($start));
+
         return $this->where('emp_code', $empCode)
-                    ->where('YEAR(date)', $year)
-                    ->where('MONTH(date)', $month)
+                    ->where('date >=', $start)
+                    ->where('date <=', $end)
                     ->orderBy('date', 'ASC')
                     ->findAll();
     }
@@ -103,10 +106,13 @@ class AttendanceDailyModel extends Model
      */
     public function getAllMonthly(int $year, int $month): array
     {
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-t', strtotime($start));
+
         return $this->select('attendance_daily.*, employees.name, employees.department, employees.salary')
                     ->join('employees', 'employees.emp_code = attendance_daily.emp_code', 'left')
-                    ->where('YEAR(attendance_daily.date)', $year)
-                    ->where('MONTH(attendance_daily.date)', $month)
+                    ->where('attendance_daily.date >=', $start)
+                    ->where('attendance_daily.date <=', $end)
                     ->orderBy('employees.name', 'ASC')
                     ->orderBy('attendance_daily.date', 'ASC')
                     ->findAll();
@@ -124,7 +130,10 @@ class AttendanceDailyModel extends Model
 
         $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];
         foreach ($results as $row) {
-            $counts[$row['status']] = (int) $row['count'];
+            $st = $row['status'];
+            if (isset($counts[$st])) {
+                $counts[$st] = (int) $row['count'];
+            }
         }
 
         return $counts;

@@ -65,6 +65,7 @@ $routes->group('', ['filter' => 'employeeAuth'], function ($routes) {
         $routes->get('dashboard/personal-summary', 'DashboardController::personalSummary');
         $routes->get('dashboard/summary', 'DashboardController::summary');
         $routes->get('dashboard/attendance', 'DashboardController::attendance');
+        $routes->post('sync/run', 'SyncController::run');
     });
 });
 

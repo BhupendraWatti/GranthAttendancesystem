@@ -209,7 +209,7 @@ class EmployeeController extends BaseController
                     $workMinutes = round(($outTime - $inTime) / 60);
                 }
             } else if ($status === 'work_from_home') {
-                $workMinutes = 480; // 8 hours default for WFH
+                $workMinutes = 510; // 8.5 hours default for WFH
             } else if ($status === 'half_day') {
                 $workMinutes = 240; // 4 hours default
             } else if ($status === 'present') {

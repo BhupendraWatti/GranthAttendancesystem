@@ -36,6 +36,9 @@ class LeaveController extends BaseController
             return redirect()->to('/login');
         }
 
+        // Ensure balances are initialized (2 Paid, 8 Unpaid)
+        $this->leaveService->initializeBalances($empCode);
+
         $data = [
             'pageTitle'    => 'Leave Management',
             'activePage'   => 'leave',

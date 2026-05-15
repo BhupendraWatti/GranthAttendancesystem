@@ -25,6 +25,11 @@ $status = $todayRow['status'] ?? 'absent';
                 <span style="font-size: 0.8125rem; font-weight: 800; color: var(--color-primary); line-height: 1.2;"><?= date('l, d M') ?></span>
                 <span id="stat-status-text" style="font-size: 0.65rem; font-weight: 700; color: <?= $dotColor ?>; text-transform: uppercase; letter-spacing: 0.05em;"><?= str_replace('_', ' ', $status) ?></span>
             </div>
+            <button id="manual-sync-btn" onclick="triggerManualSync()" title="Refresh Attendance Data"
+                style="margin-left: 0.5rem; background: none; border: none; padding: 0.25rem; cursor: pointer; color: var(--color-text-dim); display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                <span class="material-symbols-outlined" id="sync-icon" style="font-size: 1.25rem;">sync</span>
+            </button>
+            <span id="sync-success-msg" style="display: none; color: var(--color-success); font-size: 0.75rem; font-weight: 700; margin-left: 0.5rem; animation: fadeIn 0.3s ease;">Sync Successful!</span>
         </div>
     </div>
 </div>
@@ -146,8 +151,63 @@ $status = $todayRow['status'] ?? 'absent';
         .catch(err => console.error('[Dashboard Refresh] Error:', err));
     }
 
-    // Refresh every 30 seconds
+    function triggerManualSync() {
+        const btn = document.getElementById('manual-sync-btn');
+        const icon = document.getElementById('sync-icon');
+        const base = (window.siteUrl || '').replace(/\/$/, '');
+
+        if (btn.disabled) return;
+
+        // Start loading state
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        icon.classList.add('rotating');
+
+        fetch(base + '/api/sync/run', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ type: 'full' })
+        })
+        .then(res => res.json())
+        .then(response => {
+            if (response.status === 'success') {
+                // Show success text
+                const msg = document.getElementById('sync-success-msg');
+                if (msg) msg.style.display = 'inline';
+
+                // Auto refresh the entire page after 1.5 seconds
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                console.error('[Sync] Failed:', response.message);
+                alert('Sync failed. Please try again later.');
+                // End loading state immediately on failure
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                icon.classList.remove('rotating');
+            }
+        })
+        .catch(err => {
+            console.error('[Sync] Error:', err);
+            alert('Sync encountered an error.');
+            // End loading state immediately on error
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            icon.classList.remove('rotating');
+        });
+    }
+
+    // Refresh stats every 30 seconds
     setInterval(refreshPersonalStats, 30000);
+
+    // Full page auto-refresh every 5 minutes to keep session and layout fresh
+    setInterval(() => {
+        location.reload();
+    }, 300000);
 </script>
 
 <div class="card">
@@ -195,6 +255,20 @@ $status = $todayRow['status'] ?? 'absent';
 </div>
 
 <style>
+    .rotating {
+        animation: rotate 1.5s linear infinite;
+    }
+
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
     @keyframes pulse {
         0% {
             transform: scale(0.95);

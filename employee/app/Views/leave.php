@@ -20,22 +20,23 @@
                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                     <?php if (!empty($balances)): ?>
                         <?php foreach ($balances as $bal): ?>
-                            <?php if ($bal['leave_type'] !== 'unified_leave')
-                                continue; ?>
+                            <?php 
+                                $label = ($bal['leave_type'] === 'paid_leave') ? 'Monthly Paid Leave' : 'Unpaid Leave Balance';
+                                $color = ($bal['leave_type'] === 'paid_leave') ? 'var(--color-success)' : 'var(--color-warning)';
+                            ?>
                             <div>
                                 <div
                                     style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-                                    <span style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-main);">Total
-                                        Leave Balance</span>
+                                    <span style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-main);"><?= $label ?></span>
                                     <span
-                                        style="font-size: 0.875rem; font-weight: 700; color: var(--color-accent);"><?= esc($bal['remaining']) ?>
+                                        style="font-size: 0.875rem; font-weight: 700; color: <?= $color ?>;"><?= esc($bal['remaining']) ?>
                                         days left</span>
                                 </div>
                                 <div
                                     style="height: 6px; background: var(--color-surface-muted); border-radius: 3px; overflow: hidden;">
                                     <?php $percent = ($bal['total'] > 0) ? round(($bal['used'] / $bal['total']) * 100) : 0; ?>
                                     <div
-                                        style="height: 100%; width: <?= $percent ?>%; background: var(--color-accent); border-radius: 3px;">
+                                        style="height: 100%; width: <?= $percent ?>%; background: <?= $color ?>; border-radius: 3px;">
                                     </div>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-top: 0.375rem;">
@@ -67,7 +68,11 @@
                                 <div>
                                     <div style="font-size: 0.875rem; font-weight: 600;"><?= esc($h['title']) ?></div>
                                     <div class="text-muted" style="font-size: 0.75rem;">
-                                        <?= date('D, d M Y', strtotime($h['date'])) ?></div>
+                                        <?php 
+                                            $hTime = strtotime($h['date'] ?? '');
+                                            echo $hTime ? date('D, d M Y', $hTime) : '—';
+                                        ?>
+                                    </div>
                                 </div>
                                 <span class="badge"
                                     style="background: var(--color-surface-muted); color: var(--color-text-dim);"><?= esc(ucfirst($h['type'])) ?></span>
@@ -94,8 +99,8 @@
                     <div style="grid-column: span 2;">
                         <label class="form-label">Absence Category</label>
                         <select name="leave_type" class="form-input" required>
-                            <option value="sick_leave">Paid Leave</option>
-                            <option value="other_leave">Unpaid Leave</option>
+                            <option value="paid_leave">Paid Leave (PL)</option>
+                            <option value="unpaid_leave">Unpaid Leave</option>
                             <option value="comp_off">Comp-off</option>
                         </select>
                     </div>
@@ -107,6 +112,7 @@
                                 min="<?= date('Y-m-d') ?>">
                             <select name="from_session" class="form-input" style="width: auto;">
                                 <option value="full">Full Day</option>
+                            </select>
                         </div>
                     </div>
 
@@ -158,8 +164,11 @@
                                 ?>
                                 <tr>
                                     <td style="font-weight: 500;">
-                                        <?= date('d M', strtotime($req['from_date'])) ?> —
-                                        <?= date('d M Y', strtotime($req['to_date'])) ?>
+                                        <?php 
+                                            $fTime = strtotime($req['from_date'] ?? '');
+                                            $tTime = strtotime($req['to_date'] ?? '');
+                                            echo ($fTime ? date('d M', $fTime) : '—') . ' — ' . ($tTime ? date('d M Y', $tTime) : '—');
+                                        ?>
                                     </td>
                                     <td style="font-size: 0.8125rem; color: var(--color-text-dim);">
                                         <?= esc(ucwords(str_replace('_', ' ', $req['leave_type']))) ?></td>

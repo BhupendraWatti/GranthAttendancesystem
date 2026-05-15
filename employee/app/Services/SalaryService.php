@@ -6,18 +6,11 @@ use App\Models\AttendanceDailyModel;
 use App\Models\EmployeeModel;
 
 /**
- * SalaryService — Core Salary Calculation Engine
+ * SalaryService — Core Salary Calculation Engine (Dynamic Hourly Model)
  *
- * RULES:
- * - Base days for calculation: 30 days
- * - Expected working days: 24 days
- *
- * FORMULA:
- *   per_day_salary = monthly_salary / 30
- *   net_salary = per_day_salary * effective_days
- *   deduction = monthly_salary - net_salary
- *
- * effective_days = present + (half_days * 0.5) + leave_days + holiday_days + comp_off_days
+ * This service calculates salary based on:
+ * 1. Target Hours to Date (excluding Sundays and 1st/3rd Saturdays)
+ * 2. Deductive model for mid-month fairness
  */
 class SalaryService
 {
@@ -25,225 +18,129 @@ class SalaryService
     private EmployeeModel $employeeModel;
 
     private int $salaryBaseDays;
-    private int $monthlyWorkingDays;
-    private int $fullTimeMinutesPerDay;
-    private int $internMinutesPerDay;
+    private float $workDayHours;
 
     public function __construct()
     {
         $this->attendanceModel = new AttendanceDailyModel();
-        $this->employeeModel = new EmployeeModel();
+        $this->employeeModel  = new EmployeeModel();
 
         $this->salaryBaseDays = (int) env('SALARY_BASE_DAYS', 30);
-        $this->monthlyWorkingDays = (int) env('MONTHLY_WORKING_DAYS', 30);
-        $this->fullTimeMinutesPerDay = (int) env('FULL_TIME_MINUTES', 510);
-        $this->internMinutesPerDay = (int) env('INTERN_MINUTES', 330);
+        $this->workDayHours   = 8.5; 
     }
 
     /**
-     * Calculate salary for ALL employees for a given month
-     */
-    public function calculateAllSalaries(int $year, int $month, ?float $defaultMonthlySalary = null): array
-    {
-        $monthlySalary = $defaultMonthlySalary ?? (float) env('DEFAULT_MONTHLY_SALARY', 25000);
-
-        // Get all attendance records for the month with employee names
-        $records = $this->attendanceModel->getAllMonthly($year, $month);
-
-        if (empty($records)) {
-            return [];
-        }
-
-        // Group by employee
-        $byEmployee = [];
-        foreach ($records as $record) {
-            $empCode = $record['emp_code'];
-
-            if (!isset($byEmployee[$empCode])) {
-                $byEmployee[$empCode] = [
-                    'emp_code' => $empCode,
-                    'name' => $record['name'] ?? $empCode,
-                    'department' => $record['department'] ?? null,
-                    'employee_type' => $record['employee_type'] ?? 'full_time',
-                    'base_salary' => $record['salary'] ?? null,
-                    'present_days' => 0,
-                    'half_days' => 0,
-                    'absent_days' => 0,
-                    'leave_days' => 0,
-                    'holiday_days' => 0,
-                    'comp_off_days' => 0,
-                    'late_count' => 0,
-                    'total_work_minutes' => 0,
-                    'total_late_minutes' => 0,
-                    'records' => [],
-                ];
-            }
-
-            switch ($record['status']) {
-                case 'present':
-                    $byEmployee[$empCode]['present_days']++;
-                    break;
-                case 'half_day':
-                    $byEmployee[$empCode]['half_days']++;
-                    break;
-                case 'absent':
-                    $byEmployee[$empCode]['absent_days']++;
-                    break;
-                case 'leave':
-                    $byEmployee[$empCode]['leave_days']++;
-                    break;
-                case 'holiday':
-                    $byEmployee[$empCode]['holiday_days']++;
-                    break;
-                case 'comp_off':
-                    $byEmployee[$empCode]['comp_off_days']++;
-                    break;
-            }
-
-            $byEmployee[$empCode]['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
-            $lateMin = (int) ($record['late_minutes'] ?? 0);
-            $byEmployee[$empCode]['total_late_minutes'] += $lateMin;
-            if ($lateMin > 0) {
-                $byEmployee[$empCode]['late_count']++;
-            }
-        }
-
-        // Calculate salary for each employee
-        $result = [];
-        foreach ($byEmployee as $empCode => $data) {
-            $empSalary = $data['base_salary'] ?? $monthlySalary;
-            $result[] = $this->computeSalary($data, (float) $empSalary);
-        }
-
-        return $result;
-    }
-
-    /**
-     * Calculate salary for a SINGLE employee for a given month
+     * Calculate salary for a SINGLE employee
      */
     public function calculateEmployeeSalary(string $empCode, int $year, int $month, ?float $monthlySalary = null): ?array
     {
         $employee = $this->employeeModel->findByCode($empCode);
-        if (!$employee) {
-            return null;
-        }
+        if (!$employee) return null;
 
         $salary = $employee['salary'] ?? $monthlySalary ?? (float) env('DEFAULT_MONTHLY_SALARY', 25000);
-
         $records = $this->attendanceModel->getMonthly($empCode, $year, $month);
 
         $data = [
-            'emp_code' => $empCode,
-            'name' => $employee['name'],
-            'department' => $employee['department'] ?? null,
-            'employee_type' => $employee['employee_type'] ?? 'full_time',
-            'base_salary' => $employee['salary'] ?? null,
-            'present_days' => 0,
-            'half_days' => 0,
-            'absent_days' => 0,
-            'leave_days' => 0,
-            'holiday_days' => 0,
-            'comp_off_days' => 0,
-            'late_count' => 0,
+            'emp_code'           => $empCode,
+            'name'               => $employee['name'],
+            'department'         => $employee['department'] ?? null,
+            'employee_type'      => $employee['employee_type'] ?? 'full_time',
+            'base_salary'        => $employee['salary'] ?? null,
+            'present_days'       => 0,
+            'half_days'          => 0,
+            'absent_days'        => 0,
+            'wfh_days'           => 0,
+            'paid_leave_days'    => 0,
+            'unpaid_leave_days'  => 0,
+            'holiday_days'       => 0,
+            'comp_off_days'      => 0,
             'total_work_minutes' => 0,
-            'total_late_minutes' => 0,
         ];
 
         foreach ($records as $record) {
             switch ($record['status']) {
-                case 'present':
-                    $data['present_days']++;
-                    break;
-                case 'half_day':
-                    $data['half_days']++;
-                    break;
-                case 'absent':
-                    $data['absent_days']++;
-                    break;
-                case 'leave':
-                    $data['leave_days']++;
-                    break;
-                case 'holiday':
-                    $data['holiday_days']++;
-                    break;
-                case 'comp_off':
-                    $data['comp_off_days']++;
-                    break;
+                case 'present':  $data['present_days']++; break;
+                case 'half_day': $data['half_days']++; break;
+                case 'absent':   $data['absent_days']++; break;
+                case 'work_from_home': $data['wfh_days']++; break;
+                case 'paid_leave': $data['paid_leave_days']++; break;
+                case 'unpaid_leave': $data['unpaid_leave_days']++; break;
+                case 'leave':    $data['paid_leave_days']++; break;
+                case 'holiday':  $data['holiday_days']++; break;
+                case 'comp_off': $data['comp_off_days']++; break;
             }
-            $data['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
-            $lateMin = (int) ($record['late_minutes'] ?? 0);
-            $data['total_late_minutes'] += $lateMin;
-            if ($lateMin > 0) {
-                $data['late_count']++;
+            $fullCreditStatuses = ['work_from_home', 'paid_leave', 'holiday', 'comp_off', 'leave'];
+            if (in_array($record['status'], $fullCreditStatuses)) {
+                $data['total_work_minutes'] += 510;
+            } else {
+                $data['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
             }
         }
 
-        return $this->computeSalary($data, (float) $salary);
+        return $this->computeSalary($data, (float)$salary, $year, $month);
     }
 
     /**
-     * Core salary computation (shared logic)
+     * Dynamic Hourly Model Computation
      */
-    private function computeSalary(array $data, float $monthlySalary): array
+    private function computeSalary(array $data, float $monthlySalary, int $year, int $month): array
     {
-        $type = $data['employee_type'] ?? 'full_time';
-        $minutesPerDay = ($type === 'intern') ? $this->internMinutesPerDay : $this->fullTimeMinutesPerDay;
+        $today = date('Y-m-d');
+        $isCurrentMonth = ($year == date('Y') && $month == date('m'));
+        $endDay = $isCurrentMonth ? (int)date('d') : (int)date('t', strtotime("$year-$month-01"));
 
-        $expectedMinutes = $minutesPerDay * $this->monthlyWorkingDays;
+        // 1. Calculate Dynamic Target-to-Date
+        $targetToDateMin = 0;
+        $satCount = 0;
+        for ($d = 1; $d <= $endDay; $d++) {
+            $time = mktime(0, 0, 0, $month, $d, $year);
+            $dow = (int)date('w', $time); // 0=Sun, 6=Sat
+            
+            if ($dow === 0) continue; // Sunday OFF
+            
+            if ($dow === 6) { // Saturday
+                $satCount++;
+                if ($satCount === 1 || $satCount === 3) continue; // 1st/3rd Sat OFF
+            }
+            
+            $targetToDateMin += 510; // Working day (8.5h)
+        }
 
-        $actualMinutes = $data['total_work_minutes'];
-        $workHours = round($actualMinutes / 60, 1);
-        $expectedHours = round($expectedMinutes / 60, 1);
+        $targetToDateHours = $targetToDateMin / 60;
+        $actualWorkMin = (int) ($data['total_work_minutes'] ?? 0);
+        $actualWorkHours = round($actualWorkMin / 60, 2);
 
-        $effectiveDays = $data['present_days'] +
-            ($data['half_days'] * 0.5) +
-            ($data['leave_days'] ?? 0) +
-            ($data['holiday_days'] ?? 0) +
-            ($data['comp_off_days'] ?? 0);
+        // 2. Shortfall & Deduction Logic
+        $shortfallHours = max(0, $targetToDateHours - $actualWorkHours);
+        $deductionDays = 0;
+        if ($shortfallHours > 4.5) {
+            $halfDayUnit = 4.25;
+            $units = round($shortfallHours / $halfDayUnit);
+            $deductionDays = $units * 0.5;
+        }
 
-        $perDaySalary = $monthlySalary / $this->salaryBaseDays;
-        $calculatedSalary = round($perDaySalary * $effectiveDays, 2);
+        // 3. Earnings based on Days Elapsed (e.g. 10 days)
+        $dailyRate = $monthlySalary / 30;
+        $baseEarned = $dailyRate * $endDay; 
+        $totalDeduction = round($deductionDays * $dailyRate, 2);
+        $netPayable = round($baseEarned - $totalDeduction, 2);
 
-        $calculatedSalary = min($calculatedSalary, $monthlySalary);
-        $deduction = round($monthlySalary - $calculatedSalary, 2);
-
-        $ratio = ($this->monthlyWorkingDays > 0) ? min(1, $effectiveDays / $this->monthlyWorkingDays) : 0;
+        // Effective days for display (e.g. 10 - deduction)
+        $effectiveDays = max(0, $endDay - $deductionDays);
 
         return array_merge($data, [
-            'expected_minutes' => $expectedMinutes,
-            'work_hours' => $workHours,
-            'expected_hours' => $expectedHours,
-            'monthly_salary' => $monthlySalary,
-            'calculated_salary' => $calculatedSalary,
-            'deduction' => $deduction,
-            'net_salary' => $calculatedSalary,
-            'effective_days' => $effectiveDays,
-            'working_days' => $this->monthlyWorkingDays,
-            'ratio' => round($ratio * 100, 1),
+            'expected_minutes'  => $targetToDateMin,
+            'work_hours'        => $actualWorkHours,
+            'expected_hours'    => $targetToDateHours,
+            'shortfall_hours'   => $shortfallHours,
+            'monthly_salary'    => $monthlySalary,
+            'calculated_salary' => $netPayable,
+            'deduction'         => $totalDeduction,
+            'net_salary'        => $netPayable,
+            'effective_days'    => $effectiveDays,
+            'days_elapsed'      => $endDay,
+            'working_days'      => round($targetToDateHours / 8.5, 1),
+            'ratio'             => $targetToDateMin > 0 ? round(min(1, $actualWorkMin / $targetToDateMin) * 100, 1) : 0,
         ]);
-    }
-
-    /**
-     * Get aggregate totals for all employees in a month
-     */
-    public function getMonthlyTotals(array $salaryData): array
-    {
-        $totalPaid = 0;
-        $totalDeduction = 0;
-        $totalWorkHours = 0;
-        $count = count($salaryData);
-
-        foreach ($salaryData as $emp) {
-            $totalPaid += $emp['net_salary'] ?? 0;
-            $totalDeduction += $emp['deduction'] ?? 0;
-            $totalWorkHours += $emp['work_hours'] ?? 0;
-        }
-
-        return [
-            'total_salary_paid' => round($totalPaid, 2),
-            'total_deduction' => round($totalDeduction, 2),
-            'avg_work_hours' => $count > 0 ? round($totalWorkHours / $count, 1) : 0,
-            'employee_count' => $count,
-        ];
     }
 }

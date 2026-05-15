@@ -26,6 +26,15 @@ class LeaveService
     }
 
     /**
+     * Initialize all leave balances for an employee
+     */
+    public function initializeBalances(string $empCode): void
+    {
+        $this->ensureLeaveBalance($empCode, 'paid_leave');
+        $this->ensureLeaveBalance($empCode, 'unpaid_leave');
+    }
+
+    /**
      * Apply for leave
      */
     public function apply(array $data): array
@@ -33,7 +42,7 @@ class LeaveService
         $empCode = $data['emp_code'];
         $fromDate = $data['from_date'];
         $toDate = $data['to_date'];
-        $leaveType = $data['leave_type'];
+        $leaveType = $data['leave_type']; // 'paid_leave' or 'unpaid_leave'
 
         // 1. Validate: No past date
         if ($fromDate < date('Y-m-d')) {
@@ -45,8 +54,8 @@ class LeaveService
             throw new \RuntimeException("This request overlaps with an existing leave request.");
         }
 
-        // 3. Auto-credit balance if missing (Unified balance)
-        $this->ensureLeaveBalance($empCode, 'unified_leave');
+        // 3. Auto-credit balances if missing
+        $this->initializeBalances($empCode);
 
         // 4. Calculate duration
         $duration = $this->calculateDuration($fromDate, $toDate, $data['from_session'], $data['to_session']);
@@ -55,10 +64,11 @@ class LeaveService
             throw new \RuntimeException("Selected dates are holidays or weekends.");
         }
 
-        // 5. Check balance (Always check unified_leave)
-        $balance = $this->leaveBalanceModel->getBalance($empCode, 'unified_leave');
-        if ($balance['remaining'] < $duration) {
-            throw new \RuntimeException("Insufficient leave balance. Available: {$balance['remaining']} days.");
+        // 5. Check specific balance
+        $balance = $this->leaveBalanceModel->getBalance($empCode, $leaveType);
+        if (!$balance || $balance['remaining'] < $duration) {
+            $label = str_replace('_', ' ', $leaveType);
+            throw new \RuntimeException("Insufficient {$label} balance. Available: " . ($balance['remaining'] ?? 0) . " days.");
         }
 
         // 6. Save request
@@ -88,11 +98,11 @@ class LeaveService
 
         $duration = $this->calculateDuration($request['from_date'], $request['to_date'], $request['from_session'], $request['to_session']);
 
-        // Update unified balance
-        $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], 'unified_leave');
+        // Update specific balance
+        $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], $request['leave_type']);
         if (!$balance) {
-            $this->ensureLeaveBalance($request['emp_code'], 'unified_leave');
-            $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], 'unified_leave');
+            $this->initializeBalances($request['emp_code']);
+            $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], $request['leave_type']);
         }
 
         $this->leaveBalanceModel->update($balance['id'], [
@@ -166,20 +176,38 @@ class LeaveService
     }
 
     /**
-     * Auto-credit balance (Unified 12 days)
+     * Auto-credit balances (1 Paid per month, 30 Unpaid buffer)
      */
     private function ensureLeaveBalance(string $empCode, string $leaveType): void
     {
-        // We only care about unified_leave now
-        $existing = $this->leaveBalanceModel->getBalance($empCode, 'unified_leave');
-        if (!$existing) {
-            $total = 12.0; 
+        $existing = $this->leaveBalanceModel->getBalance($empCode, $leaveType);
+        $currentMonth = date('Y-m');
+
+        if ($existing) {
+            // Check if we need to reset Monthly Paid Leave
+            if ($leaveType === 'paid_leave') {
+                $lastUpdate = strtotime($existing['updated_at'] ?? $existing['created_at'] ?? 'now');
+                $lastUpdateMonth = date('Y-m', $lastUpdate);
+                if ($lastUpdateMonth !== $currentMonth) {
+                    $this->leaveBalanceModel->update($existing['id'], [
+                        'total'      => 1.0,
+                        'used'       => 0,
+                        'remaining'  => 1.0,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            }
+        } else {
+            // Initial creation
+            $total = ($leaveType === 'paid_leave') ? 1.0 : 30.0; 
             $this->leaveBalanceModel->insert([
                 'emp_code'   => $empCode,
-                'leave_type' => 'unified_leave',
+                'leave_type' => $leaveType,
                 'total'      => $total,
                 'used'       => 0,
                 'remaining'  => $total,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
             ]);
         }
     }
@@ -208,7 +236,7 @@ class LeaveService
             $existing = $this->attendanceModel->where('emp_code', $request['emp_code'])->where('date', $ymd)->first();
             
             // Determine status based on leave type
-            $status = 'leave';
+            $status = $request['leave_type']; // 'paid_leave' or 'unpaid_leave'
             if (($request['leave_type'] ?? '') === 'comp_off') {
                 $status = 'comp_off';
             }

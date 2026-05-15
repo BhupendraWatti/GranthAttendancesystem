@@ -17,6 +17,8 @@ $presentDays = 0;
 $absentDays = 0;
 $halfDays = 0;
 $wfhDays = 0;
+$paidLeaveDays = 0;
+$unpaidLeaveDays = 0;
 $lateDays = 0;
 $holidayDays = 0;
 $leaveDays = 0;
@@ -32,10 +34,14 @@ foreach (($attendanceRecords ?? []) as $r) {
         $halfDays++;
     elseif ($r['status'] === 'work_from_home')
         $wfhDays++;
+    elseif ($r['status'] === 'paid_leave')
+        $paidLeaveDays++;
+    elseif ($r['status'] === 'unpaid_leave')
+        $unpaidLeaveDays++;
     elseif ($r['status'] === 'holiday')
         $holidayDays++;
     elseif ($r['status'] === 'leave')
-        $leaveDays++;
+        $paidLeaveDays++;
     elseif ($r['status'] === 'comp_off')
         $compOffDays++;
 
@@ -44,7 +50,7 @@ foreach (($attendanceRecords ?? []) as $r) {
     $totalWorkMin += (int) ($r['work_minutes'] ?? 0);
 }
 $avgWorkHours = ($presentDays + $wfhDays) > 0 ? round($totalWorkMin / ($presentDays + $wfhDays) / 60, 1) : 0;
-$effectiveDays = $presentDays + $wfhDays + ($halfDays * 0.5) + $holidayDays + $leaveDays + $compOffDays;
+$effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + $holidayDays + $compOffDays;
 ?>
 
 <div class="page-header animate-in">
@@ -146,6 +152,13 @@ $effectiveDays = $presentDays + $wfhDays + ($halfDays * 0.5) + $holidayDays + $l
                             </div>
                             <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
                                 <div class="stat-info">
+                                    <span class="label">Shortfall Hours</span>
+                                    <span class="value" style="color: var(--color-error);"><?= round($salary['shortfall_hours'] ?? 0, 1) ?>h</span>
+                                    <div style="font-size: 0.65rem; color: var(--color-text-dim); margin-top: 0.25rem;">TARGET: <?= round($salary['expected_hours'] ?? 0, 1) ?>h TO DATE</div>
+                                </div>
+                            </div>
+                            <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
+                                <div class="stat-info">
                                     <span class="label">Workload Avg.</span>
                                     <span class="value"><?= $avgWorkHours ?>h</span>
                                 </div>
@@ -169,13 +182,17 @@ $effectiveDays = $presentDays + $wfhDays + ($halfDays * 0.5) + $holidayDays + $l
                                 </div>
                                 <div style="width: <?= $totalDays > 0 ? round($wfhDays / $totalDays * 100) : 0 ?>%; background: #6366f1;" title="Work From Home">
                                 </div>
+                                <div style="width: <?= $totalDays > 0 ? round($paidLeaveDays / $totalDays * 100) : 0 ?>%; background: #10B981; opacity: 0.7;" title="Paid Leave">
+                                </div>
                                 <div style="width: <?= $totalDays > 0 ? round($halfDays / $totalDays * 100) : 0 ?>%; background: var(--color-warning);"
                                     title="Half Day"></div>
+                                <div style="width: <?= $totalDays > 0 ? round($unpaidLeaveDays / $totalDays * 100) : 0 ?>%; background: #94a3b8;" title="Unpaid Leave">
+                                </div>
                                 <div style="width: <?= $totalDays > 0 ? round($absentDays / $totalDays * 100) : 0 ?>%; background: var(--color-danger);"
                                     title="Absent"></div>
                             </div>
                             <div
-                                style="display: flex; gap: 1.5rem; margin-top: 1rem; font-size: 0.75rem; font-weight: 600;">
+                                style="display: flex; gap: 1.5rem; margin-top: 1rem; font-size: 0.75rem; font-weight: 600; flex-wrap: wrap;">
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                                     <div
                                         style="width: 8px; height: 8px; border-radius: 2px; background: var(--color-success);">
@@ -188,8 +205,18 @@ $effectiveDays = $presentDays + $wfhDays + ($halfDays * 0.5) + $holidayDays + $l
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                                     <div
+                                        style="width: 8px; height: 8px; border-radius: 2px; background: #10B981;">
+                                    </div> PAID LEAVE
+                                </span>
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div
                                         style="width: 8px; height: 8px; border-radius: 2px; background: var(--color-warning);">
                                     </div> HALF DAY
+                                </span>
+                                <span style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div
+                                        style="width: 8px; height: 8px; border-radius: 2px; background: #94a3b8;">
+                                    </div> UNPAID
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                                     <div

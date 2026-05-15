@@ -19,8 +19,9 @@
                     <select name="month" class="form-input"
                         style="padding: 0.375rem 0.75rem; font-size: 0.8125rem; width: auto;">
                         <?php for ($m = 1; $m <= 12; $m++): ?>
+                            <?php $mTime = mktime(0, 0, 0, $m, 1, $year); ?>
                             <option value="<?= $m ?>" <?= $m == $month ? 'selected' : '' ?>>
-                                <?= date('F', mktime(0, 0, 0, $m, 1)) ?></option>
+                                <?= date('F', $mTime) ?></option>
                         <?php endfor; ?>
                     </select>
                     <button type="submit" class="btn btn-outline"
@@ -86,12 +87,27 @@
                         <?php foreach (array_reverse($rows) as $r): ?>
                             <?php $st = $r['status'] ?? 'absent'; ?>
                             <tr>
-                                <td style="font-weight: 500;"><?= date('D, d M', strtotime($r['date'])) ?></td>
+                                <td style="font-weight: 500;">
+                                    <?php 
+                                        $time = strtotime($r['date'] ?? '');
+                                        echo $time ? date('D, d M', $time) : '—';
+                                    ?>
+                                </td>
                                 <td><span
                                         class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span>
                                 </td>
-                                <td><?= $r['first_in'] ? date('H:i', strtotime($r['first_in'])) : '—' ?></td>
-                                <td><?= $r['last_out'] ? date('H:i', strtotime($r['last_out'])) : '—' ?></td>
+                                <td>
+                                    <?php 
+                                        $time = strtotime($r['first_in'] ?? '');
+                                        echo $time ? date('H:i', $time) : '—';
+                                    ?>
+                                </td>
+                                <td>
+                                    <?php 
+                                        $time = strtotime($r['last_out'] ?? '');
+                                        echo $time ? date('H:i', $time) : '—';
+                                    ?>
+                                </td>
                                 <td style="font-weight: 600; color: var(--color-primary);">
                                     <?= esc((string) ($r['total_hours'] ?? '0')) ?>h</td>
                             </tr>

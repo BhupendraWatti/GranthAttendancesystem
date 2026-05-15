@@ -20,9 +20,18 @@ class LeaveService
     {
         $this->leaveRequestModel = new LeaveRequestModel();
         $this->leaveBalanceModel = new LeaveBalanceModel();
-        $this->holidayModel = new HolidayModel();
-        $this->attendanceModel = new AttendanceDailyModel();
-        $this->employeeModel = new EmployeeModel();
+        $this->holidayModel      = new HolidayModel();
+        $this->attendanceModel   = new AttendanceDailyModel();
+        $this->employeeModel     = new EmployeeModel();
+    }
+
+    /**
+     * Initialize all leave balances for an employee
+     */
+    public function initializeBalances(string $empCode): void
+    {
+        $this->ensureLeaveBalance($empCode, 'paid_leave');
+        $this->ensureLeaveBalance($empCode, 'unpaid_leave');
     }
 
     /**
@@ -33,7 +42,7 @@ class LeaveService
         $empCode = $data['emp_code'];
         $fromDate = $data['from_date'];
         $toDate = $data['to_date'];
-        $leaveType = $data['leave_type'];
+        $leaveType = $data['leave_type']; // 'paid_leave' or 'unpaid_leave'
 
         // 1. Validate: No past date
         if ($fromDate < date('Y-m-d')) {
@@ -45,32 +54,33 @@ class LeaveService
             throw new \RuntimeException("This request overlaps with an existing leave request.");
         }
 
-        // 3. Auto-credit balance if missing (Unified balance)
-        $this->ensureLeaveBalance($empCode, 'unified_leave');
+        // 3. Auto-credit balances if missing
+        $this->initializeBalances($empCode);
 
         // 4. Calculate duration
         $duration = $this->calculateDuration($fromDate, $toDate, $data['from_session'], $data['to_session']);
-
+        
         if ($duration <= 0) {
             throw new \RuntimeException("Selected dates are holidays or weekends.");
         }
 
-        // 5. Check balance (Always check unified_leave)
-        $balance = $this->leaveBalanceModel->getBalance($empCode, 'unified_leave');
-        if ($balance['remaining'] < $duration) {
-            throw new \RuntimeException("Insufficient leave balance. Available: {$balance['remaining']} days.");
+        // 5. Check specific balance
+        $balance = $this->leaveBalanceModel->getBalance($empCode, $leaveType);
+        if (!$balance || $balance['remaining'] < $duration) {
+            $label = str_replace('_', ' ', $leaveType);
+            throw new \RuntimeException("Insufficient {$label} balance. Available: " . ($balance['remaining'] ?? 0) . " days.");
         }
 
         // 6. Save request
         $id = $this->leaveRequestModel->insert([
-            'emp_code' => $empCode,
-            'leave_type' => $leaveType,
-            'from_date' => $fromDate,
-            'to_date' => $toDate,
-            'from_session' => $data['from_session'] ?? 'full',
-            'to_session' => $data['to_session'] ?? 'full',
-            'reason' => $data['reason'] ?? '',
-            'status' => 'pending',
+            'emp_code'      => $empCode,
+            'leave_type'    => $leaveType,
+            'from_date'     => $fromDate,
+            'to_date'       => $toDate,
+            'from_session'  => $data['from_session'] ?? 'full',
+            'to_session'    => $data['to_session'] ?? 'full',
+            'reason'        => $data['reason'] ?? '',
+            'status'        => 'pending',
         ]);
 
         return ['success' => true, 'id' => $id, 'duration' => $duration];
@@ -88,21 +98,21 @@ class LeaveService
 
         $duration = $this->calculateDuration($request['from_date'], $request['to_date'], $request['from_session'], $request['to_session']);
 
-        // Update unified balance
-        $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], 'unified_leave');
+        // Update specific balance
+        $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], $request['leave_type']);
         if (!$balance) {
-            $this->ensureLeaveBalance($request['emp_code'], 'unified_leave');
-            $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], 'unified_leave');
+            $this->initializeBalances($request['emp_code']);
+            $balance = $this->leaveBalanceModel->getBalance($request['emp_code'], $request['leave_type']);
         }
 
         $this->leaveBalanceModel->update($balance['id'], [
-            'used' => $balance['used'] + $duration,
+            'used'      => $balance['used'] + $duration,
             'remaining' => $balance['remaining'] - $duration,
         ]);
 
         // Update status
         $this->leaveRequestModel->update($id, [
-            'status' => 'approved',
+            'status'        => 'approved',
             'admin_comment' => $comment,
         ]);
 
@@ -118,7 +128,7 @@ class LeaveService
     public function reject(int $id, ?string $comment = null): bool
     {
         return $this->leaveRequestModel->update($id, [
-            'status' => 'rejected',
+            'status'        => 'rejected',
             'admin_comment' => $comment,
         ]);
     }
@@ -129,16 +139,16 @@ class LeaveService
     public function calculateDuration(string $start, string $end, string $fromSession = 'full', string $toSession = 'full'): float
     {
         $startDate = new \DateTime($start);
-        $endDate = new \DateTime($end);
+        $endDate   = new \DateTime($end);
         $endDate->modify('+1 day'); // inclusive
 
         $interval = new \DateInterval('P1D');
-        $period = new \DatePeriod($startDate, $interval, $endDate);
+        $period   = new \DatePeriod($startDate, $interval, $endDate);
 
         $totalDays = 0;
         foreach ($period as $date) {
             $ymd = $date->format('Y-m-d');
-
+            
             // Skip weekends (assuming Saturday/Sunday)
             if ($date->format('N') >= 6) {
                 continue;
@@ -151,14 +161,12 @@ class LeaveService
 
             // Determine weight for this day
             $weight = 1.0;
-
+            
             // Handle sessions for start and end dates
             if ($ymd === $start) {
-                if ($fromSession !== 'full')
-                    $weight = 0.5;
+                if ($fromSession !== 'full') $weight = 0.5;
             } elseif ($ymd === $end) {
-                if ($toSession !== 'full')
-                    $weight = 0.5;
+                if ($toSession !== 'full') $weight = 0.5;
             }
 
             $totalDays += $weight;
@@ -168,20 +176,38 @@ class LeaveService
     }
 
     /**
-     * Auto-credit balance (Unified 12 days)
+     * Auto-credit balances (1 Paid per month, 30 Unpaid buffer)
      */
     private function ensureLeaveBalance(string $empCode, string $leaveType): void
     {
-        // We only care about unified_leave now
-        $existing = $this->leaveBalanceModel->getBalance($empCode, 'unified_leave');
-        if (!$existing) {
-            $total = 12.0; 
+        $existing = $this->leaveBalanceModel->getBalance($empCode, $leaveType);
+        $currentMonth = date('Y-m');
+
+        if ($existing) {
+            // Check if we need to reset Monthly Paid Leave
+            if ($leaveType === 'paid_leave') {
+                $lastUpdate = strtotime($existing['updated_at'] ?? $existing['created_at'] ?? 'now');
+                $lastUpdateMonth = date('Y-m', $lastUpdate);
+                if ($lastUpdateMonth !== $currentMonth) {
+                    $this->leaveBalanceModel->update($existing['id'], [
+                        'total'      => 1.0,
+                        'used'       => 0,
+                        'remaining'  => 1.0,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            }
+        } else {
+            // Initial creation
+            $total = ($leaveType === 'paid_leave') ? 1.0 : 30.0; 
             $this->leaveBalanceModel->insert([
-                'emp_code' => $empCode,
-                'leave_type' => 'unified_leave',
-                'total' => $total,
-                'used' => 0,
-                'remaining' => $total,
+                'emp_code'   => $empCode,
+                'leave_type' => $leaveType,
+                'total'      => $total,
+                'used'       => 0,
+                'remaining'  => $total,
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
             ]);
         }
     }
@@ -192,15 +218,15 @@ class LeaveService
     private function syncAttendanceWithLeave(array $request): void
     {
         $startDate = new \DateTime($request['from_date']);
-        $endDate = new \DateTime($request['to_date']);
+        $endDate   = new \DateTime($request['to_date']);
         $endDate->modify('+1 day');
 
         $interval = new \DateInterval('P1D');
-        $period = new \DatePeriod($startDate, $interval, $endDate);
+        $period   = new \DatePeriod($startDate, $interval, $endDate);
 
         foreach ($period as $date) {
             $ymd = $date->format('Y-m-d');
-
+            
             // Skip weekends/holidays for attendance status
             if ($date->format('N') >= 6 || $this->holidayModel->isHoliday($ymd)) {
                 continue;
@@ -208,16 +234,17 @@ class LeaveService
 
             // Upsert attendance record
             $existing = $this->attendanceModel->where('emp_code', $request['emp_code'])->where('date', $ymd)->first();
-
-            $status = 'leave';
+            
+            // Determine status based on leave type
+            $status = $request['leave_type']; // 'paid_leave' or 'unpaid_leave'
             if (($request['leave_type'] ?? '') === 'comp_off') {
                 $status = 'comp_off';
             }
 
             $data = [
                 'emp_code' => $request['emp_code'],
-                'date' => $ymd,
-                'status' => $status,
+                'date'     => $ymd,
+                'status'   => $status,
                 'raw_data' => json_encode(['leave_type' => $request['leave_type'], 'request_id' => $request['id']]),
             ];
 
