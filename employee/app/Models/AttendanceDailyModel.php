@@ -30,6 +30,8 @@ class AttendanceDailyModel extends Model
         'employee_type',
         'required_minutes',
         'validation_errors',
+        'is_manual_entry',
+        'is_locked',
     ];
 
     /**
@@ -46,8 +48,8 @@ class AttendanceDailyModel extends Model
 
         // Single atomic query — no race condition between SELECT and INSERT
         $sql = "INSERT INTO {$this->table} 
-                    (emp_code, date, first_in, last_out, work_minutes, late_minutes, status, attendance_status, work_mode, day_type, punch_count, employee_type, required_minutes, validation_errors, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (emp_code, date, first_in, last_out, work_minutes, late_minutes, status, attendance_status, work_mode, day_type, punch_count, employee_type, required_minutes, validation_errors, is_manual_entry, is_locked, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     first_in = VALUES(first_in),
                     last_out = VALUES(last_out),
@@ -61,6 +63,8 @@ class AttendanceDailyModel extends Model
                     employee_type = VALUES(employee_type),
                     required_minutes = VALUES(required_minutes),
                     validation_errors = VALUES(validation_errors),
+                    is_manual_entry = VALUES(is_manual_entry),
+                    is_locked = VALUES(is_locked),
                     updated_at = VALUES(updated_at)";
 
         return $db->query($sql, [
@@ -78,6 +82,8 @@ class AttendanceDailyModel extends Model
             $data['employee_type'] ?? 'full_time',
             $data['required_minutes'] ?? 510,
             $data['validation_errors'] ?? null,
+            $data['is_manual_entry'] ?? 0,
+            $data['is_locked'] ?? 0,
             $now,
             $now,
         ]);

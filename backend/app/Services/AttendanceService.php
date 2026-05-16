@@ -98,6 +98,15 @@ class AttendanceService
         // Get all active employees
         $employees = $this->employeeModel->getActive();
 
+        // Get all existing records to check for locks
+        $existingRecords = $this->attendanceModel->where('date', $date)->findAll();
+        $lockedMap = [];
+        foreach ($existingRecords as $rec) {
+            if (!empty($rec['is_locked'])) {
+                $lockedMap[$rec['emp_code']] = true;
+            }
+        }
+
         // Get all overrides for this date
         $overrides = $this->overrideModel->where('attendance_date', $date)->findAll();
         $overrideMap = [];
@@ -110,6 +119,13 @@ class AttendanceService
 
         foreach ($employees as $employee) {
             $empCode = $employee['emp_code'];
+
+            // SKIP processing if the record is locked (manual edit protection)
+            if (isset($lockedMap[$empCode])) {
+                log_message('debug', "[AttendanceService] Skipping locked record for {$empCode} on {$date}");
+                continue;
+            }
+
             $punches = $grouped[$empCode] ?? [];
             $employeeType = $employee['employee_type'] ?? 'full_time';
             $overrideMode = $overrideMap[$empCode] ?? null;

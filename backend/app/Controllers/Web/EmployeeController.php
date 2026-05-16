@@ -245,6 +245,8 @@ class EmployeeController extends BaseController
                 'work_mode' => $workMode,
                 'work_minutes' => $workMinutes,
                 'punch_count' => ($firstIn || $lastOut) ? 2 : 0, 
+                'is_manual_entry' => 1,
+                'is_locked' => 1,
             ];
 
             $attendanceModel->upsertAttendance($data);
