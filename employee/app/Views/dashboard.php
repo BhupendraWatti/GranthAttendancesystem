@@ -68,7 +68,7 @@ $status = $todayRow['status'] ?? 'absent';
         <div style="position: absolute; top: -10px; right: -10px; width: 80px; height: 80px; background: var(--color-surface-muted); border-radius: 50%; z-index: 0;"></div>
         
         <div style="flex: 1; position: relative; z-index: 1;">
-            <span class="stat-label">Work Done</span>
+            <span class="stat-label">Total Monthly Work Done</span>
             <div style="display: flex; gap: 0.75rem; align-items: baseline; margin-bottom: 0.25rem;">
                 <span class="stat-value" style="color: var(--color-text);"><span id="stat-logged-hours"><?= esc($totalHoursMonth) ?></span>h</span>
                 <span class="text-muted" style="font-size: 0.875rem;">logged</span>
@@ -81,7 +81,7 @@ $status = $todayRow['status'] ?? 'absent';
             
             <div style="margin-top: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.7rem; font-weight: 700; color: var(--color-text-dim); text-transform: uppercase;"><span id="stat-progress-percent"><?= round($monthProgress) ?></span>% Completed</span>
-                <span style="font-size: 0.7rem; font-weight: 600; color: var(--color-text-dim);">Goal: <?= esc($requiredHoursMonth) ?>h</span>
+                <span style="font-size: 0.7rem; font-weight: 600; color: var(--color-text-dim);">Monthly Goal: <span id="stat-goal-hours"><?= esc($requiredHoursMonth) ?></span>h</span>
             </div>
         </div>
 
@@ -131,6 +131,9 @@ $status = $todayRow['status'] ?? 'absent';
                 
                 const elRemaining = document.getElementById('stat-remaining-hours');
                 if (elRemaining) elRemaining.textContent = data.remainingHours.toFixed(1);
+
+                const elGoal = document.getElementById('stat-goal-hours');
+                if (elGoal) elGoal.textContent = data.requiredHoursMonth;
 
                 // Update Status Header
                 const elDot = document.getElementById('stat-status-dot');

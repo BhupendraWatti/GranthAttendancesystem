@@ -74,22 +74,37 @@ class AttendancePolicyService
 
     private function classify(string $employeeType, float $hours): string
     {
+        // Convert grace minutes into hours
+        $graceHours = ((int) env('ATTENDANCE_GRACE_MINUTES', 30)) / 60;
+
+
         if ($employeeType === 'intern') {
-            if ($hours >= $this->internPresentHours) {
+
+            $internPresentThreshold = max(0, $this->internPresentHours - $graceHours);
+
+            if ($hours >= $internPresentThreshold) {
                 return 'present';
             }
+
             if ($hours >= $this->internHalfDayHours) {
                 return 'half_day';
             }
+
             return 'absent';
         }
 
-        if ($hours >= $this->fullTimePresentHours) {
+        $fullTimePresentThreshold = max(0, $this->fullTimePresentHours - $graceHours);
+
+        if ($hours >= $fullTimePresentThreshold) {
             return 'present';
         }
+
         if ($hours >= $this->fullTimeHalfDayHours) {
             return 'half_day';
         }
+
         return 'absent';
+
+
     }
 }

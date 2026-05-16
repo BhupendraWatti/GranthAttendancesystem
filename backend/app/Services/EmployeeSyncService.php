@@ -40,12 +40,12 @@ class EmployeeSyncService
             $isNew = $existing === null;
 
             $payload = [
-                'emp_code'       => $empCode,
-                'name'           => $record['name'] ?? $empCode,
-                'department'     => $department,
-                'designation'    => $designation,
-                'employee_type'  => $employeeType,
-                'status'         => 'active',
+                'emp_code' => $empCode,
+                'name' => $record['name'] ?? $empCode,
+                'department' => $department,
+                'designation' => $designation,
+                'employee_type' => $employeeType,
+                'status' => 'active',
             ];
 
             $this->employeeModel->upsertByCode($payload);
@@ -55,22 +55,6 @@ class EmployeeSyncService
             } else {
                 $updated++;
                 log_message('info', "[EmployeeSyncService] Updated employee {$empCode}");
-            }
-        }
-
-        if (!empty($apiEmpcodes)) {
-            $dbEmpcodes = array_map(
-                static fn(array $row): string => (string) $row['emp_code'],
-                $this->employeeModel->select('emp_code')->findAll()
-            );
-            $missingInApi = array_diff($dbEmpcodes, $apiEmpcodes);
-            foreach ($missingInApi as $empCode) {
-                $this->employeeModel
-                    ->where('emp_code', $empCode)
-                    ->set(['status' => 'inactive', 'updated_at' => date('Y-m-d H:i:s')])
-                    ->update();
-                $deactivated++;
-                log_message('info', "[EmployeeSyncService] Deactivated employee {$empCode} (missing in API)");
             }
         }
 

@@ -58,22 +58,6 @@ class EmployeeSyncService
             }
         }
 
-        if (!empty($apiEmpcodes)) {
-            $dbEmpcodes = array_map(
-                static fn(array $row): string => (string) $row['emp_code'],
-                $this->employeeModel->select('emp_code')->findAll()
-            );
-            $missingInApi = array_diff($dbEmpcodes, $apiEmpcodes);
-            foreach ($missingInApi as $empCode) {
-                $this->employeeModel
-                    ->where('emp_code', $empCode)
-                    ->set(['status' => 'inactive', 'updated_at' => date('Y-m-d H:i:s')])
-                    ->update();
-                $deactivated++;
-                log_message('info', "[EmployeeSyncService] Deactivated employee {$empCode} (missing in API)");
-            }
-        }
-
         return [
             'created' => $created,
             'updated' => $updated,

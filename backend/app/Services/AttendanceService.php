@@ -55,15 +55,15 @@ class AttendanceService
         ?AttendanceDailyModel $attendanceModel = null,
         ?EmployeeModel $employeeModel = null
     ) {
-        $this->punchLogModel      = $punchLogModel ?? new PunchLogModel();
-        $this->attendanceModel  = $attendanceModel ?? new AttendanceDailyModel();
-        $this->employeeModel  = $employeeModel ?? new EmployeeModel();
+        $this->punchLogModel = $punchLogModel ?? new PunchLogModel();
+        $this->attendanceModel = $attendanceModel ?? new AttendanceDailyModel();
+        $this->employeeModel = $employeeModel ?? new EmployeeModel();
         $this->validationService = new ValidationService();
         $this->holidayModel = new \App\Models\HolidayModel();
         $this->leaveRequestModel = new \App\Models\LeaveRequestModel();
 
         $this->fullTimeMinutes = (int) env('FULL_TIME_PRESENT_MINUTES', 510);
-        $this->internMinutes   = (int) env('INTERN_PRESENT_MINUTES', 330);
+        $this->internMinutes = (int) env('INTERN_PRESENT_MINUTES', 330);
         $this->fullTimeHalfDayMinutes = (int) env('FULL_TIME_HALF_DAY_MINUTES', 255);
         $this->internHalfDayMinutes = (int) env('INTERN_HALF_DAY_MINUTES', 165);
         $this->officeStartTime = env('OFFICE_START_TIME', '10:00');
@@ -103,13 +103,13 @@ class AttendanceService
             // 2. If global holiday, mark as 'holiday' unless they punched in
             if ($isGlobalHoliday && empty($punches)) {
                 $result = [
-                    'emp_code'      => $empCode,
-                    'date'          => $date,
-                    'status'        => 'holiday',
-                    'work_minutes'  => 0,
-                    'punch_count'   => 0,
+                    'emp_code' => $empCode,
+                    'date' => $date,
+                    'status' => 'holiday',
+                    'work_minutes' => 0,
+                    'punch_count' => 0,
                     'required_minutes' => $this->getRequiredMinutes($employeeType),
-                    'employee_type'    => $employeeType,
+                    'employee_type' => $employeeType,
                 ];
             } else {
                 $result = $this->processEmployee($empCode, $date, $punches, $employeeType);
@@ -130,9 +130,9 @@ class AttendanceService
         log_message('info', "[AttendanceService] Processed {$processed} employees for {$date}, " . count($errors) . " validation issues");
 
         return [
-            'date'      => $date,
+            'date' => $date,
             'processed' => $processed,
-            'errors'    => $errors,
+            'errors' => $errors,
         ];
     }
 
@@ -163,15 +163,15 @@ class AttendanceService
             }
 
             return [
-                'emp_code'         => $empCode,
-                'date'             => $date,
-                'first_in'         => null,
-                'last_out'         => null,
-                'work_minutes'     => 0,
-                'late_minutes'     => 0,
-                'status'           => $status,
-                'punch_count'      => 0,
-                'employee_type'    => $employeeType,
+                'emp_code' => $empCode,
+                'date' => $date,
+                'first_in' => null,
+                'last_out' => null,
+                'work_minutes' => 0,
+                'late_minutes' => 0,
+                'status' => $status,
+                'punch_count' => 0,
+                'employee_type' => $employeeType,
                 'required_minutes' => $requiredMinutes,
                 'validation_errors' => null,
             ];
@@ -183,8 +183,8 @@ class AttendanceService
         });
 
         // First IN = first punch, Last OUT = last punch
-        $firstIn  = $punches[0]['punch_time'];
-        $lastOut  = $punches[count($punches) - 1]['punch_time'];
+        $firstIn = $punches[0]['punch_time'];
+        $lastOut = $punches[count($punches) - 1]['punch_time'];
 
         // Calculate work minutes
         $workMinutes = $this->calculateWorkMinutes($firstIn, $lastOut);
@@ -194,15 +194,15 @@ class AttendanceService
             $lateMinutes = $this->calculateLateMinutes($firstIn, $date);
 
             return [
-                'emp_code'         => $empCode,
-                'date'             => $date,
-                'first_in'         => $firstIn,
-                'last_out'         => null, // No OUT punch
-                'work_minutes'     => 0,
-                'late_minutes'     => $lateMinutes,
-                'status'           => 'half_day',
-                'punch_count'      => 1,
-                'employee_type'    => $employeeType,
+                'emp_code' => $empCode,
+                'date' => $date,
+                'first_in' => $firstIn,
+                'last_out' => null, // No OUT punch
+                'work_minutes' => 0,
+                'late_minutes' => $lateMinutes,
+                'status' => 'half_day',
+                'punch_count' => 1,
+                'employee_type' => $employeeType,
                 'required_minutes' => $requiredMinutes,
                 'validation_errors' => json_encode([['type' => 'missing_out', 'message' => 'Only one punch recorded']]),
             ];
@@ -213,15 +213,15 @@ class AttendanceService
         $status = $this->determineStatus($workMinutes, $requiredMinutes);
 
         return [
-            'emp_code'         => $empCode,
-            'date'             => $date,
-            'first_in'         => $firstIn,
-            'last_out'         => $lastOut,
-            'work_minutes'     => max(0, $workMinutes),
-            'late_minutes'     => $lateMinutes,
-            'status'           => $status,
-            'punch_count'      => $punchCount,
-            'employee_type'    => $employeeType,
+            'emp_code' => $empCode,
+            'date' => $date,
+            'first_in' => $firstIn,
+            'last_out' => $lastOut,
+            'work_minutes' => max(0, $workMinutes),
+            'late_minutes' => $lateMinutes,
+            'status' => $status,
+            'punch_count' => $punchCount,
+            'employee_type' => $employeeType,
             'required_minutes' => $requiredMinutes,
             'validation_errors' => null,
         ];
@@ -236,7 +236,8 @@ class AttendanceService
      */
     public function determineStatus(int $workMinutes, int $requiredMinutes): string
     {
-        $presentThreshold = $requiredMinutes;
+        $graceMinutes = 30;
+        $presentThreshold = $requiredMinutes - $graceMinutes;
         $halfDayThreshold = $requiredMinutes === $this->internMinutes
             ? $this->internHalfDayMinutes
             : $this->fullTimeHalfDayMinutes;
@@ -257,7 +258,7 @@ class AttendanceService
      */
     private function calculateWorkMinutes(string $firstIn, string $lastOut): int
     {
-        $in  = new \DateTime($firstIn);
+        $in = new \DateTime($firstIn);
         $out = new \DateTime($lastOut);
         $diff = $out->getTimestamp() - $in->getTimestamp();
 
@@ -274,7 +275,7 @@ class AttendanceService
     private function calculateLateMinutes(string $firstIn, string $date): int
     {
         $officeStart = new \DateTime($date . ' ' . $this->officeStartTime . ':00');
-        $punchIn     = new \DateTime($firstIn);
+        $punchIn = new \DateTime($firstIn);
 
         if ($punchIn <= $officeStart) {
             return 0;
@@ -311,7 +312,7 @@ class AttendanceService
     {
         $results = [];
         $current = new \DateTime($fromDate);
-        $end     = new \DateTime($toDate);
+        $end = new \DateTime($toDate);
 
         while ($current <= $end) {
             $date = $current->format('Y-m-d');
@@ -341,14 +342,14 @@ class AttendanceService
 
             if (!isset($byEmployee[$empCode])) {
                 $byEmployee[$empCode] = [
-                    'emp_code'              => $empCode,
-                    'name'                 => $record['name'] ?? $empCode,
-                    'present_days'         => 0,
-                    'half_days'            => 0,
-                    'absent_days'          => 0,
-                    'total_work_minutes'   => 0,
-                    'total_late_minutes'    => 0,
-                    'late_count'          => 0,
+                    'emp_code' => $empCode,
+                    'name' => $record['name'] ?? $empCode,
+                    'present_days' => 0,
+                    'half_days' => 0,
+                    'absent_days' => 0,
+                    'total_work_minutes' => 0,
+                    'total_late_minutes' => 0,
+                    'late_count' => 0,
                 ];
             }
 
@@ -363,15 +364,18 @@ class AttendanceService
                     $byEmployee[$empCode]['absent_days']++;
                     break;
                 case 'leave':
-                    if (!isset($byEmployee[$empCode]['leave_days'])) $byEmployee[$empCode]['leave_days'] = 0;
+                    if (!isset($byEmployee[$empCode]['leave_days']))
+                        $byEmployee[$empCode]['leave_days'] = 0;
                     $byEmployee[$empCode]['leave_days']++;
                     break;
                 case 'holiday':
-                    if (!isset($byEmployee[$empCode]['holiday_days'])) $byEmployee[$empCode]['holiday_days'] = 0;
+                    if (!isset($byEmployee[$empCode]['holiday_days']))
+                        $byEmployee[$empCode]['holiday_days'] = 0;
                     $byEmployee[$empCode]['holiday_days']++;
                     break;
                 case 'comp_off':
-                    if (!isset($byEmployee[$empCode]['comp_off_days'])) $byEmployee[$empCode]['comp_off_days'] = 0;
+                    if (!isset($byEmployee[$empCode]['comp_off_days']))
+                        $byEmployee[$empCode]['comp_off_days'] = 0;
                     $byEmployee[$empCode]['comp_off_days']++;
                     break;
             }

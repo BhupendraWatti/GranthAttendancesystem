@@ -122,20 +122,8 @@ class DashboardService
         $daysInMonth = cal_days_in_month(CAL_GREGORIAN, $month, $year);
         $todayDay = (int)date('d');
         
-        $workingDays = 0;
-        $satCount = 0;
-        for ($d = 1; $d <= $todayDay; $d++) {
-            $time = mktime(0, 0, 0, $month, $d, $year);
-            $dow = (int)date('w', $time);
-            
-            if ($dow === 0) continue; // Sunday OFF
-            if ($dow === 6) { // Saturday
-                $satCount++;
-                if ($satCount === 1 || $satCount === 3) continue; // 1st/3rd Sat OFF
-            }
-            $workingDays++;
-        }
-        $requiredHoursMonth = $workingDays * 8.5;
+        // Fixed Monthly Goal: 204 hours (24 days * 8.5 hours)
+        $requiredHoursMonth = 204.0;
         $totalHoursMonth = round($totalMinutesMonth / 60, 2);
 
         $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];

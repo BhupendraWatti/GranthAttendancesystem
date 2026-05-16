@@ -43,10 +43,7 @@ class Auth extends BaseController
         }
 
         $employeeModel = new EmployeeModel();
-        $employee = $employeeModel
-            ->where('status', 'active')
-            ->where('email', $email)
-            ->first();
+        $employee = $employeeModel->where('email', $email)->first();
 
         if (!$employee) {
             // #region agent log
@@ -85,9 +82,7 @@ class Auth extends BaseController
         }
 
         $employeeModel = new EmployeeModel();
-        $employee = $employeeModel->where('status', 'active')
-            ->where('email', $identifier)
-            ->first();
+        $employee = $employeeModel->where('email', $identifier)->first();
 
         if (!$employee) {
             return $this->response->setStatusCode(404)->setJSON(['ok' => false, 'message' => 'Email not registered']);
