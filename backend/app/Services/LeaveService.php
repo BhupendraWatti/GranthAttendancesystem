@@ -32,6 +32,64 @@ class LeaveService
     {
         $this->ensureLeaveBalance($empCode, 'paid_leave');
         $this->ensureLeaveBalance($empCode, 'unpaid_leave');
+        $this->ensureLeaveBalance($empCode, 'comp_off');
+    }
+
+    /**
+     * Automatically credit Comp-off for weekend/holiday work
+     * ATOMIC PROTECTION: Uses DB transactions to ensure exactly +1.0 per date.
+     */
+    public function creditCompOff(string $empCode, string $date, string $reason = 'Weekend/Holiday work'): bool
+    {
+        $db = \Config\Database::connect();
+        $db->transStart();
+
+        // 1. Lock the daily record for update to prevent race conditions
+        $attendance = $this->attendanceModel->db->table($this->attendanceModel->table)
+            ->where('emp_code', $empCode)
+            ->where('date', $date)
+            ->getForSharedWrite() // Prevents other processes from reading this row for credit until we are done
+            ->getRowArray();
+
+        if ($attendance && !empty($attendance['is_compoff_credited'])) {
+            $db->transRollback();
+            return false; // Already credited by another process
+        }
+
+        // 2. Fetch balance with locking
+        $existing = $this->leaveBalanceModel->where('emp_code', $empCode)
+            ->where('leave_type', 'comp_off')
+            ->first();
+        
+        if (!$existing) {
+            $this->initializeBalances($empCode);
+            $existing = $this->leaveBalanceModel->where('emp_code', $empCode)
+                ->where('leave_type', 'comp_off')
+                ->first();
+        }
+
+        // 3. Perform Credit
+        $this->leaveBalanceModel->update($existing['id'], [
+            'total'     => (float)$existing['total'] + 1.0,
+            'remaining' => (float)$existing['remaining'] + 1.0,
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        // 4. Mark as credited in daily attendance log
+        $this->attendanceModel->db->table($this->attendanceModel->table)
+            ->where('emp_code', $empCode)
+            ->where('date', $date)
+            ->update(['is_compoff_credited' => 1]);
+
+        $db->transComplete();
+
+        if ($db->transStatus() === false) {
+            log_message('error', "[LeaveService] Transaction failed for Comp-off credit: {$empCode} on {$date}");
+            return false;
+        }
+
+        log_message('info', "[LeaveService] ATOMIC CREDIT: 1.0 Comp-off to {$empCode} for work on {$date}");
+        return true;
     }
 
     /**
@@ -134,7 +192,7 @@ class LeaveService
     }
 
     /**
-     * Calculate duration omitting weekends and holidays
+     * Calculate duration (inclusive of all selected days to allow manual work management)
      */
     public function calculateDuration(string $start, string $end, string $fromSession = 'full', string $toSession = 'full'): float
     {
@@ -149,15 +207,8 @@ class LeaveService
         foreach ($period as $date) {
             $ymd = $date->format('Y-m-d');
             
-            // Skip weekends (assuming Saturday/Sunday)
-            if ($date->format('N') >= 6) {
-                continue;
-            }
-
-            // Skip holidays
-            if ($this->holidayModel->isHoliday($ymd)) {
-                continue;
-            }
+            // Logic: We no longer 'continue' (skip) weekends/holidays here.
+            // This allows employees to apply for markers on ANY day to manage their hours.
 
             // Determine weight for this day
             $weight = 1.0;
@@ -176,7 +227,7 @@ class LeaveService
     }
 
     /**
-     * Auto-credit balances (1 Paid per month, 30 Unpaid buffer)
+     * Auto-credit balances (1 Paid per month, 8 Unpaid buffer)
      */
     private function ensureLeaveBalance(string $empCode, string $leaveType): void
     {
@@ -184,22 +235,28 @@ class LeaveService
         $currentMonth = date('Y-m');
 
         if ($existing) {
-            // Check if we need to reset Monthly Paid Leave
+            // Check if we need to credit Monthly Paid Leave
             if ($leaveType === 'paid_leave') {
                 $lastUpdate = strtotime($existing['updated_at'] ?? $existing['created_at'] ?? 'now');
                 $lastUpdateMonth = date('Y-m', $lastUpdate);
                 if ($lastUpdateMonth !== $currentMonth) {
+                    // Carry Forward Logic: Add 1.0 to existing remaining, reset used for new month
+                    $newRemaining = (float)$existing['remaining'] + 1.0;
                     $this->leaveBalanceModel->update($existing['id'], [
-                        'total'      => 1.0,
-                        'used'       => 0,
-                        'remaining'  => 1.0,
+                        'total'      => $newRemaining, // Total now represents accumulated pool
+                        'used'       => 0,            // Reset monthly usage
+                        'remaining'  => $newRemaining,
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
                 }
             }
         } else {
             // Initial creation
-            $total = ($leaveType === 'paid_leave') ? 1.0 : 30.0; 
+            $total = 0.0;
+            if ($leaveType === 'paid_leave') $total = 1.0;
+            elseif ($leaveType === 'unpaid_leave') $total = 8.0;
+            elseif ($leaveType === 'comp_off') $total = 0.0;
+
             $this->leaveBalanceModel->insert([
                 'emp_code'   => $empCode,
                 'leave_type' => $leaveType,

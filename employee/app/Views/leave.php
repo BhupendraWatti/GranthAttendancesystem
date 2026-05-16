@@ -21,8 +21,18 @@
                     <?php if (!empty($balances)): ?>
                         <?php foreach ($balances as $bal): ?>
                             <?php 
-                                $label = ($bal['leave_type'] === 'paid_leave') ? 'Monthly Paid Leave' : 'Unpaid Leave Balance';
-                                $color = ($bal['leave_type'] === 'paid_leave') ? 'var(--color-success)' : 'var(--color-warning)';
+                                $label = 'Balance';
+                                $color = 'var(--color-text-dim)';
+                                if ($bal['leave_type'] === 'paid_leave') {
+                                    $label = 'Monthly Paid Leave';
+                                    $color = 'var(--color-success)';
+                                } elseif ($bal['leave_type'] === 'unpaid_leave') {
+                                    $label = 'Unpaid Leave Balance';
+                                    $color = 'var(--color-warning)';
+                                } elseif ($bal['leave_type'] === 'comp_off') {
+                                    $label = 'Comp-off Balance';
+                                    $color = '#6366f1';
+                                }
                             ?>
                             <div>
                                 <div

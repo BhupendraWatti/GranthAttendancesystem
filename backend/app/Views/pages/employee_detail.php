@@ -255,6 +255,40 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                             </div>
                         </div>
                     </div>
+
+                    <!-- Leave Balances Section -->
+                    <div style="background: var(--color-surface-muted); border-radius: 12px; padding: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h4 class="font-display" style="font-size: 1rem;">Leave Balances</h4>
+                            <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
+                                    onclick="document.getElementById('edit-balances-modal').classList.add('active')">
+                                <i class="fa-solid fa-pen"></i> Edit
+                            </button>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                            <?php 
+                            $balanceMap = [];
+                            foreach(($leaveBalances ?? []) as $lb) $balanceMap[$lb['leave_type']] = $lb;
+                            
+                            $categories = [
+                                'paid_leave' => ['label' => 'Paid Leave', 'color' => 'var(--color-success)'],
+                                'unpaid_leave' => ['label' => 'Unpaid Buffer', 'color' => 'var(--color-text-dim)'],
+                                'comp_off' => ['label' => 'Comp-off', 'color' => '#6366f1']
+                            ];
+
+                            foreach($categories as $key => $cat):
+                                $b = $balanceMap[$key] ?? ['remaining' => 0, 'total' => 0];
+                            ?>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div style="width: 8px; height: 8px; border-radius: 50%; background: <?= $cat['color'] ?>;"></div>
+                                    <span class="text-muted" style="font-size: 0.8125rem;"><?= $cat['label'] ?></span>
+                                </div>
+                                <span style="font-weight: 700;"><?= esc($b['remaining']) ?> <small style="font-size: 0.65rem; color: var(--color-text-dim);">/ <?= esc($b['total']) ?> DAYS</small></span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -576,6 +610,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                            <option value="absent">Absent</option>
                            <option value="half_day">Half Day</option>
                            <option value="work_from_home">Work from Home</option>
+                           <option value="paid_leave">Paid Leave</option>
+                           <option value="unpaid_leave">Unpaid Leave</option>
                        </select>
                    </div>
                    <div class="form-group">
@@ -597,6 +633,49 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; gap: 0.5rem; background: var(--color-accent); border-color: var(--color-accent);">
                         <i class="fa-solid fa-check-double"></i>
                         Commit Update
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Leave Balances Modal -->
+<div id="edit-balances-modal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Edit Leave Balances</h3>
+                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;">Adjust the manual leave pool for this employee.</p>
+            </div>
+            <button onclick="document.getElementById('edit-balances-modal').classList.remove('active')" class="modal-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form action="<?= site_url('employees/leave-balances') ?>" method="POST">
+                <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Paid Leave Balance (Days)</label>
+                    <input type="number" name="paid_leave" step="0.5" class="form-input" placeholder="Current total pool" value="<?= $balanceMap['paid_leave']['total'] ?? '' ?>">
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label">Unpaid Leave Buffer (Days)</label>
+                    <input type="number" name="unpaid_leave" step="1" class="form-input" placeholder="Maximum unpaid allowed" value="<?= $balanceMap['unpaid_leave']['total'] ?? '' ?>">
+                </div>
+
+                <div class="form-group mb-6">
+                    <label class="form-label">Comp-off Balance (Days)</label>
+                    <input type="number" name="comp_off" step="0.5" class="form-input" placeholder="Accumulated time bank" value="<?= $balanceMap['comp_off']['total'] ?? '' ?>">
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="document.getElementById('edit-balances-modal').classList.remove('active')"
+                        class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; background: var(--color-accent); border-color: var(--color-accent);">
+                        Update Balances
                     </button>
                 </div>
             </form>

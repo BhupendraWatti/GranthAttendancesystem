@@ -134,6 +134,10 @@ class EmployeeController extends BaseController
             // Fetch documents
             $documents = $employeeDocModel->where('emp_code', $empCode)->orderBy('created_at', 'DESC')->findAll();
 
+            // Fetch Leave Balances
+            $balanceModel = new \App\Models\LeaveBalanceModel();
+            $leaveBalances = $balanceModel->getByEmployee($empCode);
+
             return view('pages/employee_detail', [
                 'pageTitle' => $employee['name'],
                 'activePage' => 'employees',
@@ -141,6 +145,7 @@ class EmployeeController extends BaseController
                 'attendanceRecords' => $attendanceRecords,
                 'salarySummary' => $salarySummary,
                 'documents' => $documents,
+                'leaveBalances' => $leaveBalances,
                 'month' => $month,
                 'year' => $year,
             ]);
@@ -267,10 +272,14 @@ class EmployeeController extends BaseController
                 }
             } else if ($status === 'work_from_home' || $workMode === 'wfh') {
                 $workMinutes = 510; // 8.5 hours default for WFH
+            } else if ($status === 'paid_leave' || $status === 'leave') {
+                $workMinutes = 510; // Full credit for paid leave
             } else if ($status === 'half_day') {
                 $workMinutes = 240; // 4 hours default
             } else if ($status === 'present') {
                 $workMinutes = 480;
+            } else if ($status === 'unpaid_leave' || $status === 'absent') {
+                $workMinutes = 0;
             }
 
             // Format times for DB if provided
@@ -297,6 +306,56 @@ class EmployeeController extends BaseController
         } catch (\Throwable $e) {
             log_message('error', '[Web\\EmployeeController] updateAttendance error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to update attendance.');
+        }
+    }
+
+    /**
+     * POST /employees/leave-balances — Update employee leave balances manually
+     */
+    public function updateLeaveBalances()
+    {
+        $empCode = $this->request->getPost('emp_code');
+        $paid = $this->request->getPost('paid_leave');
+        $unpaid = $this->request->getPost('unpaid_leave');
+        $compoff = $this->request->getPost('comp_off');
+
+        if (empty($empCode)) {
+            return redirect()->back()->with('error', 'Employee code is required.');
+        }
+
+        try {
+            $balanceModel = new \App\Models\LeaveBalanceModel();
+            
+            $types = [
+                'paid_leave' => $paid,
+                'unpaid_leave' => $unpaid,
+                'comp_off' => $compoff
+            ];
+
+            foreach ($types as $type => $value) {
+                if ($value === null || $value === '') continue;
+                
+                $existing = $balanceModel->where('emp_code', $empCode)->where('leave_type', $type)->first();
+                $data = [
+                    'emp_code' => $empCode,
+                    'leave_type' => $type,
+                    'total' => (float)$value,
+                    'remaining' => (float)$value, // resetting remaining to match new total for simplicity
+                    'used' => 0,
+                    'updated_at' => date('Y-m-d H:i:s')
+                ];
+
+                if ($existing) {
+                    $balanceModel->update($existing['id'], $data);
+                } else {
+                    $balanceModel->insert($data);
+                }
+            }
+
+            return redirect()->back()->with('success', 'Leave balances updated successfully.');
+        } catch (\Throwable $e) {
+            log_message('error', '[Web\\EmployeeController] updateLeaveBalances error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update leave balances.');
         }
     }
 }

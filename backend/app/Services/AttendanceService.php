@@ -37,6 +37,7 @@ class AttendanceService
     private \App\Models\HolidayModel $holidayModel;
     private \App\Models\LeaveRequestModel $leaveRequestModel;
     private \App\Models\AttendanceOverrideModel $overrideModel;
+    private \App\Services\LeaveService $leaveService;
 
     private int $fullTimeMinutes;
     private int $internMinutes;
@@ -64,6 +65,7 @@ class AttendanceService
         $this->holidayModel = new \App\Models\HolidayModel();
         $this->leaveRequestModel = new \App\Models\LeaveRequestModel();
         $this->overrideModel = new \App\Models\AttendanceOverrideModel();
+        $this->leaveService = new \App\Services\LeaveService();
 
         $this->fullTimeMinutes = (int) env('FULL_TIME_PRESENT_MINUTES', 510);
         $this->internMinutes = (int) env('INTERN_PRESENT_MINUTES', 330);
@@ -154,6 +156,18 @@ class AttendanceService
             } else {
                 // Normal processing or Override processing
                 $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType);
+            }
+
+            // 4. CREDIT COMP-OFF if work detected on weekend/holiday AND not already credited
+            if (($dayType === 'weekend' || $dayType === 'holiday') && ($result['work_minutes'] ?? 0) > 0) {
+                // Check existing record for credit flag
+                $existing = $this->attendanceModel->where('emp_code', $empCode)->where('date', $date)->first();
+                if (!$existing || empty($existing['is_compoff_credited'])) {
+                    $this->leaveService->creditCompOff($empCode, $date);
+                    $result['is_compoff_credited'] = 1;
+                } else {
+                    $result['is_compoff_credited'] = 1; // Preserve flag
+                }
             }
 
             // Validate the result

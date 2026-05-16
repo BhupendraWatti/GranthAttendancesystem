@@ -29,8 +29,47 @@ class Dashboard extends BaseController
         }
 
         $year = (int) date('Y');
-        $month = (int) date('m');
-        $monthRows = $dailyModel->getMonthly($empCode, $year, $month);
+        $month = (int) date('n');
+        $rows = $dailyModel->getMonthly($empCode, $year, $month);
+
+        // Fill gaps for full month visibility on dashboard
+        helper('attendance');
+        $holidayModel = new \App\Models\HolidayModel();
+        $indexed = [];
+        foreach ($rows as $r) {
+            $indexed[$r['date']] = $r;
+        }
+
+        $fullMonthRows = [];
+        $daysToProcess = (int)date('d'); // Only show up to today on dashboard recent activity
+        for ($d = 1; $d <= $daysToProcess; $d++) {
+            $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
+            if (isset($indexed[$dateStr])) {
+                $fullMonthRows[] = $indexed[$dateStr];
+            } else {
+                $dayType = 'working_day';
+                if (isWeekendOff($dateStr)) {
+                    $dayType = 'weekend';
+                } elseif ($holidayModel->isHoliday($dateStr)) {
+                    $dayType = 'holiday';
+                }
+
+                $fullMonthRows[] = [
+                    'emp_code' => $empCode,
+                    'date' => $dateStr,
+                    'first_in' => null,
+                    'last_out' => null,
+                    'work_minutes' => 0,
+                    'late_minutes' => 0,
+                    'status' => 'absent',
+                    'attendance_status' => 'absent',
+                    'day_type' => $dayType,
+                    'work_mode' => null,
+                    'punch_count' => 0,
+                ];
+            }
+        }
+        $monthRows = $fullMonthRows;
 
         $totalMinutesMonth = 0;
         foreach ($monthRows as &$r) {
@@ -39,15 +78,27 @@ class Dashboard extends BaseController
         }
         unset($r);
 
+        // Update TodayRow if it was missing in DB
+        if (empty($todayRow)) {
+            $todayRow = end($monthRows);
+        }
+
         // Fixed Monthly Goal: 204 hours (24 days * 8.5 hours)
         $requiredHoursMonth = 204.0;
         $totalHoursMonth = round($totalMinutesMonth / 60, 2);
 
         $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];
         foreach ($monthRows as $r) {
-            $status = $r['status'] ?? '';
-            if (isset($counts[$status])) {
-                $counts[$status]++;
+            $st = $r['attendance_status'] ?? $r['status'] ?? 'absent';
+            $dayType = $r['day_type'] ?? 'working_day';
+            
+            // Only count absences on working days
+            if (($dayType === 'weekend' || $dayType === 'holiday') && $st === 'absent' && empty($r['first_in'])) {
+                continue;
+            }
+
+            if (isset($counts[$st])) {
+                $counts[$st]++;
             }
         }
 

@@ -21,7 +21,8 @@
                         <?php for ($m = 1; $m <= 12; $m++): ?>
                             <?php $mTime = mktime(0, 0, 0, $m, 1, $year); ?>
                             <option value="<?= $m ?>" <?= $m == $month ? 'selected' : '' ?>>
-                                <?= date('F', $mTime) ?></option>
+                                <?= date('F', $mTime) ?>
+                            </option>
                         <?php endfor; ?>
                     </select>
                     <button type="submit" class="btn btn-outline"
@@ -38,7 +39,8 @@
                         ?>
                         <div
                             style="text-align: center; font-size: 0.7rem; font-weight: 700; color: var(--color-text-dim); text-transform: uppercase; padding: 0.5rem;">
-                            <?= $day ?></div>
+                            <?= $day ?>
+                        </div>
                     <?php endforeach; ?>
 
                     <?php
@@ -48,37 +50,42 @@
                             ?>
                             <div></div>
                         <?php else:
-                        $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $dayNum);
-                        $row = $byDate[$dateStr] ?? null;
-                        $st = $row['attendance_status'] ?? $row['status'] ?? null;
-                        $dayType = $row['day_type'] ?? 'working_day';
+                            $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $dayNum);
+                            $row = $byDate[$dateStr] ?? null;
+                            $st = $row['attendance_status'] ?? $row['status'] ?? null;
+                            $dayType = $row['day_type'] ?? 'working_day';
 
-                        if ($dayType === 'weekend' && ($st === 'absent' || $st === null) && empty($row['first_in'])) {
-                            $st = 'weekend';
-                        } elseif ($dayType === 'holiday' && ($st === 'absent' || $st === null) && empty($row['first_in'])) {
-                            $st = 'holiday';
-                        }
+                            if ($dayType === 'weekend' && ($st === 'absent' || $st === null) && empty($row['first_in'])) {
+                                $st = 'weekend';
+                            } elseif ($dayType === 'holiday' && ($st === 'absent' || $st === null) && empty($row['first_in'])) {
+                                $st = 'holiday';
+                            }
 
-                        $hasData = ($st !== null && $st !== 'weekend' && $st !== 'holiday');
-                        ?>
-                        <div
-                            style="aspect-ratio: 1; border-radius: 8px; border: 1px solid <?= $st ? 'var(--color-border)' : 'transparent' ?>; background: <?= $st ? 'var(--color-surface-muted)' : 'transparent' ?>; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-                            <span
-                                style="font-size: 0.9375rem; font-weight: <?= $st ? '700' : '400' ?>; color: <?= $st ? 'var(--color-primary)' : 'var(--color-text-dim)' ?>;"><?= $dayNum ?></span>
-                            <?php if ($st): ?>
-                                <?php 
+                            $hasData = ($st !== null && $st !== 'weekend' && $st !== 'holiday');
+                            ?>
+                            <div
+                                style="aspect-ratio: 1; border-radius: 8px; border: 1px solid <?= $st ? 'var(--color-border)' : 'transparent' ?>; background: <?= $st ? 'var(--color-surface-muted)' : 'transparent' ?>; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+                                <span
+                                    style="font-size: 0.9375rem; font-weight: <?= $st ? '700' : '400' ?>; color: <?= $st ? 'var(--color-primary)' : 'var(--color-text-dim)' ?>;"><?= $dayNum ?></span>
+                                <?php if ($st): ?>
+                                    <?php
                                     $dotColor = 'var(--color-error)';
-                                    if ($st === 'present') $dotColor = 'var(--color-success)';
-                                    elseif ($st === 'work_from_home' || !empty($row['work_mode'])) $dotColor = '#6366f1';
-                                    elseif ($st === 'half_day') $dotColor = 'var(--color-warning)';
-                                    elseif ($st === 'weekend') $dotColor = '#3b82f6';
-                                    elseif ($st === 'holiday') $dotColor = '#8b5cf6';
-                                ?>
-                                <div
-                                    style="width: 4px; height: 4px; border-radius: 50%; background: <?= $dotColor ?>; margin-top: 0.25rem;">
-                                </div>
-                            <?php endif; ?>
-                        </div>
+                                    if ($st === 'present')
+                                        $dotColor = 'var(--color-success)';
+                                    elseif ($st === 'work_from_home' || !empty($row['work_mode']))
+                                        $dotColor = '#6366f1';
+                                    elseif ($st === 'half_day')
+                                        $dotColor = 'var(--color-warning)';
+                                    elseif ($st === 'weekend')
+                                        $dotColor = '#3b82f6';
+                                    elseif ($st === 'holiday')
+                                        $dotColor = '#8b5cf6';
+                                    ?>
+                                    <div
+                                        style="width: 4px; height: 4px; border-radius: 50%; background: <?= $dotColor ?>; margin-top: 0.25rem;">
+                                    </div>
+                                <?php endif; ?>
+                            </div>
                         <?php endif; endfor; ?>
                 </div>
             </div>
@@ -100,8 +107,8 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach (array_reverse($rows) as $r): ?>
-                            <?php 
+                        <?php foreach ($rows as $r): ?>
+                            <?php
                             $st = $r['attendance_status'] ?? $r['status'] ?? 'absent';
                             $dayType = $r['day_type'] ?? 'working_day';
                             if ($dayType === 'weekend' && $st === 'absent' && empty($r['first_in'])) {
@@ -112,31 +119,34 @@
                             ?>
                             <tr>
                                 <td style="font-weight: 500;">
-                                    <?php 
-                                        $time = strtotime($r['date'] ?? '');
-                                        echo $time ? date('D, d M', $time) : '—';
+                                    <?php
+                                    $time = strtotime($r['date'] ?? '');
+                                    echo $time ? date('D, d M', $time) : '—';
                                     ?>
                                 </td>
                                 <td>
-                                    <span class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span>
+                                    <span
+                                        class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span>
                                     <?php if (!empty($r['work_mode'])): ?>
-                                        <span class="badge badge--info" style="font-size:0.6rem; padding: 2px 4px;"><?= strtoupper(esc($r['work_mode'])) ?></span>
+                                        <span class="badge badge--info"
+                                            style="font-size:0.6rem; padding: 2px 4px;"><?= strtoupper(esc($r['work_mode'])) ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <?php 
-                                        $time = strtotime($r['first_in'] ?? '');
-                                        echo $time ? date('H:i', $time) : '—';
+                                    <?php
+                                    $time = strtotime($r['first_in'] ?? '');
+                                    echo $time ? date('H:i', $time) : '—';
                                     ?>
                                 </td>
                                 <td>
-                                    <?php 
-                                        $time = strtotime($r['last_out'] ?? '');
-                                        echo $time ? date('H:i', $time) : '—';
+                                    <?php
+                                    $time = strtotime($r['last_out'] ?? '');
+                                    echo $time ? date('H:i', $time) : '—';
                                     ?>
                                 </td>
                                 <td style="font-weight: 600; color: var(--color-primary);">
-                                    <?= esc((string) ($r['total_hours'] ?? '0')) ?>h</td>
+                                    <?= esc((string) ($r['total_hours'] ?? '0')) ?>h
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         <?php if (empty($rows)): ?>
@@ -163,11 +173,14 @@
                 foreach ($rows as $r) {
                     $st = $r['attendance_status'] ?? $r['status'] ?? 'absent';
                     $dayType = $r['day_type'] ?? 'working_day';
-                    
+                    $workMode = strtolower($r['work_mode'] ?? '');
+
                     if ($dayType === 'weekend' && $st === 'absent' && empty($r['first_in'])) {
                         $summaryCounts['weekend']++;
                     } elseif ($dayType === 'holiday' && $st === 'absent' && empty($r['first_in'])) {
                         $summaryCounts['holiday']++;
+                    } elseif ($st === 'work_from_home' || $workMode === 'wfh' || $workMode === 'work_from_home') {
+                        $summaryCounts['work_from_home']++;
                     } elseif (isset($summaryCounts[$st])) {
                         $summaryCounts[$st]++;
                     }
@@ -203,6 +216,12 @@
                     <span
                         style="font-size: 1.125rem; font-weight: 700; color: #1D4ED8;"><?= $summaryCounts['weekend'] ?></span>
                 </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #F5F3FF; border-radius: 8px;">
+                    <span style="font-size: 0.8125rem; font-weight: 600; color: #5B21B6;">Holidays</span>
+                    <span
+                        style="font-size: 1.125rem; font-weight: 700; color: #5B21B6;"><?= $summaryCounts['holiday'] ?></span>
+                </div>
             </div>
         </div>
 
@@ -215,7 +234,7 @@
                     style="list-style: none; display: flex; flex-direction: column; gap: 1rem; font-size: 0.8125rem; color: var(--color-text-dim);">
                     <li style="display: flex; gap: 0.75rem;">
                         <span style="color: var(--color-accent); font-weight: 700;">&bull;</span>
-                        <span>Service requirement: 8.0 hours per service day.</span>
+                        <span>Service requirement: 8.5 hours per service day.</span>
                     </li>
                 </ul>
             </div>
