@@ -86,6 +86,48 @@ class EmployeeController extends BaseController
             // Fetch attendance records for selected month
             $attendanceRecords = $attendanceModel->getMonthly($empCode, $year, $month);
 
+            // Ensure all dates of the month are visible (fix for missing weekend/no-punch rows)
+            helper('attendance');
+            $holidayModel = new \App\Models\HolidayModel();
+            $indexedRecords = [];
+            foreach ($attendanceRecords as $r) {
+                $indexedRecords[$r['date']] = $r;
+            }
+
+            $fullMonthRecords = [];
+            $daysInMonth = date('t', mktime(0, 0, 0, $month, 1, $year));
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
+                if (isset($indexedRecords[$dateStr])) {
+                    $fullMonthRecords[] = $indexedRecords[$dateStr];
+                } else {
+                    // Create default virtual record for missing dates
+                    $dayType = 'working_day';
+                    if (isWeekendOff($dateStr)) {
+                        $dayType = 'weekend';
+                    } elseif ($holidayModel->isHoliday($dateStr)) {
+                        $dayType = 'holiday';
+                    }
+
+                    $fullMonthRecords[] = [
+                        'emp_code' => $empCode,
+                        'date' => $dateStr,
+                        'first_in' => null,
+                        'last_out' => null,
+                        'work_minutes' => 0,
+                        'late_minutes' => 0,
+                        'status' => 'absent',
+                        'attendance_status' => 'absent',
+                        'day_type' => $dayType,
+                        'work_mode' => null,
+                        'punch_count' => 0,
+                        'is_manual_entry' => 0,
+                        'is_locked' => 0,
+                    ];
+                }
+            }
+            $attendanceRecords = $fullMonthRecords;
+
             // Calculate salary for this employee
             $salarySummary = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
 

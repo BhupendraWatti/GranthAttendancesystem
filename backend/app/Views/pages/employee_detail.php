@@ -26,9 +26,18 @@ $compOffDays = 0;
 $totalWorkMin = 0;
 $totalDays = count($attendanceRecords ?? []);
 foreach (($attendanceRecords ?? []) as $r) {
-    if ($r['status'] === 'present')
+    $st = $r['status'];
+    $dayType = $r['day_type'] ?? 'working_day';
+
+    // Business Rule: Weekend and Holiday absences (no work) should not count towards absent stats
+    if (($dayType === 'weekend' || $dayType === 'holiday') && $st === 'absent' && empty($r['first_in'])) {
+        if ($dayType === 'holiday') $holidayDays++;
+        continue;
+    }
+
+    if ($st === 'present')
         $presentDays++;
-    elseif ($r['status'] === 'absent')
+    elseif ($st === 'absent')
         $absentDays++;
     elseif ($r['status'] === 'half_day')
         $halfDays++;
