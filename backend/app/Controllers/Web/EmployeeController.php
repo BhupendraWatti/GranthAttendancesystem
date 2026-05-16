@@ -192,6 +192,7 @@ class EmployeeController extends BaseController
         $status = $this->request->getPost('status');
         $firstIn = $this->request->getPost('first_in') ?: null;
         $lastOut = $this->request->getPost('last_out') ?: null;
+        $workMode = $this->request->getPost('work_mode') ?: null; // New field
 
         if (empty($empCode) || empty($date) || empty($status)) {
             return redirect()->back()->with('error', 'Employee code, date, and status are required.');
@@ -199,7 +200,21 @@ class EmployeeController extends BaseController
 
         try {
             $attendanceModel = new AttendanceDailyModel();
+            $overrideModel = new \App\Models\AttendanceOverrideModel();
             
+            // Handle Work Mode Override Table
+            if ($workMode) {
+                $overrideModel->replace([
+                    'emp_code' => $empCode,
+                    'attendance_date' => $date,
+                    'override_type' => $workMode,
+                    'remarks' => 'Admin manual edit',
+                    'updated_at' => date('Y-m-d H:i:s')
+                ]);
+            } else {
+                $overrideModel->where('emp_code', $empCode)->where('attendance_date', $date)->delete();
+            }
+
             // Calculate work minutes if times are provided
             $workMinutes = 0;
             if ($firstIn && $lastOut) {
@@ -208,7 +223,7 @@ class EmployeeController extends BaseController
                 if ($outTime > $inTime) {
                     $workMinutes = round(($outTime - $inTime) / 60);
                 }
-            } else if ($status === 'work_from_home') {
+            } else if ($status === 'work_from_home' || $workMode === 'wfh') {
                 $workMinutes = 510; // 8.5 hours default for WFH
             } else if ($status === 'half_day') {
                 $workMinutes = 240; // 4 hours default
@@ -225,7 +240,9 @@ class EmployeeController extends BaseController
                 'date' => $date,
                 'first_in' => $formattedFirstIn,
                 'last_out' => $formattedLastOut,
-                'status' => $status,
+                'status' => ($status === 'work_from_home') ? 'present' : $status, // map wfh to present
+                'attendance_status' => ($status === 'work_from_home') ? 'present' : $status,
+                'work_mode' => $workMode,
                 'work_minutes' => $workMinutes,
                 'punch_count' => ($firstIn || $lastOut) ? 2 : 0, 
             ];

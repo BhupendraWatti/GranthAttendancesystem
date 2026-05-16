@@ -47,6 +47,26 @@
             background: rgba(245, 158, 11, 0.1);
             color: #F59E0B;
         }
+
+        .badge--weekend {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3B82F6;
+        }
+
+        .badge--holiday {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8B5CF6;
+        }
+
+        .badge--leave {
+            background: rgba(107, 114, 128, 0.1);
+            color: #6B7280;
+        }
+
+        .badge--info {
+            background: rgba(6, 182, 212, 0.1);
+            color: #06B6D4;
+        }
     </style>
 </head>
 

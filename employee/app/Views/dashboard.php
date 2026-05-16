@@ -4,7 +4,13 @@
 
 <?php
 $name = $employee['name'] ?? 'Associate';
-$status = $todayRow['status'] ?? 'absent';
+$st = $todayRow['attendance_status'] ?? $todayRow['status'] ?? 'absent';
+$dayType = $todayRow['day_type'] ?? 'working_day';
+if ($dayType === 'weekend' && $st === 'absent' && empty($todayRow['first_in'])) {
+    $st = 'weekend';
+} elseif ($dayType === 'holiday' && $st === 'absent' && empty($todayRow['first_in'])) {
+    $st = 'holiday';
+}
 ?>
 
 <div class="page-header">
@@ -14,16 +20,21 @@ $status = $todayRow['status'] ?? 'absent';
             style="display: flex; align-items: center; gap: 0.75rem; background: var(--color-surface); padding: 0.5rem 1.25rem; border-radius: 999px; border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
             <?php 
                 $dotColor = 'var(--color-danger)';
-                if ($status === 'present') $dotColor = 'var(--color-success)';
-                elseif ($status === 'work_from_home') $dotColor = '#6366f1';
-                elseif ($status === 'half_day') $dotColor = 'var(--color-warning)';
+                if ($st === 'present') $dotColor = 'var(--color-success)';
+                elseif ($st === 'work_from_home' || !empty($todayRow['work_mode'])) $dotColor = '#6366f1';
+                elseif ($st === 'half_day') $dotColor = 'var(--color-warning)';
+                elseif ($st === 'weekend') $dotColor = '#3b82f6';
+                elseif ($st === 'holiday') $dotColor = '#8b5cf6';
             ?>
             <div id="stat-status-dot"
                 style="width: 10px; height: 10px; border-radius: 50%; background: <?= $dotColor ?>; animation: pulse 2s infinite;">
             </div>
             <div style="display: flex; flex-direction: column;">
                 <span style="font-size: 0.8125rem; font-weight: 800; color: var(--color-primary); line-height: 1.2;"><?= date('l, d M') ?></span>
-                <span id="stat-status-text" style="font-size: 0.65rem; font-weight: 700; color: <?= $dotColor ?>; text-transform: uppercase; letter-spacing: 0.05em;"><?= str_replace('_', ' ', $status) ?></span>
+                <span id="stat-status-text" style="font-size: 0.65rem; font-weight: 700; color: <?= $dotColor ?>; text-transform: uppercase; letter-spacing: 0.05em;">
+                    <?= str_replace('_', ' ', $st) ?>
+                    <?= !empty($todayRow['work_mode']) ? ' (' . strtoupper($todayRow['work_mode']) . ')' : '' ?>
+                </span>
             </div>
             <button id="manual-sync-btn" onclick="triggerManualSync()" title="Refresh Attendance Data"
                 style="margin-left: 0.5rem; background: none; border: none; padding: 0.25rem; cursor: pointer; color: var(--color-text-dim); display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
@@ -232,11 +243,22 @@ $status = $todayRow['status'] ?? 'absent';
             </thead>
             <tbody>
                 <?php foreach ($recent as $row): ?>
-                    <?php $st = $row['status'] ?? 'absent'; ?>
+                    <?php 
+                    $st = $row['attendance_status'] ?? $row['status'] ?? 'absent';
+                    $dayType = $row['day_type'] ?? 'working_day';
+                    if ($dayType === 'weekend' && $st === 'absent' && empty($row['first_in'])) {
+                        $st = 'weekend';
+                    } elseif ($dayType === 'holiday' && $st === 'absent' && empty($row['first_in'])) {
+                        $st = 'holiday';
+                    }
+                    ?>
                     <tr>
                         <td style="font-weight: 500;"><?= date('D, d M Y', strtotime($row['date'])) ?></td>
-                        <td><span
-                                class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span>
+                        <td>
+                            <span class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span>
+                            <?php if (!empty($row['work_mode'])): ?>
+                                <span class="badge badge--info" style="font-size:0.6rem; padding: 2px 4px;"><?= strtoupper(esc($row['work_mode'])) ?></span>
+                            <?php endif; ?>
                         </td>
                         <td><?= $row['first_in'] ? date('H:i', strtotime($row['first_in'])) : '—' ?></td>
                         <td><?= $row['last_out'] ? date('H:i', strtotime($row['last_out'])) : '—' ?></td>

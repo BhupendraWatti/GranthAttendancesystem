@@ -36,6 +36,7 @@ class AttendanceService
     private ValidationService $validationService;
     private \App\Models\HolidayModel $holidayModel;
     private \App\Models\LeaveRequestModel $leaveRequestModel;
+    private \App\Models\AttendanceOverrideModel $overrideModel;
 
     private int $fullTimeMinutes;
     private int $internMinutes;
@@ -55,12 +56,14 @@ class AttendanceService
         ?AttendanceDailyModel $attendanceModel = null,
         ?EmployeeModel $employeeModel = null
     ) {
+        helper('attendance');
         $this->punchLogModel = $punchLogModel ?? new PunchLogModel();
         $this->attendanceModel = $attendanceModel ?? new AttendanceDailyModel();
         $this->employeeModel = $employeeModel ?? new EmployeeModel();
         $this->validationService = new ValidationService();
         $this->holidayModel = new \App\Models\HolidayModel();
         $this->leaveRequestModel = new \App\Models\LeaveRequestModel();
+        $this->overrideModel = new \App\Models\AttendanceOverrideModel();
 
         $this->fullTimeMinutes = (int) env('FULL_TIME_PRESENT_MINUTES', 510);
         $this->internMinutes = (int) env('INTERN_PRESENT_MINUTES', 330);
@@ -82,6 +85,9 @@ class AttendanceService
 
         // 1. Check if date is a global holiday
         $isGlobalHoliday = $this->holidayModel->isHoliday($date);
+        
+        // 2. Check if date is a weekend off
+        $isWeekendOff = isWeekendOff($date);
 
         // Get all punches for this date
         $allPunches = $this->punchLogModel->getAllPunchesForDate($date);
@@ -92,6 +98,13 @@ class AttendanceService
         // Get all active employees
         $employees = $this->employeeModel->getActive();
 
+        // Get all overrides for this date
+        $overrides = $this->overrideModel->where('attendance_date', $date)->findAll();
+        $overrideMap = [];
+        foreach ($overrides as $o) {
+            $overrideMap[$o['emp_code']] = $o['override_type'];
+        }
+
         $processed = 0;
         $errors = [];
 
@@ -99,20 +112,32 @@ class AttendanceService
             $empCode = $employee['emp_code'];
             $punches = $grouped[$empCode] ?? [];
             $employeeType = $employee['employee_type'] ?? 'full_time';
+            $overrideMode = $overrideMap[$empCode] ?? null;
 
-            // 2. If global holiday, mark as 'holiday' unless they punched in
-            if ($isGlobalHoliday && empty($punches)) {
+            // 3. Logic for Holiday/Weekend vs Punches/Overrides
+            $dayType = 'working_day';
+            if ($isGlobalHoliday) $dayType = 'holiday';
+            elseif ($isWeekendOff) $dayType = 'weekend';
+
+            // If it's a non-working day (holiday/weekend), AND no punches, AND no manual override -> mark as dayType
+            if (($isGlobalHoliday || $isWeekendOff) && empty($punches) && !$overrideMode) {
+                $status = ($isGlobalHoliday) ? 'holiday' : 'absent'; // Status remains 'absent' for database/salary purposes on weekend if no work
+                
                 $result = [
                     'emp_code' => $empCode,
                     'date' => $date,
-                    'status' => 'holiday',
+                    'status' => $status,
+                    'attendance_status' => $status,
+                    'day_type' => $dayType,
+                    'work_mode' => null,
                     'work_minutes' => 0,
                     'punch_count' => 0,
                     'required_minutes' => $this->getRequiredMinutes($employeeType),
                     'employee_type' => $employeeType,
                 ];
             } else {
-                $result = $this->processEmployee($empCode, $date, $punches, $employeeType);
+                // Normal processing or Override processing
+                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType);
             }
 
             // Validate the result
@@ -143,10 +168,18 @@ class AttendanceService
      * @param string $date Date in Y-m-d format
      * @param array $punches Array of punch records for this employee/date
      * @param string $employeeType 'full_time' or 'intern'
+     * @param string|null $overrideMode Manual override ('wfh' or 'wfo')
+     * @param string $dayType 'working_day', 'weekend', or 'holiday'
      * @return array Attendance record ready for upsert
      */
-    public function processEmployee(string $empCode, string $date, array $punches, string $employeeType = 'full_time'): array
-    {
+    public function processEmployee(
+        string $empCode,
+        string $date,
+        array $punches,
+        string $employeeType = 'full_time',
+        ?string $overrideMode = null,
+        string $dayType = 'working_day'
+    ): array {
         $requiredMinutes = $this->getRequiredMinutes($employeeType);
         $punchCount = count($punches);
 
@@ -170,6 +203,9 @@ class AttendanceService
                 'work_minutes' => 0,
                 'late_minutes' => 0,
                 'status' => $status,
+                'attendance_status' => $status,
+                'day_type' => $dayType,
+                'work_mode' => $overrideMode, // Preserve override even if absent
                 'punch_count' => 0,
                 'employee_type' => $employeeType,
                 'required_minutes' => $requiredMinutes,
@@ -201,6 +237,9 @@ class AttendanceService
                 'work_minutes' => 0,
                 'late_minutes' => $lateMinutes,
                 'status' => 'half_day',
+                'attendance_status' => 'half_day',
+                'day_type' => $dayType,
+                'work_mode' => $overrideMode ?: 'wfo', // Default to WFO if punched in
                 'punch_count' => 1,
                 'employee_type' => $employeeType,
                 'required_minutes' => $requiredMinutes,
@@ -220,6 +259,9 @@ class AttendanceService
             'work_minutes' => max(0, $workMinutes),
             'late_minutes' => $lateMinutes,
             'status' => $status,
+            'attendance_status' => $status,
+            'day_type' => $dayType,
+            'work_mode' => $overrideMode ?: 'wfo',
             'punch_count' => $punchCount,
             'employee_type' => $employeeType,
             'required_minutes' => $requiredMinutes,

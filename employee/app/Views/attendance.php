@@ -48,21 +48,37 @@
                             ?>
                             <div></div>
                         <?php else:
-                            $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $dayNum);
-                            $row = $byDate[$dateStr] ?? null;
-                            $st = $row['status'] ?? null;
-                            $hasData = ($st !== null);
-                            ?>
-                            <div
-                                style="aspect-ratio: 1; border-radius: 8px; border: 1px solid <?= $hasData ? 'var(--color-border)' : 'transparent' ?>; background: <?= $st ? 'var(--color-surface-muted)' : 'transparent' ?>; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
-                                <span
-                                    style="font-size: 0.9375rem; font-weight: <?= $st ? '700' : '400' ?>; color: <?= $st ? 'var(--color-primary)' : 'var(--color-text-dim)' ?>;"><?= $dayNum ?></span>
-                                <?php if ($st): ?>
-                                    <div
-                                        style="width: 4px; height: 4px; border-radius: 50%; background: <?= $st === 'present' ? 'var(--color-success)' : ($st === 'work_from_home' ? '#6366f1' : ($st === 'half_day' ? 'var(--color-warning)' : 'var(--color-error)')) ?>; margin-top: 0.25rem;">
-                                    </div>
-                                <?php endif; ?>
-                            </div>
+                        $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $dayNum);
+                        $row = $byDate[$dateStr] ?? null;
+                        $st = $row['attendance_status'] ?? $row['status'] ?? null;
+                        $dayType = $row['day_type'] ?? 'working_day';
+
+                        if ($dayType === 'weekend' && ($st === 'absent' || $st === null) && empty($row['first_in'])) {
+                            $st = 'weekend';
+                        } elseif ($dayType === 'holiday' && ($st === 'absent' || $st === null) && empty($row['first_in'])) {
+                            $st = 'holiday';
+                        }
+
+                        $hasData = ($st !== null && $st !== 'weekend' && $st !== 'holiday');
+                        ?>
+                        <div
+                            style="aspect-ratio: 1; border-radius: 8px; border: 1px solid <?= $st ? 'var(--color-border)' : 'transparent' ?>; background: <?= $st ? 'var(--color-surface-muted)' : 'transparent' ?>; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+                            <span
+                                style="font-size: 0.9375rem; font-weight: <?= $st ? '700' : '400' ?>; color: <?= $st ? 'var(--color-primary)' : 'var(--color-text-dim)' ?>;"><?= $dayNum ?></span>
+                            <?php if ($st): ?>
+                                <?php 
+                                    $dotColor = 'var(--color-error)';
+                                    if ($st === 'present') $dotColor = 'var(--color-success)';
+                                    elseif ($st === 'work_from_home' || !empty($row['work_mode'])) $dotColor = '#6366f1';
+                                    elseif ($st === 'half_day') $dotColor = 'var(--color-warning)';
+                                    elseif ($st === 'weekend') $dotColor = '#3b82f6';
+                                    elseif ($st === 'holiday') $dotColor = '#8b5cf6';
+                                ?>
+                                <div
+                                    style="width: 4px; height: 4px; border-radius: 50%; background: <?= $dotColor ?>; margin-top: 0.25rem;">
+                                </div>
+                            <?php endif; ?>
+                        </div>
                         <?php endif; endfor; ?>
                 </div>
             </div>
@@ -85,7 +101,15 @@
                     </thead>
                     <tbody>
                         <?php foreach (array_reverse($rows) as $r): ?>
-                            <?php $st = $r['status'] ?? 'absent'; ?>
+                            <?php 
+                            $st = $r['attendance_status'] ?? $r['status'] ?? 'absent';
+                            $dayType = $r['day_type'] ?? 'working_day';
+                            if ($dayType === 'weekend' && $st === 'absent' && empty($r['first_in'])) {
+                                $st = 'weekend';
+                            } elseif ($dayType === 'holiday' && $st === 'absent' && empty($r['first_in'])) {
+                                $st = 'holiday';
+                            }
+                            ?>
                             <tr>
                                 <td style="font-weight: 500;">
                                     <?php 
@@ -93,8 +117,11 @@
                                         echo $time ? date('D, d M', $time) : '—';
                                     ?>
                                 </td>
-                                <td><span
-                                        class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span>
+                                <td>
+                                    <span class="badge badge--<?= esc($st) ?>"><?= esc(ucfirst(str_replace('_', ' ', $st))) ?></span>
+                                    <?php if (!empty($r['work_mode'])): ?>
+                                        <span class="badge badge--info" style="font-size:0.6rem; padding: 2px 4px;"><?= strtoupper(esc($r['work_mode'])) ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php 
@@ -132,34 +159,49 @@
             </div>
             <div class="card-body" style="display: flex; flex-direction: column; gap: 1.25rem;">
                 <?php
-                $summaryCounts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];
-                foreach ($rows as $r)
-                    if (isset($summaryCounts[$r['status']]))
-                        $summaryCounts[$r['status']]++;
+                $summaryCounts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0, 'weekend' => 0, 'holiday' => 0];
+                foreach ($rows as $r) {
+                    $st = $r['attendance_status'] ?? $r['status'] ?? 'absent';
+                    $dayType = $r['day_type'] ?? 'working_day';
+                    
+                    if ($dayType === 'weekend' && $st === 'absent' && empty($r['first_in'])) {
+                        $summaryCounts['weekend']++;
+                    } elseif ($dayType === 'holiday' && $st === 'absent' && empty($r['first_in'])) {
+                        $summaryCounts['holiday']++;
+                    } elseif (isset($summaryCounts[$st])) {
+                        $summaryCounts[$st]++;
+                    }
+                }
                 ?>
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #F0FDF4; border-radius: 8px;">
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #F0FDF4; border-radius: 8px;">
                     <span style="font-size: 0.8125rem; font-weight: 600; color: #166534;">Present Days</span>
                     <span
-                        style="font-size: 1.25rem; font-weight: 700; color: #166534;"><?= $summaryCounts['present'] ?></span>
+                        style="font-size: 1.125rem; font-weight: 700; color: #166534;"><?= $summaryCounts['present'] ?></span>
                 </div>
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #EEF2FF; border-radius: 8px;">
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #EEF2FF; border-radius: 8px;">
                     <span style="font-size: 0.8125rem; font-weight: 600; color: #4338CA;">Work from Home</span>
                     <span
-                        style="font-size: 1.25rem; font-weight: 700; color: #4338CA;"><?= $summaryCounts['work_from_home'] ?></span>
+                        style="font-size: 1.125rem; font-weight: 700; color: #4338CA;"><?= $summaryCounts['work_from_home'] ?></span>
                 </div>
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #FFFBEB; border-radius: 8px;">
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #FFFBEB; border-radius: 8px;">
                     <span style="font-size: 0.8125rem; font-weight: 600; color: #92400E;">Half Days</span>
                     <span
-                        style="font-size: 1.25rem; font-weight: 700; color: #92400E;"><?= $summaryCounts['half_day'] ?></span>
+                        style="font-size: 1.125rem; font-weight: 700; color: #92400E;"><?= $summaryCounts['half_day'] ?></span>
                 </div>
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #FEF2F2; border-radius: 8px;">
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #FEF2F2; border-radius: 8px;">
                     <span style="font-size: 0.8125rem; font-weight: 600; color: #991B1B;">Absent Days</span>
                     <span
-                        style="font-size: 1.25rem; font-weight: 700; color: #991B1B;"><?= $summaryCounts['absent'] ?></span>
+                        style="font-size: 1.125rem; font-weight: 700; color: #991B1B;"><?= $summaryCounts['absent'] ?></span>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #EFF6FF; border-radius: 8px;">
+                    <span style="font-size: 0.8125rem; font-weight: 600; color: #1D4ED8;">Weekends</span>
+                    <span
+                        style="font-size: 1.125rem; font-weight: 700; color: #1D4ED8;"><?= $summaryCounts['weekend'] ?></span>
                 </div>
             </div>
         </div>

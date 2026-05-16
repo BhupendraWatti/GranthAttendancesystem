@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Granth Attend - Project Linking Graph</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --accent: #38bdf8;
+            --text: #f1f5f9;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            font-family: 'Outfit', sans-serif;
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #cy {
+            flex-grow: 1;
+            width: 100%;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 2rem;
+            left: 2rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            z-index: 10;
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--accent);
+        }
+
+        .legend {
+            position: absolute;
+            top: 6rem;
+            right: 2rem;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            z-index: 10;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 6rem;
+            left: 2rem;
+            width: 300px;
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            border-radius: 1rem;
+            border: 1px solid var(--border);
+            z-index: 10;
+            display: none;
+        }
+
+        .info-panel h3 {
+            margin-top: 0;
+            color: var(--accent);
+        }
+
+        .info-panel p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Granth Attend: Linking Graph</h1>
+        <div style="font-size: 0.8rem; color: #64748b;">Interactive Project Structure & Linkage Visualization</div>
+    </header>
+
+    <div id="cy"></div>
+
+    <div class="info-panel" id="infoPanel">
+        <h3 id="nodeTitle">Node Details</h3>
+        <p id="nodeDesc">Click a node to see its role and connections.</p>
+    </div>
+
+    <div class="legend" style="top: 15rem;">
+        <div class="legend-item"><div class="dot" style="background: #38bdf8;"></div> Controller</div>
+        <div class="legend-item"><div class="dot" style="background: #4ade80;"></div> Model</div>
+        <div class="legend-item"><div class="dot" style="background: #f472b6;"></div> View / Layout</div>
+        <div class="legend-item"><div class="dot" style="background: #fbbf24;"></div> Config / Route</div>
+        <div class="legend-item"><div class="dot" style="background: #a78bfa;"></div> Service</div>
+    </div>
+
+    <div class="legend" style="top: 6rem; right: 2rem; width: 220px;">
+        <h4 style="margin: 0 0 0.75rem 0; font-size: 0.9rem; color: var(--accent);">Visual Workflows</h4>
+        <select id="workflowSelector" onchange="highlightWorkflow(this.value)" style="width: 100%; background: #1e293b; color: white; border: 1px solid var(--border); padding: 0.5rem; border-radius: 0.5rem; font-family: inherit;">
+            <option value="none">-- Select a Workflow --</option>
+            <option value="sync">Attendance Sync Flow</option>
+            <option value="dash">Dashboard Update Flow</option>
+            <option value="salary">Salary Calculation Flow</option>
+            <option value="leave">Leave Request Flow</option>
+        </select>
+        <p id="workflowDesc" style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.75rem; line-height: 1.4;">Select a workflow to see how files work together.</p>
+    </div>
+
+    <div class="controls">
+        <button onclick="cy.layout({ name: 'cose', animate: true }).run()">Reset Layout</button>
+        <button onclick="cy.fit()">Fit View</button>
+        <button onclick="highlightWorkflow('none')">Clear Highlights</button>
+    </div>
+
+    <script>
+        const workflows = {
+            sync: {
+                nodes: ['b_routes', 'b_sync_c', 'm_sync', 'm_attn'],
+                desc: '1. Route triggers SyncController -> 2. Controller calls eTimeOffice API -> 3. Records logs in SyncModel -> 4. Processes data into AttendanceModel.'
+            },
+            dash: {
+                nodes: ['b_routes', 'b_dash_c', 'v_dash', 'm_attn', 'm_emp'],
+                desc: '1. DashboardController loads View -> 2. Controller fetches initial totals from Models -> 3. View uses AJAX to refresh data from API.'
+            },
+            salary: {
+                nodes: ['b_routes', 'b_salary_c', 'm_salary', 'm_attn', 'm_emp'],
+                desc: '1. SalaryController receives request -> 2. Calls SalaryService -> 3. Service pulls hours from AttendanceModel and base pay from EmployeeModel.'
+            },
+            leave: {
+                nodes: ['e_routes', 'e_leave_c', 'm_emp', 'b_emp_c'],
+                desc: '1. Employee submits LeaveController form -> 2. Validates against Employee balance -> 3. Admin reviews via Backend Controller.'
+            }
+        };
+
+        function highlightWorkflow(key) {
+            cy.elements().removeClass('highlighted faded');
+            const descEl = document.getElementById('workflowDesc');
+            
+            if (key === 'none') {
+                descEl.innerText = 'Select a workflow to see how files work together.';
+                return;
+            }
+
+            const flow = workflows[key];
+            descEl.innerText = flow.desc;
+
+            const workflowNodes = cy.nodes().filter(n => flow.nodes.includes(n.id()));
+            const workflowEdges = workflowNodes.connectedEdges().filter(e => {
+                return flow.nodes.includes(e.source().id()) && flow.nodes.includes(e.target().id());
+            });
+
+            cy.elements().addClass('faded');
+            workflowNodes.removeClass('faded').addClass('highlighted');
+            workflowEdges.removeClass('faded').addClass('highlighted');
+        }
+
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: [
+                // ... (previous elements remain same)
+                // BACKEND NODES
+                { data: { id: 'b_routes', label: 'Backend Routes', type: 'config', desc: 'Config/Routes.php - Maps URLs to backend logic.' } },
+                { data: { id: 'b_auth_c', label: 'Auth Controller', type: 'controller', desc: 'Handles admin login and session management.' } },
+                { data: { id: 'b_dash_c', label: 'Dashboard Controller', type: 'controller', desc: 'Main admin overview and real-time stats.' } },
+                { data: { id: 'b_emp_c', label: 'Employee Controller', type: 'controller', desc: 'Manages employee directory and profiles.' } },
+                { data: { id: 'b_sync_c', label: 'Sync Controller', type: 'controller', desc: 'Bridges eTimeOffice API with local DB.' } },
+                { data: { id: 'b_salary_c', label: 'Salary Controller', type: 'controller', desc: 'Calculates payouts and generates payslips.' } },
+                
+                { data: { id: 'm_emp', label: 'Employee Model', type: 'model', desc: 'Handles tbl_employees data.' } },
+                { data: { id: 'm_attn', label: 'Attendance Model', type: 'model', desc: 'Handles daily attendance logs.' } },
+                { data: { id: 'm_sync', label: 'Sync Model', type: 'model', desc: 'Tracks sync status and history.' } },
+                { data: { id: 'm_salary', label: 'Salary Service', type: 'service', desc: 'Business logic for salary calculation.' } },
+                
+                { data: { id: 'v_layout', label: 'Main Layout', type: 'view', desc: 'Base HTML structure for admin portal.' } },
+                { data: { id: 'v_dash', label: 'Dashboard View', type: 'view', desc: 'The admin dashboard UI.' } },
+                { data: { id: 'v_emp_list', label: 'Employee List View', type: 'view', desc: 'The directory table view.' } },
+
+                // EMPLOYEE NODES
+                { data: { id: 'e_routes', label: 'Employee Routes', type: 'config', desc: 'Config/Routes.php - Maps employee portal URLs.' } },
+                { data: { id: 'e_auth_c', label: 'Auth Controller (OTP)', type: 'controller', desc: 'Handles OTP generation and verification.' } },
+                { data: { id: 'e_dash_c', label: 'Dashboard Controller', type: 'controller', desc: 'Employee home view with personal stats.' } },
+                { data: { id: 'e_attn_c', label: 'Attendance Controller', type: 'controller', desc: 'Personal attendance history view.' } },
+                { data: { id: 'e_leave_c', label: 'Leave Controller', type: 'controller', desc: 'Leave application and balance check.' } },
+
+                { data: { id: 'ev_layout', label: 'Employee Layout', type: 'view', desc: 'Responsive base layout for staff portal.' } },
+                { data: { id: 'ev_dash', label: 'Dashboard View', type: 'view', desc: 'Employee personal dashboard.' } },
+
+                // EDGES - BACKEND
+                { data: { source: 'b_routes', target: 'b_auth_c' } },
+                { data: { source: 'b_routes', target: 'b_dash_c' } },
+                { data: { source: 'b_routes', target: 'b_emp_c' } },
+                { data: { source: 'b_routes', target: 'b_sync_c' } },
+                { data: { source: 'b_routes', target: 'b_salary_c' } },
+                
+                { data: { source: 'b_auth_c', target: 'm_emp' } },
+                { data: { source: 'b_dash_c', target: 'm_attn' } },
+                { data: { source: 'b_dash_c', target: 'v_dash' } },
+                { data: { source: 'b_emp_c', target: 'm_emp' } },
+                { data: { source: 'b_emp_c', target: 'm_attn' } },
+                { data: { source: 'b_emp_c', target: 'v_emp_list' } },
+                { data: { source: 'b_salary_c', target: 'm_salary' } },
+                { data: { source: 'b_sync_c', target: 'm_sync' } },
+                { data: { source: 'b_sync_c', target: 'm_attn' } },
+                
+                { data: { source: 'v_dash', target: 'v_layout' } },
+                { data: { source: 'v_emp_list', target: 'v_layout' } },
+
+                // EDGES - EMPLOYEE
+                { data: { source: 'e_routes', target: 'e_auth_c' } },
+                { data: { source: 'e_routes', target: 'e_dash_c' } },
+                { data: { source: 'e_routes', target: 'e_attn_c' } },
+                { data: { source: 'e_routes', target: 'e_leave_c' } },
+                
+                { data: { source: 'e_dash_c', target: 'm_emp' } },
+                { data: { source: 'e_dash_c', target: 'm_attn' } },
+                { data: { source: 'e_dash_c', target: 'ev_dash' } },
+                { data: { source: 'e_attn_c', target: 'm_attn' } },
+                { data: { source: 'e_leave_c', target: 'm_emp' } },
+                
+                { data: { source: 'ev_dash', target: 'ev_layout' } },
+                
+                // SHARED
+                { data: { source: 'm_salary', target: 'm_emp' } },
+                { data: { source: 'm_salary', target: 'm_attn' } },
+            ],
+
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'text-valign': 'center',
+                        'color': '#fff',
+                        'font-family': 'Outfit',
+                        'font-weight': '600',
+                        'font-size': '12px',
+                        'width': '120px',
+                        'height': '40px',
+                        'shape': 'round-rectangle',
+                        'background-color': '#334155',
+                        'border-width': '2px',
+                        'border-color': 'rgba(255,255,255,0.1)',
+                        'text-wrap': 'wrap',
+                        'text-max-width': '100px',
+                        'transition-property': 'background-color, border-color, opacity',
+                        'transition-duration': '0.3s'
+                    }
+                },
+                {
+                    selector: 'node[type="controller"]',
+                    style: { 'background-color': '#0369a1', 'border-color': '#38bdf8' }
+                },
+                {
+                    selector: 'node[type="model"]',
+                    style: { 'background-color': '#15803d', 'border-color': '#4ade80' }
+                },
+                {
+                    selector: 'node[type="view"]',
+                    style: { 'background-color': '#be185d', 'border-color': '#f472b6' }
+                },
+                {
+                    selector: 'node[type="config"]',
+                    style: { 'background-color': '#b45309', 'border-color': '#fbbf24' }
+                },
+                {
+                    selector: 'node[type="service"]',
+                    style: { 'background-color': '#6d28d9', 'border-color': '#a78bfa' }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': 'rgba(148, 163, 184, 0.3)',
+                        'target-arrow-color': 'rgba(148, 163, 184, 0.3)',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'arrow-scale': 1.2,
+                        'transition-property': 'line-color, opacity',
+                        'transition-duration': '0.3s'
+                    }
+                },
+                {
+                    selector: '.faded',
+                    style: { 'opacity': 0.15 }
+                },
+                {
+                    selector: '.highlighted',
+                    style: {
+                        'border-width': '4px',
+                        'border-color': '#fff',
+                        'line-color': '#38bdf8',
+                        'target-arrow-color': '#38bdf8',
+                        'width': 4
+                    }
+                },
+                {
+                    selector: 'node:selected',
+                    style: {
+                        'border-width': '4px',
+                        'border-color': '#fff',
+                        'box-shadow': '0 0 10px #fff'
+                    }
+                }
+            ],
+
+            layout: {
+                name: 'cose',
+                animate: true,
+                padding: 50,
+                componentSpacing: 100,
+                nodeRepulsion: 4000,
+                idealEdgeLength: 100
+            }
+        });
+
+        cy.on('tap', 'node', function(evt){
+            const node = evt.target;
+            document.getElementById('nodeTitle').innerText = node.data('label');
+            document.getElementById('nodeDesc').innerText = node.data('desc');
+            document.getElementById('infoPanel').style.display = 'block';
+        });
+
+        cy.on('tap', function(evt){
+            if(evt.target === cy){
+                document.getElementById('infoPanel').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

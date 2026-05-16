@@ -551,6 +551,7 @@ table tbody tr:last-child td {
 .badge--present  { background: var(--success-light); color: var(--success-dark); }
 .badge--half_day, .badge--half-day { background: var(--warning-light); color: var(--warning-dark); }
 .badge--absent   { background: var(--danger-light);  color: var(--danger); }
+.badge--weekend  { background: #e0f2fe;              color: #0369a1; }
 .badge--active   { background: var(--success-light); color: var(--success-dark); }
 .badge--inactive { background: var(--gray-200);      color: var(--gray-600); }
 .badge--late     { background: #fef3c7;              color: #92400e; }

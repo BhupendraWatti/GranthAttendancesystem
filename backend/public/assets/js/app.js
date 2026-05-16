@@ -178,6 +178,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     ? '<span class="badge badge--late">' + lateMins + ' min</span>'
                     : '<span class="text-muted">—</span>';
 
+                var st = row.attendance_status || row.status || 'absent';
+                if (row.day_type === 'weekend' && st === 'absent' && !row.first_in) {
+                    st = 'weekend';
+                }
+
+                var statusHtml = '<span class="badge badge--' + escapeHtml(st) + '">'
+                    + escapeHtml(st.replace('_', ' ')) + '</span>';
+                
+                if (row.work_mode) {
+                    statusHtml += ' <span class="badge badge--info" style="font-size:0.6rem; padding: 2px 4px;">' + escapeHtml(row.work_mode.toUpperCase()) + '</span>';
+                }
+
                 html += '<tr>'
                     + '<td><a href="' + (window.siteUrl || '') + '/employees/' + encodeURIComponent(row.emp_code) + '" style="font-weight:600;">'
                     + escapeHtml(row.name || row.emp_code) + '</a></td>'
@@ -185,8 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     + '<td>' + firstIn + '</td>'
                     + '<td>' + lastOut + '</td>'
                     + '<td class="font-mono">' + hrs + 'h ' + mins + 'm</td>'
-                    + '<td><span class="badge badge--' + escapeHtml(row.status || 'absent') + '">'
-                    + escapeHtml(String(row.status || 'absent').replace('_', ' ')) + '</span></td>'
+                    + '<td>' + statusHtml + '</td>'
                     + '<td>' + lateCell + '</td>'
                     + '</tr>';
             });

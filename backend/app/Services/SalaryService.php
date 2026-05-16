@@ -149,23 +149,18 @@ class SalaryService
      */
     private function computeSalary(array $data, float $monthlySalary, int $year, int $month): array
     {
+        helper('attendance');
         $today = date('Y-m-d');
         $isCurrentMonth = ($year == date('Y') && $month == date('m'));
         $endDay = $isCurrentMonth ? (int)date('d') : (int)date('t', strtotime("$year-$month-01"));
 
         // 1. Calculate Dynamic Target-to-Date
         $targetToDateMin = 0;
-        $satCount = 0;
         for ($d = 1; $d <= $endDay; $d++) {
-            $time = mktime(0, 0, 0, $month, $d, $year);
-            $dow = (int)date('w', $time); // 0=Sun, 6=Sat
+            $currentDate = sprintf('%04d-%02d-%02d', $year, $month, $d);
             
-            if ($dow === 0) continue; // Sunday OFF
-            
-            if ($dow === 6) { // Saturday
-                $satCount++;
-                if ($satCount === 1 || $satCount === 3) continue; // 1st/3rd Sat OFF
-            }
+            // Exclude Weekend Offs (Sundays, 1st/3rd Saturdays)
+            if (isWeekendOff($currentDate)) continue;
             
             $targetToDateMin += 510; // Working day (8.5h)
         }

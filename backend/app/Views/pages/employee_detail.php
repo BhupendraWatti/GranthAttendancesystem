@@ -299,8 +299,18 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                         $mn = ($rec['work_minutes'] ?? 0) % 60;
                                         echo "{$h}h {$mn}m"; ?>
                                     </td>
-                                    <td><span
-                                            class="badge badge--<?= esc($rec['status']) ?>"><?= ucfirst(str_replace('_', ' ', esc($rec['status']))) ?></span>
+                                    <td>
+                                        <?php 
+                                        $st = $rec['attendance_status'] ?? $rec['status'] ?? 'absent';
+                                        if (($rec['day_type'] ?? 'working_day') === 'weekend' && $st === 'absent' && empty($rec['first_in'])) {
+                                            $st = 'weekend';
+                                        }
+                                        ?>
+                                        <span class="badge badge--<?= esc($st) ?>"><?= ucfirst(str_replace('_', ' ', esc($st))) ?></span>
+                                        
+                                        <?php if (!empty($rec['work_mode'])): ?>
+                                            <span class="badge badge--info" style="font-size:0.65rem; padding: 1px 4px;"><?= strtoupper(esc($rec['work_mode'])) ?></span>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php if (($rec['late_minutes'] ?? 0) > 0): ?>
@@ -316,7 +326,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                             data-date="<?= esc($rec['date']) ?>"
                                             data-status="<?= esc($rec['status']) ?>"
                                             data-in="<?= $rec['first_in'] ? date('H:i', strtotime($rec['first_in'])) : '' ?>"
-                                            data-out="<?= $rec['last_out'] ? date('H:i', strtotime($rec['last_out'])) : '' ?>">
+                                            data-out="<?= $rec['last_out'] ? date('H:i', strtotime($rec['last_out'])) : '' ?>"
+                                            data-workmode="<?= esc($rec['work_mode'] ?? '') ?>">
                                             <i class="fa-solid fa-pen-to-square mr-1"></i> Edit
                                         </button>
                                     </td>
@@ -548,17 +559,29 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     </div>
                 </div>
 
-                <div class="form-group mb-6">
-                    <label class="form-label">Attendance Status</label>
-                    <select name="status" id="edit-status-input" class="form-input" required>
-                        <option value="present">Present</option>
-                        <option value="absent">Absent</option>
-                        <option value="half_day">Half Day</option>
-                        <option value="work_from_home">Work from Home</option>
-                    </select>
-                    <small class="text-muted mt-1 block" style="font-size: 0.75rem;">WFH defaults to 8 full working hours if no times are set.</small>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                   <div class="form-group">
+                       <label class="form-label">Attendance Status</label>
+                       <select name="status" id="edit-status-input" class="form-input" required>
+                           <option value="present">Present</option>
+                           <option value="absent">Absent</option>
+                           <option value="half_day">Half Day</option>
+                           <option value="work_from_home">Work from Home</option>
+                       </select>
+                   </div>
+                   <div class="form-group">
+                       <label class="form-label">Work Mode Override</label>
+                       <select name="work_mode" id="edit-workmode-input" class="form-input">
+                           <option value="">No Override (Auto)</option>
+                           <option value="wfo">WFO (Office)</option>
+                           <option value="wfh">WFH (Home)</option>
+                       </select>
+                   </div>
                 </div>
 
+                <div class="form-group mb-6">
+                   <small class="text-muted mt-1 block" style="font-size: 0.75rem;">WFH defaults to 8.5 full working hours if no times are set. Overrides force the work mode regardless of punch source.</small>
+                </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" onclick="document.getElementById('edit-attendance-modal').classList.remove('active')"
                         class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
@@ -880,6 +903,7 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
     const editInInput = document.getElementById('edit-in-input');
     const editOutInput = document.getElementById('edit-out-input');
     const editStatusInput = document.getElementById('edit-status-input');
+    const editWorkmodeInput = document.getElementById('edit-workmode-input');
 
     editBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -887,12 +911,14 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
             const status = btn.getAttribute('data-status');
             const inTime = btn.getAttribute('data-in');
             const outTime = btn.getAttribute('data-out');
+            const workmode = btn.getAttribute('data-workmode');
 
             editDateDisplay.textContent = 'Updating records for ' + date;
             editDateInput.value = date;
             editInInput.value = inTime;
             editOutInput.value = outTime;
             editStatusInput.value = status;
+            editWorkmodeInput.value = workmode;
 
             editModal.classList.add('active');
         });
