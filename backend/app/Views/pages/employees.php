@@ -14,7 +14,8 @@
                     style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim);">
                     Total Entries</div>
                 <div style="font-size: 1.5rem; font-weight: 800; color: var(--color-primary);">
-                    <?= esc((string) ($total ?? 0)) ?></div>
+                    <?= esc((string) ($total ?? 0)) ?>
+                </div>
             </div>
             <div
                 style="width: 48px; height: 48px; border-radius: var(--radius-md); background: linear-gradient(135deg, var(--color-accent) 0%, #6366f1 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.25rem;">
@@ -87,12 +88,13 @@
             <thead>
                 <tr
                     style="background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);">
-                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Employee Name</th>                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Identity Code</th>
-                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Department</th>
-                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Designation</th>
-                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Category</th>
-                    <th style="color: white; border: none; padding: 1rem 1.5rem;">Status</th>
-                    <th style="color: white; border: none; padding: 1rem 1.5rem; text-align: right;">Action</th>
+                    <th style=" border: none; padding: 1rem 1.5rem;">Employee Name</th>
+                    <th style=" border: none; padding: 1rem 1.5rem;">Identity Code</th>
+                    <th style=" border: none; padding: 1rem 1.5rem;">Department</th>
+                    <th style=" border: none; padding: 1rem 1.5rem;">Designation</th>
+                    <th style=" border: none; padding: 1rem 1.5rem;">Category</th>
+                    <th style=" border: none; padding: 1rem 1.5rem;">Status</th>
+                    <th style=" border: none; padding: 1rem 1.5rem; text-align: right;">Action</th>
                 </tr>
             </thead>
             <tbody>

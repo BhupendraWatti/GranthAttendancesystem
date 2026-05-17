@@ -34,6 +34,7 @@ class SalaryService
      */
     public function calculateAllSalaries(int $year, int $month, ?float $defaultMonthlySalary = null): array
     {
+        helper('attendance');
         $monthlySalary = $defaultMonthlySalary ?? (float) env('DEFAULT_MONTHLY_SALARY', 25000);
         $records = $this->attendanceModel->getAllMonthly($year, $month);
 
@@ -44,6 +45,7 @@ class SalaryService
         $byEmployee = [];
         foreach ($records as $record) {
             $empCode = $record['emp_code'];
+            $date = $record['date'];
 
             if (!isset($byEmployee[$empCode])) {
                 $byEmployee[$empCode] = [
@@ -64,10 +66,16 @@ class SalaryService
                 ];
             }
 
-            switch ($record['status']) {
+            $st = $record['status'];
+            $isWeekend = isWeekendOff($date);
+
+            // 1. Stats Counting (Only count as 'Absent' if it's a working day)
+            switch ($st) {
                 case 'present':  $byEmployee[$empCode]['present_days']++; break;
                 case 'half_day': $byEmployee[$empCode]['half_days']++; break;
-                case 'absent':   $byEmployee[$empCode]['absent_days']++; break;
+                case 'absent':   
+                    if (!$isWeekend) $byEmployee[$empCode]['absent_days']++; 
+                    break;
                 case 'work_from_home': $byEmployee[$empCode]['wfh_days']++; break;
                 case 'paid_leave': $byEmployee[$empCode]['paid_leave_days']++; break;
                 case 'unpaid_leave': $byEmployee[$empCode]['unpaid_leave_days']++; break;
@@ -76,9 +84,17 @@ class SalaryService
                 case 'comp_off': $byEmployee[$empCode]['comp_off_days']++; break;
             }
 
+            // 2. Minute Crediting Logic (Professional Standard)
             $fullCreditStatuses = ['work_from_home', 'paid_leave', 'holiday', 'comp_off', 'leave'];
-            if (in_array($record['status'], $fullCreditStatuses)) {
-                $byEmployee[$empCode]['total_work_minutes'] += 510;
+            if (in_array($st, $fullCreditStatuses)) {
+                // RULE: Only give 510m credit if the day was actually a TARGET working day.
+                // This prevents "Double Credit" for Holidays/Leaves that fall on Sundays.
+                if (!$isWeekend) {
+                    $byEmployee[$empCode]['total_work_minutes'] += 510;
+                } else {
+                    // If they worked on a weekend, add actual minutes (punches) but no bonus credit
+                    $byEmployee[$empCode]['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
+                }
             } else {
                 $byEmployee[$empCode]['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
             }
@@ -98,6 +114,7 @@ class SalaryService
      */
     public function calculateEmployeeSalary(string $empCode, int $year, int $month, ?float $monthlySalary = null): ?array
     {
+        helper('attendance');
         $employee = $this->employeeModel->findByCode($empCode);
         if (!$employee) return null;
 
@@ -122,10 +139,15 @@ class SalaryService
         ];
 
         foreach ($records as $record) {
-            switch ($record['status']) {
+            $st = $record['status'];
+            $isWeekend = isWeekendOff($record['date']);
+
+            switch ($st) {
                 case 'present':  $data['present_days']++; break;
                 case 'half_day': $data['half_days']++; break;
-                case 'absent':   $data['absent_days']++; break;
+                case 'absent':   
+                    if (!$isWeekend) $data['absent_days']++; 
+                    break;
                 case 'work_from_home': $data['wfh_days']++; break;
                 case 'paid_leave': $data['paid_leave_days']++; break;
                 case 'unpaid_leave': $data['unpaid_leave_days']++; break;
@@ -133,9 +155,14 @@ class SalaryService
                 case 'holiday':  $data['holiday_days']++; break;
                 case 'comp_off': $data['comp_off_days']++; break;
             }
+
             $fullCreditStatuses = ['work_from_home', 'paid_leave', 'holiday', 'comp_off', 'leave'];
-            if (in_array($record['status'], $fullCreditStatuses)) {
-                $data['total_work_minutes'] += 510;
+            if (in_array($st, $fullCreditStatuses)) {
+                if (!$isWeekend) {
+                    $data['total_work_minutes'] += 510;
+                } else {
+                    $data['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
+                }
             } else {
                 $data['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
             }
@@ -152,7 +179,8 @@ class SalaryService
         helper('attendance');
         $today = date('Y-m-d');
         $isCurrentMonth = ($year == date('Y') && $month == date('m'));
-        $endDay = $isCurrentMonth ? (int)date('d') : (int)date('t', strtotime("$year-$month-01"));
+        $daysInMonth = (int)date('t', strtotime("$year-$month-01"));
+        $endDay = $isCurrentMonth ? (int)date('d') : $daysInMonth;
 
         // 1. Calculate Dynamic Target-to-Date
         $targetToDateMin = 0;
@@ -178,10 +206,15 @@ class SalaryService
             $deductionDays = $units * 0.5;
         }
 
-        // 3. Earnings based on Days Elapsed (e.g. 10 days)
-        $dailyRate = $monthlySalary / 30;
-        $baseEarned = $dailyRate * $endDay; 
+        // 3. Earnings based on Actual Days in Month (Professional Standard)
+        $dailyRate = $monthlySalary / $daysInMonth;
+        
+        // Base earned up to today
+        $baseEarned = round($dailyRate * $endDay, 2); 
+        
+        // Total deduction based on real daily rate
         $totalDeduction = round($deductionDays * $dailyRate, 2);
+        
         $netPayable = round($baseEarned - $totalDeduction, 2);
 
         // Effective days for display (e.g. 10 - deduction)
