@@ -191,6 +191,7 @@ class EmployeeController extends BaseController
                 return redirect()->back()->with('error', 'Employee not found.');
             }
 
+            $employmentStatus = $this->request->getPost('employment_status') ?: 'active';
             $data = [
                 'name'              => $this->request->getPost('name'),
                 'employee_type'     => $this->request->getPost('employee_type'),
@@ -198,7 +199,8 @@ class EmployeeController extends BaseController
                 'department_id'     => $this->request->getPost('department_id') ?: null,
                 'designation_id'    => $this->request->getPost('designation_id') ?: null,
                 'shift_id'          => $this->request->getPost('shift_id') ?: null,
-                'employment_status' => $this->request->getPost('employment_status') ?: 'active',
+                'employment_status' => $employmentStatus,
+                'status'            => $employmentStatus === 'active' ? 'active' : 'inactive',
                 'is_profile_locked' => 1, // Lock profile on manual update
             ];
 
