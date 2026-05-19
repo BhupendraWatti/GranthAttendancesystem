@@ -15,7 +15,7 @@ $methodName = service('router')->methodName();
     </div>
 
     <!-- Navigation -->
-    <nav class="sidebar-nav" style="padding: 1rem 0; flex: 1;">
+    <nav class="sidebar-nav" style="padding: 1rem 0; flex: 1; overflow-y: auto; overflow-x: hidden;">
         <div
             style="padding: 0 1.5rem 0.5rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3);">
             Primary</div>
