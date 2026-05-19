@@ -48,7 +48,7 @@ class LeaveService
         $attendance = $this->attendanceModel->db->table($this->attendanceModel->table)
             ->where('emp_code', $empCode)
             ->where('date', $date)
-            ->getForSharedWrite() // Prevents other processes from reading this row for credit until we are done
+            ->get() // Note: CI4 does not have getForSharedWrite(), using standard get() within transaction
             ->getRowArray();
 
         if ($attendance && !empty($attendance['is_compoff_credited'])) {
