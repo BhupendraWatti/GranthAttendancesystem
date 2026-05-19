@@ -52,11 +52,12 @@ class SyncController extends ResourceController
                     break;
             }
 
-            $statusCode = ($result['status'] === 'success') ? 200 : 500;
+            $statusCode = ($result['status'] === 'success' || $result['status'] === 'skipped') ? 200 : 500;
 
             return $this->respond([
-                'status' => $result['status'],
-                'data'   => $result,
+                'status'  => $result['status'],
+                'data'    => $result,
+                'message' => $result['status'] === 'skipped' ? ($result['reason'] ?? 'Already running') : 'Sync processed',
             ], $statusCode);
 
         } catch (\Throwable $e) {

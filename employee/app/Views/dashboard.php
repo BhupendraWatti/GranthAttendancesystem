@@ -64,14 +64,36 @@ if ($dayType === 'weekend' && $st === 'absent' && empty($todayRow['first_in'])) 
     </div>
 
     <!-- Registry Profile -->
-    <div class="stat-card" style="grid-column: span 3;">
-        <span class="stat-label">Registry Profile</span>
-        <span class="stat-value"
-            style="font-size: 1.125rem; letter-spacing: 0.02em;"><?= esc($employee['emp_code'] ?? 'N/A') ?></span>
-        <span class="text-muted"
-            style="font-size: 0.8125rem; margin-top: 0.25rem;"><?= esc($employee['designation'] ?? 'Associate') ?></span>
-        <span class="stat-sub"
-            style="color: var(--color-accent);"><?= esc($employee['department'] ?? 'General Ops') ?></span>
+    <div class="stat-card" style="grid-column: span 3; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <span class="stat-label">Registry Profile</span>
+            <span class="stat-value"
+                style="font-size: 1.125rem; letter-spacing: 0.02em;"><?= esc($employee['emp_code'] ?? 'N/A') ?></span>
+            <span class="text-muted"
+                style="font-size: 0.8125rem; margin-top: 0.25rem; display: block; font-weight: 700; color: var(--color-primary);">
+                <?= esc($employee['desig_name'] ?? $employee['designation'] ?? 'Associate') ?>
+            </span>
+            <span class="stat-sub"
+                style="color: var(--color-accent); font-weight: 600;"><?= esc($employee['dept_name'] ?? $employee['department'] ?? 'General Ops') ?></span>
+        </div>
+        
+        <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--color-border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <span style="font-size: 0.65rem; font-weight: 700; color: var(--color-text-dim); text-transform: uppercase;">Joining Date</span>
+                <span style="font-size: 0.75rem; font-weight: 600;">
+                    <?= !empty($employee['date_of_joining']) ? date('d M Y', strtotime($employee['date_of_joining'])) : ($employee['created_at'] ? date('d M Y', strtotime($employee['created_at'])) : 'N/A') ?>
+                </span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.65rem; font-weight: 700; color: var(--color-text-dim); text-transform: uppercase;">Assigned Shift</span>
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-accent);">
+                    <?= !empty($employee['shift_name']) ? esc($employee['shift_name']) : 'General' ?>
+                    <small style="font-size: 0.6rem; display: block; text-align: right; color: var(--color-text-dim); font-weight: 400;">
+                        <?= !empty($employee['start_time']) ? date('H:i', strtotime($employee['start_time'])) . ' - ' . date('H:i', strtotime($employee['end_time'])) : '10:00 - 18:30' ?>
+                    </small>
+                </span>
+            </div>
+        </div>
     </div>
 
     <!-- Monthly Hours (Redesigned for Urgency) -->

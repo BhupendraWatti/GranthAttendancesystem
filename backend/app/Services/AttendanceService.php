@@ -155,7 +155,7 @@ class AttendanceService
                 ];
             } else {
                 // Normal processing or Override processing
-                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType);
+                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType, $employee['shift_id'] ?? null);
             }
 
             // 4. CREDIT COMP-OFF if work detected on weekend/holiday AND not already credited
@@ -200,6 +200,7 @@ class AttendanceService
      * @param string $employeeType 'full_time' or 'intern'
      * @param string|null $overrideMode Manual override ('wfh' or 'wfo')
      * @param string $dayType 'working_day', 'weekend', or 'holiday'
+     * @param int|null $shiftId Assigned shift ID
      * @return array Attendance record ready for upsert
      */
     public function processEmployee(
@@ -208,7 +209,8 @@ class AttendanceService
         array $punches,
         string $employeeType = 'full_time',
         ?string $overrideMode = null,
-        string $dayType = 'working_day'
+        string $dayType = 'working_day',
+        ?int $shiftId = null
     ): array {
         $requiredMinutes = $this->getRequiredMinutes($employeeType);
         $punchCount = count($punches);
@@ -257,7 +259,7 @@ class AttendanceService
 
         // Single punch → Half-day (force status)
         if ($punchCount === 1) {
-            $lateMinutes = $this->calculateLateMinutes($firstIn, $date);
+            $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $shiftId);
 
             return [
                 'emp_code' => $empCode,
@@ -278,7 +280,7 @@ class AttendanceService
         }
 
         // Multiple punches — calculate everything
-        $lateMinutes = $this->calculateLateMinutes($firstIn, $date);
+        $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $shiftId);
         $status = $this->determineStatus($workMinutes, $requiredMinutes);
 
         return [
@@ -342,12 +344,29 @@ class AttendanceService
      *
      * @param string $firstIn First punch time (Y-m-d H:i:s)
      * @param string $date Date (Y-m-d)
+     * @param int|null $shiftId Shift ID
      * @return int Late minutes (0 if on time or early)
      */
-    private function calculateLateMinutes(string $firstIn, string $date): int
+    private function calculateLateMinutes(string $firstIn, string $date, ?int $shiftId = null): int
     {
-        $officeStart = new \DateTime($date . ' ' . $this->officeStartTime . ':00');
+        $startTime = $this->officeStartTime;
+        $grace = 0;
+
+        if ($shiftId) {
+            $shiftModel = new \App\Models\ShiftModel();
+            $shift = $shiftModel->find($shiftId);
+            if ($shift) {
+                $startTime = substr($shift['start_time'], 0, 5); // HH:MM
+                $grace = (int) $shift['grace_minutes'];
+            }
+        }
+
+        $officeStart = new \DateTime($date . ' ' . $startTime . ':00');
         $punchIn = new \DateTime($firstIn);
+
+        if ($grace > 0) {
+            $officeStart->modify("+{$grace} minutes");
+        }
 
         if ($punchIn <= $officeStart) {
             return 0;

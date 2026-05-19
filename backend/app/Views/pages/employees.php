@@ -117,8 +117,8 @@
                                 <code
                                     style="font-family: var(--font-mono); font-size: 0.8rem; background: var(--color-surface-muted); padding: 0.375rem 0.75rem; border-radius: var(--radius-sm); font-weight: 600; color: var(--color-primary);"><?= esc($emp['emp_code']) ?></code>
                             </td>
-                            <td style="padding: 1.25rem 1.5rem; font-size: 0.875rem;"><?= esc($emp['department'] ?? '—') ?></td>
-                            <td style="padding: 1.25rem 1.5rem; font-size: 0.875rem;"><?= esc($emp['designation'] ?? '—') ?>
+                            <td style="padding: 1.25rem 1.5rem; font-size: 0.875rem;"><?= esc($emp['dept_name'] ?? $emp['department'] ?? '—') ?></td>
+                            <td style="padding: 1.25rem 1.5rem; font-size: 0.875rem;"><?= esc($emp['desig_name'] ?? $emp['designation'] ?? '—') ?>
                             </td>
                             <td style="padding: 1.25rem 1.5rem;">
                                 <span class="badge badge--info"

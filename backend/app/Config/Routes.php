@@ -47,6 +47,7 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
     // Employees
     $routes->get('employees', 'EmployeeController::index');
     $routes->post('employees/salary', 'EmployeeController::updateSalary');
+    $routes->post('employees/profile', 'EmployeeController::updateProfile');
     $routes->post('employees/leave-balances', 'EmployeeController::updateLeaveBalances');
     $routes->post('employees/email', 'EmployeeController::updateEmail');
     $routes->post('employees/attendance', 'EmployeeController::updateAttendance');
@@ -82,6 +83,15 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
         $routes->get('/', 'HolidayController::index');
         $routes->post('add', 'HolidayController::add');
         $routes->post('delete', 'HolidayController::delete');
+    });
+
+    // MASTER DATA MANAGEMENT
+    $routes->group('master', function ($routes) {
+        $routes->get('shifts', 'MasterController::shifts');
+        $routes->post('shifts/save', 'MasterController::saveShift');
+        $routes->get('departments', 'MasterController::departments');
+        $routes->post('departments/save', 'MasterController::saveDepartment');
+        $routes->post('designations/save', 'MasterController::saveDesignation');
     });
 });
 

@@ -6,7 +6,8 @@
 $name = $employee['name'] ?? 'Associate';
 $empCode = $employee['emp_code'] ?? 'N/A';
 $email = $employee['email'] ?? 'No corporate email assigned';
-$designation = $employee['designation'] ?? 'Personal Associate';
+$designation = $employee['desig_name'] ?? $employee['designation'] ?? 'Personal Associate';
+$department = $employee['dept_name'] ?? $employee['department'] ?? 'General Ops';
 ?>
 
 <div class="page-header">
@@ -31,10 +32,13 @@ $designation = $employee['designation'] ?? 'Personal Associate';
                         <h3 class="font-display"
                             style="font-size: 2rem; margin-bottom: 0.25rem; color: var(--color-primary);">
                             <?= esc($name) ?></h3>
-                        <!-- <p style="color: var(--color-accent); font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;"><?= esc($designation) ?></p> -->
+                        <p style="color: var(--color-accent); font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">
+                            <?= esc($designation) ?>
+                        </p>
                     </div>
-                    <span class="badge" style="background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;">Active
-                        Service</span>
+                    <span class="badge" style="background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0;">
+                        <?= strtoupper($employee['employment_status'] ?? 'active') ?> SERVICE
+                    </span>
                 </div>
 
                 <div style="display: flex; gap: 3rem; margin-top: 2rem;">
@@ -65,11 +69,11 @@ $designation = $employee['designation'] ?? 'Personal Associate';
                 <h3>Employment Registry</h3>
             </div>
             <div class="card-body" style="display: flex; flex-direction: column; gap: 1.5rem;">
-                <!-- <div>
+                <div>
                     <label class="text-muted" style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Department</label>
-                    <div style="font-size: 1rem; font-weight: 600;"><?= esc($employee['department'] ?? 'General Ops') ?></div>
+                    <div style="font-size: 1rem; font-weight: 600; color: var(--color-primary);"><?= esc($department) ?></div>
                 </div>
-                 -->
+                
                 <div>
                     <label class="text-muted"
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Service
@@ -83,7 +87,19 @@ $designation = $employee['designation'] ?? 'Personal Associate';
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Joining
                         Date</label>
                     <div style="font-size: 1rem; font-weight: 600;">
-                        <?= date('d M Y', strtotime($employee['created_at'] ?? 'now')) ?></div>
+                        <?= !empty($employee['date_of_joining']) ? date('d M Y', strtotime($employee['date_of_joining'])) : ($employee['created_at'] ? date('d M Y', strtotime($employee['created_at'])) : 'N/A') ?>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-muted"
+                        style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: block; margin-bottom: 0.375rem;">Assigned Shift</label>
+                    <div style="font-size: 1rem; font-weight: 700; color: var(--color-accent);">
+                        <?= esc($employee['shift_name'] ?? 'General') ?>
+                        <div style="font-size: 0.75rem; color: var(--color-text-dim); font-weight: 500; margin-top: 0.125rem;">
+                            <?= !empty($employee['start_time']) ? date('H:i', strtotime($employee['start_time'])) . ' - ' . date('H:i', strtotime($employee['end_time'])) : '10:00 - 18:30' ?>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

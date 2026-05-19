@@ -37,7 +37,7 @@ class DocumentsController extends BaseController
                 ->select('employee_documents.*, employees.name as employee_name')
                 ->join('employees', 'employees.emp_code = employee_documents.emp_code')
                 ->whereIn('document_type', ['joining', 'offer', 'incentive', 'id_proof', 'performance', 'contract'])
-                ->orderBy('created_at', 'DESC')
+                ->orderBy('employee_documents.created_at', 'DESC')
                 ->findAll(),
         ];
 
@@ -57,7 +57,7 @@ class DocumentsController extends BaseController
                 ->select('employee_documents.*, employees.name as employee_name')
                 ->join('employees', 'employees.emp_code = employee_documents.emp_code')
                 ->whereNotIn('document_type', ['joining', 'offer', 'incentive', 'id_proof', 'performance', 'contract'])
-                ->orderBy('created_at', 'DESC')
+                ->orderBy('employee_documents.created_at', 'DESC')
                 ->findAll(),
         ];
 

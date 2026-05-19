@@ -60,13 +60,14 @@
                     </div>
 
                     <div class="form-group mb-6">
-                        <div class="mini-upload-area" style="border-color: #fdba74;">
-                            <input type="file" name="document" class="mini-file-input" required>
+                        <div class="mini-upload-area" id="drop-area" style="border-color: #fdba74;">
+                            <input type="file" name="document" id="document" class="mini-file-input" required>
                             <div class="mini-upload-content" style="color: #f97316;">
                                 <i class="fa-solid fa-certificate"></i>
                                 <span>Select credential file</span>
                             </div>
                         </div>
+                        <div id="file-name" class="file-name-display"></div>
                     </div>
 
                     <button type="submit" class="btn btn-primary btn-block" style="background: #f97316; border-color: #f97316; padding: 0.75rem;">
@@ -132,13 +133,13 @@
                                         </td>
                                         <td style="text-align: right;">
                                             <div class="flex gap-2" style="justify-content: flex-end;">
-                                                <a href="<?= site_url('documents/download/employee/' . $doc['id']) ?>" class="btn-icon btn-icon--orange" title="Retrieve">
-                                                    <i class="fa-solid fa-download"></i>
+                                                <a href="<?= site_url('documents/download/employee/' . $doc['id']) ?>" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8rem; gap: 0.5rem; background: #f97316; border-color: #f97316;" title="Retrieve">
+                                                    <i class="fa-solid fa-download"></i> Retrieve
                                                 </a>
                                                 <form action="<?= site_url('documents/delete') ?>" method="POST" onsubmit="return confirm('Purge credential from vault?')" class="inline">
                                                     <input type="hidden" name="id" value="<?= $doc['id'] ?>">
                                                     <input type="hidden" name="type" value="employee">
-                                                    <button type="submit" class="btn-icon btn-icon--danger">
+                                                    <button type="submit" class="btn btn-outline" style="padding: 0.5rem 1rem; font-size: 0.8rem; color: var(--color-danger); border-color: var(--color-border);" title="Delete">
                                                         <i class="fa-solid fa-trash-can"></i>
                                                     </button>
                                                 </form>
@@ -167,6 +168,34 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         new TomSelect('select[multiple]', { plugins: ['remove_button'] });
+
+        const fileInput = document.getElementById('document');
+        const fileName = document.getElementById('file-name');
+        const dropArea = document.getElementById('drop-area');
+
+        if (fileInput && fileName && dropArea) {
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    fileName.innerHTML = '<i class="fa-solid fa-check-circle"></i> ' + this.files[0].name;
+                    fileName.classList.add('active');
+                    dropArea.style.borderColor = 'var(--color-success)';
+                }
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    dropArea.classList.add('dragover');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    dropArea.classList.remove('dragover');
+                });
+            });
+        }
     });
 </script>
 
@@ -180,9 +209,28 @@
         background: rgba(255,255,255,0.5);
         transition: all 0.2s;
     }
-    .mini-upload-area:hover {
-        border-color: #f97316;
+    .mini-upload-area:hover, .mini-upload-area.dragover {
+        border-color: #f97316 !important;
         background: white;
+    }
+    .file-name-display {
+        margin-top: 1rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+        border: 1px solid #86efac;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #059669;
+        display: none;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .file-name-display.active {
+        display: flex;
+    }
+    .file-name-display i {
+        font-size: 1rem;
     }
     .mini-file-input {
         position: absolute;

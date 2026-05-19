@@ -26,16 +26,21 @@ class EmployeeController extends BaseController
 
         try {
             $model = new EmployeeModel();
-            $builder = $model;
-
+            
             if (!empty($status)) {
-                $builder = $builder->where('status', $status);
+                $model->where('employees.status', $status);
             }
             if (!empty($type)) {
-                $builder = $builder->where('employee_type', $type);
+                $model->where('employees.employee_type', $type);
             }
 
-            $employees = $builder->orderBy('name', 'ASC')->findAll();
+            if (!empty($status) || !empty($type)) {
+                // If filters are applied, use getAllWithMaster so we don't hardcode 'active' and break the 'inactive' filter
+                $employees = $model->getAllWithMaster();
+            } else {
+                // Default behavior when no filters are applied: show only active employees
+                $employees = $model->getActiveWithMaster();
+            }
         } catch (\Throwable $e) {
             log_message('error', '[Web\\EmployeeController] Error: ' . $e->getMessage());
             if (strpos($e->getMessage(), 'Unable to connect') !== false || strpos($e->getMessage(), 'Connection refused') !== false) {
@@ -73,11 +78,20 @@ class EmployeeController extends BaseController
 
             $employeeDocModel = new \App\Models\EmployeeDocumentModel();
 
-            $employee = $employeeModel->findByCode($empCode);
+            $employee = $employeeModel->findByCodeWithMaster($empCode);
 
             if (!$employee) {
                 return redirect()->to(site_url('employees'))->with('error', "Employee {$empCode} not found.");
             }
+
+            // Fetch Master Data for Dropdowns
+            $deptModel = new \App\Models\DepartmentModel();
+            $desigModel = new \App\Models\DesignationModel();
+            $shiftModel = new \App\Models\ShiftModel();
+
+            $departments = $deptModel->where('status', 'active')->orderBy('name', 'ASC')->findAll();
+            $designations = $desigModel->where('status', 'active')->orderBy('name', 'ASC')->findAll();
+            $shifts = $shiftModel->where('status', 'active')->orderBy('name', 'ASC')->findAll();
 
             // Get month/year from query params (default = current month)
             $month = (int) ($this->request->getGet('month') ?? date('n'));
@@ -148,10 +162,52 @@ class EmployeeController extends BaseController
                 'leaveBalances' => $leaveBalances,
                 'month' => $month,
                 'year' => $year,
+                'masters' => [
+                    'departments' => $departments,
+                    'designations' => $designations,
+                    'shifts' => $shifts,
+                ]
             ]);
         } catch (\Throwable $e) {
             log_message('error', '[Web\\EmployeeController] show error: ' . $e->getMessage());
             return redirect()->to(site_url('employees'))->with('error', 'Failed to load employee details. Please ensure the database is connected.');
+        }
+    }
+
+    /**
+     * POST /employees/profile — Update employee HR profile metadata
+     */
+    public function updateProfile()
+    {
+        $empCode = $this->request->getPost('emp_code');
+        if (empty($empCode)) {
+            return redirect()->back()->with('error', 'Employee code is required.');
+        }
+
+        try {
+            $model = new EmployeeModel();
+            $employee = $model->findByCode($empCode);
+            if (!$employee) {
+                return redirect()->back()->with('error', 'Employee not found.');
+            }
+
+            $data = [
+                'name'              => $this->request->getPost('name'),
+                'employee_type'     => $this->request->getPost('employee_type'),
+                'date_of_joining'   => $this->request->getPost('date_of_joining') ?: null,
+                'department_id'     => $this->request->getPost('department_id') ?: null,
+                'designation_id'    => $this->request->getPost('designation_id') ?: null,
+                'shift_id'          => $this->request->getPost('shift_id') ?: null,
+                'employment_status' => $this->request->getPost('employment_status') ?: 'active',
+                'is_profile_locked' => 1, // Lock profile on manual update
+            ];
+
+            $model->update($employee['id'], $data);
+
+            return redirect()->back()->with('success', 'Employee profile updated and locked successfully.');
+        } catch (\Throwable $e) {
+            log_message('error', '[Web\\EmployeeController] updateProfile error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update employee profile.');
         }
     }
 

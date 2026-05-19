@@ -36,13 +36,13 @@ class LeaveController extends BaseController
                 ->select('leave_requests.*, employees.name as employee_name')
                 ->join('employees', 'employees.emp_code = leave_requests.emp_code')
                 ->where('leave_requests.status', 'pending')
-                ->orderBy('created_at', 'ASC')
+                ->orderBy('leave_requests.created_at', 'ASC')
                 ->findAll(),
             'history'    => $this->leaveRequestModel
                 ->select('leave_requests.*, employees.name as employee_name')
                 ->join('employees', 'employees.emp_code = leave_requests.emp_code')
                 ->where('leave_requests.status !=', 'pending')
-                ->orderBy('created_at', 'DESC')
+                ->orderBy('leave_requests.created_at', 'DESC')
                 ->findAll(50),
         ];
 

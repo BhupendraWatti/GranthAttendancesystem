@@ -19,11 +19,17 @@ class EmployeeModel extends Model
         'emp_code',
         'email',
         'name',
+        'date_of_joining',
         'department',
+        'department_id',
         'designation',
+        'designation_id',
+        'shift_id',
         'employee_type',
         'salary',
         'status',
+        'employment_status',
+        'is_profile_locked',
     ];
 
     protected $validationRules = [
@@ -32,11 +38,52 @@ class EmployeeModel extends Model
     ];
 
     /**
-     * Get all active employees sorted alphabetically
+     * Get all active employees sorted alphabetically with Master data
+     */
+    public function getActiveWithMaster(): array
+    {
+        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name')
+                    ->join('departments', 'departments.id = employees.department_id', 'left')
+                    ->join('designations', 'designations.id = employees.designation_id', 'left')
+                    ->join('shifts', 'shifts.id = employees.shift_id', 'left')
+                    ->where('employees.status', 'active')
+                    ->orderBy('employees.name', 'ASC')
+                    ->findAll();
+    }
+
+    /**
+     * Get all employees sorted alphabetically with Master data (ignores status)
+     * Useful when query builder filters (like status) are dynamically applied.
+     */
+    public function getAllWithMaster(): array
+    {
+        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name')
+                    ->join('departments', 'departments.id = employees.department_id', 'left')
+                    ->join('designations', 'designations.id = employees.designation_id', 'left')
+                    ->join('shifts', 'shifts.id = employees.shift_id', 'left')
+                    ->orderBy('employees.name', 'ASC')
+                    ->findAll();
+    }
+
+    /**
+     * Get all active employees (Alias for getActiveWithMaster for backward compatibility)
      */
     public function getActive(): array
     {
-        return $this->where('status', 'active')->orderBy('name', 'ASC')->findAll();
+        return $this->getActiveWithMaster();
+    }
+
+    /**
+     * Find employee by emp_code with Master data
+     */
+    public function findByCodeWithMaster(string $empCode): ?array
+    {
+        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
+                    ->join('departments', 'departments.id = employees.department_id', 'left')
+                    ->join('designations', 'designations.id = employees.designation_id', 'left')
+                    ->join('shifts', 'shifts.id = employees.shift_id', 'left')
+                    ->where('employees.emp_code', $empCode)
+                    ->first();
     }
 
     /**
@@ -44,26 +91,27 @@ class EmployeeModel extends Model
      */
     public function findByCode(string $empCode): ?array
     {
-        return $this->where('emp_code', $empCode)->first();
+        return $this->where('employees.emp_code', $empCode)->first();
     }
 
     /**
      * Upsert employee — insert or update by emp_code
+     * Respects is_profile_locked: if locked, only updates updated_at.
      */
     public function upsertByCode(array $data): bool
     {
         $db = \Config\Database::connect();
         $now = date('Y-m-d H:i:s');
 
-        // Atomic upsert — no race condition between SELECT and INSERT
+        // Atomic upsert with conditional update based on is_profile_locked
         $sql = "INSERT INTO {$this->table} (emp_code, name, department, designation, employee_type, status, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
-                    name = COALESCE(VALUES(name), name),
-                    department = VALUES(department),
-                    designation = VALUES(designation),
-                    employee_type = VALUES(employee_type),
-                    status = VALUES(status),
+                    name = IF(is_profile_locked = 0, COALESCE(VALUES(name), name), name),
+                    department = IF(is_profile_locked = 0, VALUES(department), department),
+                    designation = IF(is_profile_locked = 0, VALUES(designation), designation),
+                    employee_type = IF(is_profile_locked = 0, VALUES(employee_type), employee_type),
+                    status = IF(is_profile_locked = 0, VALUES(status), status),
                     updated_at = VALUES(updated_at)";
 
         return $db->query($sql, [

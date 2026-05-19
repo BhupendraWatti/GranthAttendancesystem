@@ -85,6 +85,37 @@ body {
   flex-direction: column;
 }
 
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.sidebar-nav a:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+}
+
+.sidebar-nav a.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-left-color: var(--color-accent);
+}
+
+.sidebar-nav a .nav-icon {
+  width: 20px;
+  text-align: center;
+  opacity: 0.8;
+  font-size: 1rem;
+}
+
 .main-wrapper {
   flex: 1;
   margin-left: var(--sidebar-width);

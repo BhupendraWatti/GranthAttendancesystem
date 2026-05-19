@@ -21,7 +21,7 @@ class Dashboard extends BaseController
         $empCode = (string) session()->get('empcode');
         $today = date('Y-m-d');
 
-        $employee = (new EmployeeModel())->findByCode($empCode);
+        $employee = (new EmployeeModel())->findByCodeWithMaster($empCode);
         $dailyModel = new AttendanceDailyModel();
         $todayRow = $dailyModel->where('emp_code', $empCode)->where('date', $today)->first() ?? [];
         if (!empty($todayRow)) {
@@ -83,8 +83,9 @@ class Dashboard extends BaseController
             $todayRow = end($monthRows);
         }
 
-        // Fixed Monthly Goal: 204 hours (24 days * 8.5 hours)
-        $requiredHoursMonth = 204.0;
+        // Dynamic Monthly Goal: (24 days * Shift Expected Hours)
+        $expectedDaily = (float) ($employee['expected_hours'] ?? 8.5);
+        $requiredHoursMonth = round($expectedDaily * 24, 1);
         $totalHoursMonth = round($totalMinutesMonth / 60, 2);
 
         $counts = ['present' => 0, 'half_day' => 0, 'absent' => 0, 'work_from_home' => 0];

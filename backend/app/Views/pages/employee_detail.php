@@ -84,13 +84,20 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     <h2 class="font-display" style="font-size: 2rem; margin-bottom: 0.25rem;"><?= esc($empName) ?></h2>
                     <p
                         style="color: var(--color-accent); font-weight: 700; font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;">
-                        <?= esc($emp['designation'] ?? 'Associate') ?>
+                        <?= esc($emp['desig_name'] ?? $emp['designation'] ?? 'Associate') ?>
                     </p>
                 </div>
-                <span class="badge badge--<?= $empStatus === 'active' ? 'success' : 'danger' ?>"
-                    style="padding: 0.5rem 1rem;">
-                    <?= strtoupper($empStatus) ?> SERVICE
-                </span>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <?php if (!empty($emp['is_profile_locked'])): ?>
+                        <span class="badge badge--info" style="padding: 0.5rem 1rem;" title="Profile is locked from API sync">
+                            <i class="fa-solid fa-lock mr-1"></i> HR MANAGED
+                        </span>
+                    <?php endif; ?>
+                    <span class="badge badge--<?= $empStatus === 'active' ? 'success' : 'danger' ?>"
+                        style="padding: 0.5rem 1rem;">
+                        <?= strtoupper($emp['employment_status'] ?? $empStatus) ?>
+                    </span>
+                </div>
             </div>
 
             <div
@@ -99,14 +106,16 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     <div
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem;">
                         Department</div>
-                    <div style="font-weight: 600; font-size: 0.9375rem;"><?= esc($emp['department'] ?? 'General Ops') ?>
+                    <div style="font-weight: 600; font-size: 0.9375rem;"><?= esc($emp['dept_name'] ?? $emp['department'] ?? 'General Ops') ?>
                     </div>
                 </div>
                 <div>
                     <div
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem;">
-                        Corporate Email</div>
-                    <div style="font-weight: 600; font-size: 0.9375rem;"><?= esc($emp['email'] ?? '—') ?></div>
+                        Assigned Shift</div>
+                    <div style="font-weight: 600; font-size: 0.9375rem; color: var(--color-accent);">
+                        <?= esc($emp['shift_name'] ?? 'General (10:00 - 18:30)') ?>
+                    </div>
                 </div>
                 <div>
                     <div
@@ -118,10 +127,15 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                 <div>
                     <div
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem;">
-                        Handover Date</div>
+                        Joining Date</div>
                     <div style="font-weight: 600; font-size: 0.9375rem;">
-                        <?= $emp['created_at'] ? date('d M Y', strtotime($emp['created_at'])) : 'N/A' ?></div>
+                        <?= !empty($emp['date_of_joining']) ? date('d M Y', strtotime($emp['date_of_joining'])) : ($emp['created_at'] ? date('d M Y', strtotime($emp['created_at'])) : 'N/A') ?></div>
                 </div>
+            </div>
+            <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                <button onclick="document.getElementById('edit-profile-modal').classList.add('active')" class="btn btn-outline" style="padding: 0.5rem 1.25rem; font-size: 0.8125rem; gap: 0.5rem; border-color: var(--color-accent); color: var(--color-accent);">
+                    <i class="fa-solid fa-user-gear"></i> Edit HR Profile
+                </button>
             </div>
         </div>
     </div>
@@ -676,6 +690,97 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                         class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
                     <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; background: var(--color-accent); border-color: var(--color-accent);">
                         Update Balances
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div id="edit-profile-modal" class="modal-overlay">
+    <div class="modal-container" style="max-width: 600px;">
+        <div class="modal-header">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Edit HR Profile</h3>
+                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;">Update core employee metadata and lock from API sync.</p>
+            </div>
+            <button onclick="document.getElementById('edit-profile-modal').classList.remove('active')" class="modal-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form action="<?= site_url('employees/profile') ?>" method="POST">
+                <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="name" class="form-input" value="<?= esc($empName) ?>" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Contract Type</label>
+                        <select name="employee_type" class="form-input" required>
+                            <option value="full_time" <?= $empType === 'full_time' ? 'selected' : '' ?>>Full Time</option>
+                            <option value="intern" <?= $empType === 'intern' ? 'selected' : '' ?>>Intern</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="form-label">Joining Date</label>
+                        <input type="date" name="date_of_joining" class="form-input" value="<?= esc($emp['date_of_joining'] ?? '') ?>">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Employment Status</label>
+                        <select name="employment_status" class="form-input" required>
+                            <option value="active" <?= ($emp['employment_status'] ?? 'active') === 'active' ? 'selected' : '' ?>>Active Service</option>
+                            <option value="resigned" <?= ($emp['employment_status'] ?? '') === 'resigned' ? 'selected' : '' ?>>Resigned</option>
+                            <option value="suspended" <?= ($emp['employment_status'] ?? '') === 'suspended' ? 'selected' : '' ?>>Suspended</option>
+                            <option value="on_leave" <?= ($emp['employment_status'] ?? '') === 'on_leave' ? 'selected' : '' ?>>On Leave</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="form-label">Department</label>
+                        <select name="department_id" class="form-input">
+                            <option value="">-- Select Department --</option>
+                            <?php foreach (($masters['departments'] ?? []) as $d): ?>
+                                <option value="<?= $d['id'] ?>" <?= ($emp['department_id'] ?? '') == $d['id'] ? 'selected' : '' ?>><?= esc($d['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Designation</label>
+                        <select name="designation_id" class="form-input">
+                            <option value="">-- Select Designation --</option>
+                            <?php foreach (($masters['designations'] ?? []) as $dg): ?>
+                                <option value="<?= $dg['id'] ?>" <?= ($emp['designation_id'] ?? '') == $dg['id'] ? 'selected' : '' ?>><?= esc($dg['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group mb-6">
+                    <label class="form-label">Assigned Shift Schedule</label>
+                    <select name="shift_id" class="form-input">
+                        <option value="">-- Use System Default --</option>
+                        <?php foreach (($masters['shifts'] ?? []) as $s): ?>
+                            <option value="<?= $s['id'] ?>" <?= ($emp['shift_id'] ?? '') == $s['id'] ? 'selected' : '' ?>>
+                                <?= esc($s['name']) ?> (<?= date('H:i', strtotime($s['start_time'])) ?> - <?= date('H:i', strtotime($s['end_time'])) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="document.getElementById('edit-profile-modal').classList.remove('active')"
+                        class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; background: var(--color-accent); border-color: var(--color-accent); gap: 0.5rem;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save & Lock Profile
                     </button>
                 </div>
             </form>

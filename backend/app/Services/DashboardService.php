@@ -20,9 +20,9 @@ class DashboardService
 
     public function __construct()
     {
-        $this->employeeModel   = new EmployeeModel();
+        $this->employeeModel = new EmployeeModel();
         $this->attendanceModel = new AttendanceDailyModel();
-        $this->punchLogModel   = new PunchLogModel();
+        $this->punchLogModel = new PunchLogModel();
     }
 
     /**
@@ -36,17 +36,17 @@ class DashboardService
         $date = $date ?? date('Y-m-d');
 
         // Total and active employees
-        $totalEmployees  = $this->employeeModel->countActive();
+        $totalEmployees = $this->employeeModel->countActive();
 
         // Attendance counts
         $statusCounts = $this->attendanceModel->countByStatus($date);
-        $lateCount    = $this->attendanceModel->countLate($date);
+        $lateCount = $this->attendanceModel->countLate($date);
 
         // Calculate counts
         $presentCount = $statusCounts['present'] ?? 0;
         $halfDayCount = $statusCounts['half_day'] ?? 0;
-        $absentCount  = $statusCounts['absent'] ?? 0;
-        $wfhCount     = $statusCounts['work_from_home'] ?? 0;
+        $absentCount = $statusCounts['absent'] ?? 0;
+        $wfhCount = $statusCounts['work_from_home'] ?? 0;
 
         // If attendance hasn't been processed yet, everyone is absent
         $processedCount = $presentCount + $halfDayCount + $absentCount + $wfhCount;
@@ -55,15 +55,15 @@ class DashboardService
         }
 
         return [
-            'date'             => $date,
-            'total_employees'  => $totalEmployees,
+            'date' => $date,
+            'total_employees' => $totalEmployees,
             'active_employees' => $totalEmployees,
-            'present_today'    => $presentCount,
-            'half_day_today'   => $halfDayCount,
-            'absent_today'     => $absentCount,
-            'wfh_today'        => $wfhCount,
-            'late_today'       => $lateCount,
-            'attendance_rate'  => $totalEmployees > 0
+            'present_today' => $presentCount,
+            'half_day_today' => $halfDayCount,
+            'absent_today' => $absentCount,
+            'wfh_today' => $wfhCount,
+            'late_today' => $lateCount,
+            'attendance_rate' => $totalEmployees > 0
                 ? round(($presentCount + $wfhCount + $halfDayCount * 0.5) / $totalEmployees * 100, 1)
                 : 0,
         ];
@@ -83,12 +83,12 @@ class DashboardService
 
         return array_map(function ($punch) {
             return [
-                'id'         => $punch['id'],
-                'emp_code'   => $punch['emp_code'],
-                'name'       => $punch['name'] ?? $punch['emp_code'],
+                'id' => $punch['id'],
+                'emp_code' => $punch['emp_code'],
+                'name' => $punch['name'] ?? $punch['emp_code'],
                 'punch_time' => $punch['punch_time'],
-                'source'     => $punch['source'],
-                'time_ago'   => $this->timeAgo($punch['punch_time']),
+                'source' => $punch['source'],
+                'time_ago' => $this->timeAgo($punch['punch_time']),
             ];
         }, $punches);
     }
@@ -102,7 +102,53 @@ class DashboardService
     public function getAttendanceTable(?string $date = null): array
     {
         $date = $date ?? date('Y-m-d');
-        return $this->attendanceModel->getForDate($date);
+        
+        // 1. Get the attendance records for today (those who punched in)
+        $attendanceRecords = $this->attendanceModel->getForDate($date);
+        $indexedRecords = [];
+        foreach ($attendanceRecords as $record) {
+            $indexedRecords[$record['emp_code']] = $record;
+        }
+
+        // 2. Get ALL active employees
+        $allEmployees = $this->employeeModel->getActiveWithMaster();
+        
+        // 3. Merge them to ensure everyone is displayed
+        $finalTable = [];
+        foreach ($allEmployees as $emp) {
+            $empCode = $emp['emp_code'];
+            if (isset($indexedRecords[$empCode])) {
+                // Employee punched in today, use their real attendance record
+                $record = $indexedRecords[$empCode];
+                // Ensure name and department are populated in case the DB join missed it
+                $record['name'] = $record['name'] ?? $emp['name'];
+                $record['department'] = $record['department'] ?? $emp['dept_name'] ?? $emp['department'];
+                $record['designation'] = $record['designation'] ?? $emp['desig_name'] ?? $emp['designation'];
+                $finalTable[] = $record;
+            } else {
+                // Employee is absent (no punches), generate virtual record for dashboard
+                $finalTable[] = [
+                    'id'                => null,
+                    'emp_code'          => $empCode,
+                    'name'              => $emp['name'],
+                    'department'        => $emp['dept_name'] ?? $emp['department'],
+                    'designation'       => $emp['desig_name'] ?? $emp['designation'],
+                    'date'              => $date,
+                    'first_in'          => null,
+                    'last_out'          => null,
+                    'work_minutes'      => 0,
+                    'late_minutes'      => 0,
+                    'status'            => 'absent',
+                    'attendance_status' => 'absent',
+                    'day_type'          => 'working_day',
+                    'punch_count'       => 0,
+                    'is_manual_entry'   => 0,
+                    'is_locked'         => 0,
+                ];
+            }
+        }
+
+        return $finalTable;
     }
 
     /**
@@ -110,7 +156,7 @@ class DashboardService
      */
     private function timeAgo(string $datetime): string
     {
-        $now  = new \DateTime();
+        $now = new \DateTime();
         $then = new \DateTime($datetime);
         $diff = $now->getTimestamp() - $then->getTimestamp();
 

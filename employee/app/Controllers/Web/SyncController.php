@@ -85,6 +85,9 @@ class SyncController extends BaseController
                 }
 
                 return redirect()->to('/sync')->with('success', $msg);
+            } elseif (($result['status'] ?? '') === 'skipped') {
+                $reason = $result['reason'] ?? 'Already running';
+                return redirect()->to('/sync')->with('warning', "Sync skipped: {$reason}");
             } else {
                 $error = $result['error'] ?? 'Unknown error';
                 return redirect()->to('/sync')->with('error', "Sync failed: {$error}");

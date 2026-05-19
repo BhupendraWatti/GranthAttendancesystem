@@ -9,7 +9,7 @@ class Profile extends BaseController
     public function index()
     {
         $empCode = (string) session()->get('empcode');
-        $employee = (new EmployeeModel())->findByCode($empCode);
+        $employee = (new EmployeeModel())->findByCodeWithMaster($empCode);
 
         return view('profile', [
             'employee' => $employee,
