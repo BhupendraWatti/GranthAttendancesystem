@@ -20,24 +20,25 @@
                 <div style="display: flex; flex-direction: column; gap: 1.5rem;">
                     <?php if (!empty($balances)): ?>
                         <?php foreach ($balances as $bal): ?>
-                            <?php 
-                                $label = 'Balance';
-                                $color = 'var(--color-text-dim)';
-                                if ($bal['leave_type'] === 'paid_leave') {
-                                    $label = 'Monthly Paid Leave';
-                                    $color = 'var(--color-success)';
-                                } elseif ($bal['leave_type'] === 'unpaid_leave') {
-                                    $label = 'Unpaid Leave Balance';
-                                    $color = 'var(--color-warning)';
-                                } elseif ($bal['leave_type'] === 'comp_off') {
-                                    $label = 'Comp-off Balance';
-                                    $color = '#6366f1';
-                                }
+                            <?php
+                            $label = 'Balance';
+                            $color = 'var(--color-text-dim)';
+                            if ($bal['leave_type'] === 'paid_leave') {
+                                $label = 'Monthly Paid Leave';
+                                $color = 'var(--color-success)';
+                            } elseif ($bal['leave_type'] === 'unpaid_leave') {
+                                $label = 'Unpaid Leave Balance';
+                                $color = 'var(--color-warning)';
+                            } elseif ($bal['leave_type'] === 'comp_off') {
+                                $label = 'Comp-off Balance';
+                                $color = '#6366f1';
+                            }
                             ?>
                             <div>
                                 <div
                                     style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
-                                    <span style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-main);"><?= $label ?></span>
+                                    <span
+                                        style="font-size: 0.8125rem; font-weight: 600; color: var(--color-text-main);"><?= $label ?></span>
                                     <span
                                         style="font-size: 0.875rem; font-weight: 700; color: <?= $color ?>;"><?= esc($bal['remaining']) ?>
                                         days left</span>
@@ -78,9 +79,9 @@
                                 <div>
                                     <div style="font-size: 0.875rem; font-weight: 600;"><?= esc($h['title']) ?></div>
                                     <div class="text-muted" style="font-size: 0.75rem;">
-                                        <?php 
-                                            $hTime = strtotime($h['date'] ?? '');
-                                            echo $hTime ? date('D, d M Y', $hTime) : '—';
+                                        <?php
+                                        $hTime = strtotime($h['date'] ?? '');
+                                        echo $hTime ? date('D, d M Y', $hTime) : '—';
                                         ?>
                                     </div>
                                 </div>
@@ -107,11 +108,33 @@
                 <form action="<?= site_url('leave/apply') ?>" method="POST"
                     style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem;">
                     <div style="grid-column: span 2;">
+                        <?php
+                        $paidLeaveRemaining = 0;
+                        $unpaidLeaveRemaining = 0;
+                        $compOffRemaining = 0;
+                        if (!empty($balances)) {
+                            foreach ($balances as $bal) {
+                                if ($bal['leave_type'] === 'paid_leave')
+                                    $paidLeaveRemaining = (float) $bal['remaining'];
+                                if ($bal['leave_type'] === 'unpaid_leave')
+                                    $unpaidLeaveRemaining = (float) $bal['remaining'];
+                                if ($bal['leave_type'] === 'comp_off')
+                                    $compOffRemaining = (float) $bal['remaining'];
+                            }
+                        }
+                        ?>
                         <label class="form-label">Absence Category</label>
                         <select name="leave_type" class="form-input" required>
-                            <option value="paid_leave">Paid Leave (PL)</option>
-                            <option value="unpaid_leave">Unpaid Leave</option>
-                            <option value="comp_off">Comp-off</option>
+                            <option value="" disabled selected>Select Category</option>
+                            <option style="front-color: gray;" value="paid_leave" <?= $paidLeaveRemaining <= 0 ? 'disabled' : '' ?>>Paid Leave (PL)
+                                <?= $paidLeaveRemaining <= 0 ? '' : '' ?>
+                            </option>
+                            <option style="front-color: gray;" value="unpaid_leave" <?= $unpaidLeaveRemaining <= 0 ? 'disabled' : '' ?>>Unpaid Leave
+                                <?= $unpaidLeaveRemaining <= 0 ? '' : '' ?>
+                            </option>
+                            <option style="front-color: gray;" value="comp_off" <?= $compOffRemaining <= 0 ? 'disabled' : '' ?>>Comp-off
+                                <?= $compOffRemaining <= 0 ? '' : '' ?>
+                            </option>
                         </select>
                     </div>
 
@@ -174,14 +197,15 @@
                                 ?>
                                 <tr>
                                     <td style="font-weight: 500;">
-                                        <?php 
-                                            $fTime = strtotime($req['from_date'] ?? '');
-                                            $tTime = strtotime($req['to_date'] ?? '');
-                                            echo ($fTime ? date('d M', $fTime) : '—') . ' — ' . ($tTime ? date('d M Y', $tTime) : '—');
+                                        <?php
+                                        $fTime = strtotime($req['from_date'] ?? '');
+                                        $tTime = strtotime($req['to_date'] ?? '');
+                                        echo ($fTime ? date('d M', $fTime) : '—') . ' — ' . ($tTime ? date('d M Y', $tTime) : '—');
                                         ?>
                                     </td>
                                     <td style="font-size: 0.8125rem; color: var(--color-text-dim);">
-                                        <?= esc(ucwords(str_replace('_', ' ', $req['leave_type']))) ?></td>
+                                        <?= esc(ucwords(str_replace('_', ' ', $req['leave_type']))) ?>
+                                    </td>
                                     <td><span class="badge badge--<?= $stClass ?>"><?= esc(ucfirst($st)) ?></span></td>
                                     <td class="text-muted"
                                         style="font-size: 0.8125rem; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"

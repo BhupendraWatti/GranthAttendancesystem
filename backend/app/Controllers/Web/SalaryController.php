@@ -67,7 +67,7 @@ class SalaryController extends BaseController
 
             $salaryData = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
 
-            return view('pages/payslip', [
+            return view('pages/payslip_professional', [
                 'pageTitle'  => "Payslip — {$employee['name']}",
                 'activePage' => 'salary',
                 'employee'   => $employee,

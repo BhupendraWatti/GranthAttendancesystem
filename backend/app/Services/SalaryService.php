@@ -4,18 +4,16 @@ namespace App\Services;
 
 use App\Models\AttendanceDailyModel;
 use App\Models\EmployeeModel;
+use App\Models\EmployeeSalaryComponentModel;
 
 /**
  * SalaryService — Core Salary Calculation Engine (Dynamic Hourly Model)
- *
- * This service calculates salary based on:
- * 1. Target Hours to Date (excluding Sundays and 1st/3rd Saturdays)
- * 2. Deductive model for mid-month fairness
  */
 class SalaryService
 {
     private AttendanceDailyModel $attendanceModel;
     private EmployeeModel $employeeModel;
+    private EmployeeSalaryComponentModel $componentModel;
 
     private int $salaryBaseDays;
     private float $workDayHours;
@@ -24,6 +22,7 @@ class SalaryService
     {
         $this->attendanceModel = new AttendanceDailyModel();
         $this->employeeModel  = new EmployeeModel();
+        $this->componentModel = new EmployeeSalaryComponentModel();
 
         $this->salaryBaseDays = (int) env('SALARY_BASE_DAYS', 30);
         $this->workDayHours   = 8.5; 
@@ -48,12 +47,26 @@ class SalaryService
             $date = $record['date'];
 
             if (!isset($byEmployee[$empCode])) {
+                $components = $this->componentModel->getByEmployee($empCode);
+                $totalEarnings = 0;
+                $earningsList = [];
+                
+                if (!empty($components)) {
+                    foreach ($components as $c) {
+                        if ($c['type'] === 'earning') {
+                            $totalEarnings += (float)$c['amount'];
+                            $earningsList[] = ['name' => $c['component_name'], 'amount' => (float)$c['amount']];
+                        }
+                    }
+                }
+
                 $byEmployee[$empCode] = [
                     'emp_code'           => $empCode,
                     'name'               => $record['name'] ?? $empCode,
                     'department'         => $record['department'] ?? null,
                     'employee_type'      => $record['employee_type'] ?? 'full_time',
-                    'base_salary'        => $record['salary'] ?? null,
+                    'base_salary'        => $totalEarnings > 0 ? $totalEarnings : ($record['salary'] ?? null),
+                    'earnings'           => $earningsList,
                     'present_days'       => 0,
                     'half_days'          => 0,
                     'absent_days'        => 0,
@@ -69,7 +82,7 @@ class SalaryService
             $st = $record['status'];
             $isWeekend = isWeekendOff($date);
 
-            // 1. Stats Counting (Only count as 'Absent' if it's a working day)
+            // 1. Stats Counting
             switch ($st) {
                 case 'present':  $byEmployee[$empCode]['present_days']++; break;
                 case 'half_day': $byEmployee[$empCode]['half_days']++; break;
@@ -84,15 +97,12 @@ class SalaryService
                 case 'comp_off': $byEmployee[$empCode]['comp_off_days']++; break;
             }
 
-            // 2. Minute Crediting Logic (Professional Standard)
+            // 2. Minute Crediting Logic
             $fullCreditStatuses = ['work_from_home', 'paid_leave', 'holiday', 'comp_off', 'leave'];
             if (in_array($st, $fullCreditStatuses)) {
-                // RULE: Only give 510m credit if the day was actually a TARGET working day.
-                // This prevents "Double Credit" for Holidays/Leaves that fall on Sundays.
                 if (!$isWeekend) {
                     $byEmployee[$empCode]['total_work_minutes'] += 510;
                 } else {
-                    // If they worked on a weekend, add actual minutes (punches) but no bonus credit
                     $byEmployee[$empCode]['total_work_minutes'] += (int) ($record['work_minutes'] ?? 0);
                 }
             } else {
@@ -118,7 +128,20 @@ class SalaryService
         $employee = $this->employeeModel->findByCode($empCode);
         if (!$employee) return null;
 
-        $salary = $employee['salary'] ?? $monthlySalary ?? (float) env('DEFAULT_MONTHLY_SALARY', 25000);
+        $components = $this->componentModel->getByEmployee($empCode);
+        $totalEarnings = 0;
+        $earningsList = [];
+        
+        if (!empty($components)) {
+            foreach ($components as $c) {
+                if ($c['type'] === 'earning') {
+                    $totalEarnings += (float)$c['amount'];
+                    $earningsList[] = ['name' => $c['component_name'], 'amount' => (float)$c['amount']];
+                }
+            }
+        }
+
+        $salary = $totalEarnings > 0 ? $totalEarnings : ($employee['salary'] ?? $monthlySalary ?? (float) env('DEFAULT_MONTHLY_SALARY', 25000));
         $records = $this->attendanceModel->getMonthly($empCode, $year, $month);
 
         $data = [
@@ -126,7 +149,8 @@ class SalaryService
             'name'               => $employee['name'],
             'department'         => $employee['department'] ?? null,
             'employee_type'      => $employee['employee_type'] ?? 'full_time',
-            'base_salary'        => $employee['salary'] ?? null,
+            'base_salary'        => $salary,
+            'earnings'           => $earningsList,
             'present_days'       => 0,
             'half_days'          => 0,
             'absent_days'        => 0,

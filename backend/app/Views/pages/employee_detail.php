@@ -31,7 +31,8 @@ foreach (($attendanceRecords ?? []) as $r) {
 
     // Business Rule: Weekend and Holiday absences (no work) should not count towards absent stats
     if (($dayType === 'weekend' || $dayType === 'holiday') && $st === 'absent' && empty($r['first_in'])) {
-        if ($dayType === 'holiday') $holidayDays++;
+        if ($dayType === 'holiday')
+            $holidayDays++;
         continue;
     }
 
@@ -89,7 +90,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                 </div>
                 <div style="display: flex; gap: 0.5rem; align-items: center;">
                     <?php if (!empty($emp['is_profile_locked'])): ?>
-                        <span class="badge badge--info" style="padding: 0.5rem 1rem;" title="Profile is locked from API sync">
+                        <span class="badge badge--info" style="padding: 0.5rem 1rem;"
+                            title="Profile is locked from API sync">
                             <i class="fa-solid fa-lock mr-1"></i> HR MANAGED
                         </span>
                     <?php endif; ?>
@@ -106,7 +108,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     <div
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem;">
                         Department</div>
-                    <div style="font-weight: 600; font-size: 0.9375rem;"><?= esc($emp['dept_name'] ?? $emp['department'] ?? 'General Ops') ?>
+                    <div style="font-weight: 600; font-size: 0.9375rem;">
+                        <?= esc($emp['dept_name'] ?? $emp['department'] ?? 'General Ops') ?>
                     </div>
                 </div>
                 <div>
@@ -122,18 +125,22 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem;">
                         Contract Type</div>
                     <div style="font-weight: 600; font-size: 0.9375rem;">
-                        <?= ucwords(str_replace('_', ' ', esc($empType))) ?></div>
+                        <?= ucwords(str_replace('_', ' ', esc($empType))) ?>
+                    </div>
                 </div>
                 <div>
                     <div
                         style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-text-dim); margin-bottom: 0.25rem;">
                         Joining Date</div>
                     <div style="font-weight: 600; font-size: 0.9375rem;">
-                        <?= !empty($emp['date_of_joining']) ? date('d M Y', strtotime($emp['date_of_joining'])) : ($emp['created_at'] ? date('d M Y', strtotime($emp['created_at'])) : 'N/A') ?></div>
+                        <?= !empty($emp['date_of_joining']) ? date('d M Y', strtotime($emp['date_of_joining'])) : ($emp['created_at'] ? date('d M Y', strtotime($emp['created_at'])) : 'N/A') ?>
+                    </div>
                 </div>
             </div>
             <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-                <button onclick="document.getElementById('edit-profile-modal').classList.add('active')" class="btn btn-outline" style="padding: 0.5rem 1.25rem; font-size: 0.8125rem; gap: 0.5rem; border-color: var(--color-accent); color: var(--color-accent);">
+                <button onclick="document.getElementById('edit-profile-modal').classList.add('active')"
+                    class="btn btn-outline"
+                    style="padding: 0.5rem 1.25rem; font-size: 0.8125rem; gap: 0.5rem; border-color: var(--color-accent); color: var(--color-accent);">
                     <i class="fa-solid fa-user-gear"></i> Edit HR Profile
                 </button>
             </div>
@@ -169,15 +176,22 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                             style="font-size: 1rem; color: var(--color-text-dim);">/ <?= $totalDays ?>
                                             DAYS</small></span>
                                     <?php if ($wfhDays > 0): ?>
-                                        <div style="font-size: 0.65rem; color: #6366f1; font-weight: 700; margin-top: 0.25rem;">INCL. <?= $wfhDays ?> REMOTE SESSIONS</div>
+                                        <div
+                                            style="font-size: 0.65rem; color: #6366f1; font-weight: 700; margin-top: 0.25rem;">
+                                            INCL. <?= $wfhDays ?> REMOTE SESSIONS</div>
                                     <?php endif; ?>
                                 </div>
                             </div>
                             <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
                                 <div class="stat-info">
-                                    <span class="label">Shortfall Hours</span>
-                                    <span class="value" style="color: var(--color-error);"><?= round($salary['shortfall_hours'] ?? 0, 1) ?>h</span>
-                                    <div style="font-size: 0.65rem; color: var(--color-text-dim); margin-top: 0.25rem;">TARGET: <?= round($salary['expected_hours'] ?? 0, 1) ?>h TO DATE</div>
+                                    <span class="label">Remaining Hours</span>
+                                    <?php 
+                                        $requiredHoursMonth = 204;
+                                        $totalHoursMonth = $totalWorkMin / 60;
+                                        $remainingHours = max(0, $requiredHoursMonth - $totalHoursMonth);
+                                    ?>
+                                    <span class="value" style="color: var(--color-error);"><?= round($remainingHours, 1) ?>h</span>
+                                    <div style="font-size: 0.65rem; color: var(--color-text-dim); margin-top: 0.25rem;">TARGET: 204h</div>
                                 </div>
                             </div>
                             <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
@@ -201,15 +215,19 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                             <?php $perc = $totalDays > 0 ? round($presentDays / $totalDays * 100) : 0; ?>
                             <div
                                 style="height: 12px; background: var(--color-surface-muted); border-radius: 6px; overflow: hidden; display: flex;">
-                                <div style="width: <?= $totalDays > 0 ? round($presentDays / $totalDays * 100) : 0 ?>%; background: var(--color-success);" title="Present">
+                                <div style="width: <?= $totalDays > 0 ? round($presentDays / $totalDays * 100) : 0 ?>%; background: var(--color-success);"
+                                    title="Present">
                                 </div>
-                                <div style="width: <?= $totalDays > 0 ? round($wfhDays / $totalDays * 100) : 0 ?>%; background: #6366f1;" title="Work From Home">
+                                <div style="width: <?= $totalDays > 0 ? round($wfhDays / $totalDays * 100) : 0 ?>%; background: #6366f1;"
+                                    title="Work From Home">
                                 </div>
-                                <div style="width: <?= $totalDays > 0 ? round($paidLeaveDays / $totalDays * 100) : 0 ?>%; background: #10B981; opacity: 0.7;" title="Paid Leave">
+                                <div style="width: <?= $totalDays > 0 ? round($paidLeaveDays / $totalDays * 100) : 0 ?>%; background: #10B981; opacity: 0.7;"
+                                    title="Paid Leave">
                                 </div>
                                 <div style="width: <?= $totalDays > 0 ? round($halfDays / $totalDays * 100) : 0 ?>%; background: var(--color-warning);"
                                     title="Half Day"></div>
-                                <div style="width: <?= $totalDays > 0 ? round($unpaidLeaveDays / $totalDays * 100) : 0 ?>%; background: #94a3b8;" title="Unpaid Leave">
+                                <div style="width: <?= $totalDays > 0 ? round($unpaidLeaveDays / $totalDays * 100) : 0 ?>%; background: #94a3b8;"
+                                    title="Unpaid Leave">
                                 </div>
                                 <div style="width: <?= $totalDays > 0 ? round($absentDays / $totalDays * 100) : 0 ?>%; background: var(--color-danger);"
                                     title="Absent"></div>
@@ -222,13 +240,11 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                     </div> PRESENT
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <div
-                                        style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1;">
+                                    <div style="width: 8px; height: 8px; border-radius: 2px; background: #6366f1;">
                                     </div> WFH
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <div
-                                        style="width: 8px; height: 8px; border-radius: 2px; background: #10B981;">
+                                    <div style="width: 8px; height: 8px; border-radius: 2px; background: #10B981;">
                                     </div> PAID LEAVE
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
@@ -237,8 +253,7 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                     </div> HALF DAY
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <div
-                                        style="width: 8px; height: 8px; border-radius: 2px; background: #94a3b8;">
+                                    <div style="width: 8px; height: 8px; border-radius: 2px; background: #94a3b8;">
                                     </div> UNPAID
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
@@ -272,34 +287,40 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
 
                     <!-- Leave Balances Section -->
                     <div style="background: var(--color-surface-muted); border-radius: 12px; padding: 2rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                             <h4 class="font-display" style="font-size: 1rem;">Leave Balances</h4>
-                            <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" 
-                                    onclick="document.getElementById('edit-balances-modal').classList.add('active')">
+                            <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                                onclick="document.getElementById('edit-balances-modal').classList.add('active')">
                                 <i class="fa-solid fa-pen"></i> Edit
                             </button>
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-                            <?php 
+                            <?php
                             $balanceMap = [];
-                            foreach(($leaveBalances ?? []) as $lb) $balanceMap[$lb['leave_type']] = $lb;
-                            
+                            foreach (($leaveBalances ?? []) as $lb)
+                                $balanceMap[$lb['leave_type']] = $lb;
+
                             $categories = [
                                 'paid_leave' => ['label' => 'Paid Leave', 'color' => 'var(--color-success)'],
                                 'unpaid_leave' => ['label' => 'Unpaid Buffer', 'color' => 'var(--color-text-dim)'],
                                 'comp_off' => ['label' => 'Comp-off', 'color' => '#6366f1']
                             ];
 
-                            foreach($categories as $key => $cat):
+                            foreach ($categories as $key => $cat):
                                 $b = $balanceMap[$key] ?? ['remaining' => 0, 'total' => 0];
-                            ?>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <div style="width: 8px; height: 8px; border-radius: 50%; background: <?= $cat['color'] ?>;"></div>
-                                    <span class="text-muted" style="font-size: 0.8125rem;"><?= $cat['label'] ?></span>
+                                ?>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <div
+                                            style="width: 8px; height: 8px; border-radius: 50%; background: <?= $cat['color'] ?>;">
+                                        </div>
+                                        <span class="text-muted" style="font-size: 0.8125rem;"><?= $cat['label'] ?></span>
+                                    </div>
+                                    <span style="font-weight: 700;"><?= esc($b['remaining']) ?> <small
+                                            style="font-size: 0.65rem; color: var(--color-text-dim);">/
+                                            <?= esc($b['total']) ?> DAYS</small></span>
                                 </div>
-                                <span style="font-weight: 700;"><?= esc($b['remaining']) ?> <small style="font-size: 0.65rem; color: var(--color-text-dim);">/ <?= esc($b['total']) ?> DAYS</small></span>
-                            </div>
                             <?php endforeach; ?>
                         </div>
                     </div>
@@ -317,7 +338,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                         <select name="month" class="form-input" style="padding: 0.4rem; width: auto;">
                             <?php for ($m = 1; $m <= 12; $m++): ?>
                                 <option value="<?= $m ?>" <?= ($month ?? date('n')) == $m ? 'selected' : '' ?>>
-                                    <?= date('F', mktime(0, 0, 0, $m, 1)) ?></option>
+                                    <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
+                                </option>
                             <?php endfor; ?>
                         </select>
                         <select name="year" class="form-input" style="padding: 0.4rem; width: auto;">
@@ -348,25 +370,29 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                 <tr>
                                     <td style="font-weight: 600;"><?= date('d M, Y (D)', strtotime($rec['date'])) ?></td>
                                     <td style="font-family: var(--font-mono);">
-                                        <?= $rec['first_in'] ? date('H:i', strtotime($rec['first_in'])) : '—' ?></td>
+                                        <?= $rec['first_in'] ? date('H:i', strtotime($rec['first_in'])) : '—' ?>
+                                    </td>
                                     <td style="font-family: var(--font-mono);">
-                                        <?= $rec['last_out'] ? date('H:i', strtotime($rec['last_out'])) : '—' ?></td>
+                                        <?= $rec['last_out'] ? date('H:i', strtotime($rec['last_out'])) : '—' ?>
+                                    </td>
                                     <td style="font-weight: 700; color: var(--color-primary);">
                                         <?php $h = floor(($rec['work_minutes'] ?? 0) / 60);
                                         $mn = ($rec['work_minutes'] ?? 0) % 60;
                                         echo "{$h}h {$mn}m"; ?>
                                     </td>
                                     <td>
-                                        <?php 
+                                        <?php
                                         $st = $rec['attendance_status'] ?? $rec['status'] ?? 'absent';
                                         if (($rec['day_type'] ?? 'working_day') === 'weekend' && $st === 'absent' && empty($rec['first_in'])) {
                                             $st = 'weekend';
                                         }
                                         ?>
-                                        <span class="badge badge--<?= esc($st) ?>"><?= ucfirst(str_replace('_', ' ', esc($st))) ?></span>
-                                        
+                                        <span
+                                            class="badge badge--<?= esc($st) ?>"><?= ucfirst(str_replace('_', ' ', esc($st))) ?></span>
+
                                         <?php if (!empty($rec['work_mode'])): ?>
-                                            <span class="badge badge--info" style="font-size:0.65rem; padding: 1px 4px;"><?= strtoupper(esc($rec['work_mode'])) ?></span>
+                                            <span class="badge badge--info"
+                                                style="font-size:0.65rem; padding: 1px 4px;"><?= strtoupper(esc($rec['work_mode'])) ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
@@ -378,10 +404,9 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                         <?php endif; ?>
                                     </td>
                                     <td style="text-align: right;">
-                                        <button class="btn btn-outline edit-attendance-btn" 
+                                        <button class="btn btn-outline edit-attendance-btn"
                                             style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
-                                            data-date="<?= esc($rec['date']) ?>"
-                                            data-status="<?= esc($rec['status']) ?>"
+                                            data-date="<?= esc($rec['date']) ?>" data-status="<?= esc($rec['status']) ?>"
                                             data-in="<?= $rec['first_in'] ? date('H:i', strtotime($rec['first_in'])) : '' ?>"
                                             data-out="<?= $rec['last_out'] ? date('H:i', strtotime($rec['last_out'])) : '' ?>"
                                             data-workmode="<?= esc($rec['work_mode'] ?? '') ?>">
@@ -417,8 +442,7 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                         <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
                             <div class="stat-info">
                                 <span class="label">Handled Days</span>
-                                <span
-                                    class="value"><?= ($salarySummary['effective_days'] ?? 0) ?></span>
+                                <span class="value"><?= ($salarySummary['effective_days'] ?? 0) ?></span>
                             </div>
                         </div>
                         <div class="stat-card" style="background: var(--color-surface-muted); border: none;">
@@ -430,39 +454,181 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     </div>
                 <?php endif; ?>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem;">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Contractual Configuration</h3>
-                        </div>
-                        <div class="card-body">
-                            <form action="<?= site_url('employees/salary') ?>" method="POST">
-                                <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
-                                <div class="form-group">
-                                    <label class="form-label">Base Monthly Compensation (INR)</label>
-                                    <input type="number" step="0.01" name="salary" class="form-input"
-                                        value="<?= esc($emp['salary'] ?? '') ?>" placeholder="Enter amount">
+                <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 2.5rem;">
+                    <div class="card" style="border: 1px solid var(--color-border); box-shadow: var(--shadow-sm);">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; background: #fafafa; border-bottom: 1px solid var(--color-border);">
+                            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(79, 70, 229, 0.1); display: flex; align-items: center; justify-content: center; color: var(--color-accent);">
+                                    <i class="fa-solid fa-layer-group"></i>
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="width: 100%;">Commit Financial
-                                    Update</button>
-                            </form>
+                                <div>
+                                    <h3 style="font-size: 1rem; margin: 0;">Salary Structure</h3>
+                                    <p style="font-size: 0.7rem; color: var(--color-text-dim); margin: 0;">Dynamic earnings breakdown</p>
+                                </div>
+                            </div>
+                            <button class="btn btn-primary" onclick="document.getElementById('add-salary-component-modal').classList.add('active')" style="padding: 0.5rem 1rem; font-size: 0.75rem; border-radius: 6px;">
+                                <i class="fa-solid fa-plus mr-1"></i> Add Component
+                            </button>
+                        </div>
+                        <div class="table-container">
+                            <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                                <thead>
+                                    <tr style="background: #f8fafc;">
+                                        <th style="text-align: left; padding: 1rem 1.5rem; font-size: 0.65rem; color: var(--color-text-dim); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--color-border);">Component Name</th>
+                                        <th style="text-align: right; padding: 1rem 1.5rem; font-size: 0.65rem; color: var(--color-text-dim); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--color-border);">Amount</th>
+                                        <th style="text-align: center; padding: 1rem 1.5rem; font-size: 0.65rem; color: var(--color-text-dim); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--color-border);">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($salaryComponents)): ?>
+                                        <?php $totalEarnings = 0; ?>
+                                        <?php foreach ($salaryComponents as $index => $comp): ?>
+                                            <?php if($comp['type'] === 'earning') $totalEarnings += $comp['amount']; ?>
+                                            <tr style="background: <?= $index % 2 === 0 ? 'white' : '#fcfcfc' ?>; transition: background 0.2s;">
+                                                <td style="padding: 1rem 1.5rem;">
+                                                    <div style="font-weight: 600; font-size: 0.875rem; color: var(--color-text-main);"><?= esc($comp['component_name']) ?></div>
+                                                    <div style="font-size: 0.65rem; color: var(--color-success); font-weight: 700; text-transform: uppercase;">Earning</div>
+                                                </td>
+                                                <td style="padding: 1rem 1.5rem; text-align: right;">
+                                                    <span style="font-weight: 700; font-family: var(--font-mono); color: var(--color-text-main);">
+                                                        ₹<?= number_format($comp['amount'], 2) ?>
+                                                    </span>
+                                                </td>
+                                                <td style="padding: 1rem 1.5rem; text-align: center;">
+                                                    <form action="<?= site_url('employees/salary/component/delete') ?>" method="POST" onsubmit="return confirm('Remove this component?')">
+                                                        <input type="hidden" name="id" value="<?= $comp['id'] ?>">
+                                                        <button type="submit" class="btn-icon" style="color: #cbd5e1; transition: color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='#cbd5e1'">
+                                                            <i class="fa-solid fa-trash-can"></i>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                        <tr style="background: linear-gradient(to right, #f8fafc, white);">
+                                            <td style="padding: 1.25rem 1.5rem; font-weight: 800; font-size: 0.875rem; color: var(--color-primary);">Calculated Gross Payout</td>
+                                            <td style="padding: 1.25rem 1.5rem; text-align: right; font-weight: 800; font-size: 1.125rem; color: var(--color-primary); font-family: var(--font-mono);">
+                                                ₹<?= number_format($totalEarnings, 2) ?>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="3" style="padding: 4rem 2rem; text-align: center;">
+                                                <div style="margin-bottom: 1rem; color: #e2e8f0;">
+                                                    <i class="fa-solid fa-receipt" style="font-size: 3rem;"></i>
+                                                </div>
+                                                <div style="font-weight: 700; color: var(--color-text-dim); margin-bottom: 0.5rem;">No dynamic components found</div>
+                                                <div style="font-size: 0.8125rem; color: #94a3b8; max-width: 300px; margin: 0 auto; line-height: 1.5;">
+                                                    System is currently defaulting to the fixed Base Compensation: 
+                                                    <strong style="color: var(--color-text-main);">₹<?= number_format($emp['salary'] ?? 0, 2) ?></strong>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="padding: 1rem; border-top: 1px solid var(--color-border); background: #fdfdfd; font-size: 0.7rem; color: var(--color-text-dim);">
+                            <i class="fa-solid fa-circle-info mr-1" style="color: var(--color-accent);"></i>
+                            Earnings defined here will override the Base Compensation during payroll generation.
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>Registry Identity Mapping</h3>
-                        </div>
-                        <div class="card-body">
-                            <form action="<?= site_url('employees/email') ?>" method="POST">
-                                <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
-                                <div class="form-group">
-                                    <label class="form-label">Authorized Communication Email</label>
-                                    <input type="email" name="email" class="form-input"
-                                        value="<?= esc($emp['email'] ?? '') ?>" placeholder="name@company.com">
+                    <div style="display: flex; flex-direction: column; gap: 2.5rem;">
+                        <div class="card" style="border: 1px solid var(--color-border);">
+                            <div class="card-header" style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 32px; height: 32px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #475569;">
+                                    <i class="fa-solid fa-file-contract"></i>
                                 </div>
-                                <button type="submit" class="btn btn-outline" style="width: 100%;">Update Corporate
-                                    Identity</button>
+                                <h3 style="font-size: 0.95rem; margin: 0;">Contractual Base</h3>
+                            </div>
+                            <div class="card-body">
+                                <form action="<?= site_url('employees/salary') ?>" method="POST">
+                                    <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.65rem;">Master Monthly Compensation</label>
+                                        <div style="position: relative;">
+                                            <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-dim); font-weight: 700;">₹</span>
+                                            <input type="number" step="0.01" name="salary" class="form-input"
+                                                value="<?= esc($emp['salary'] ?? '') ?>" placeholder="0.00" style="padding-left: 2rem; font-weight: 700; font-family: var(--font-mono);">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="width: 100%; border-radius: 6px;">
+                                        Save Base Salary
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="card" style="border: 1px solid var(--color-border);">
+                            <div class="card-header" style="display: flex; align-items: center; gap: 0.75rem;">
+                                <div style="width: 32px; height: 32px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #475569;">
+                                    <i class="fa-solid fa-envelope-open-text"></i>
+                                </div>
+                                <h3 style="font-size: 0.95rem; margin: 0;">Identity Mapping</h3>
+                            </div>
+                            <div class="card-body">
+                                <form action="<?= site_url('employees/email') ?>" method="POST">
+                                    <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
+                                    <div class="form-group">
+                                        <label class="form-label" style="font-size: 0.65rem;">Corporate Email Address</label>
+                                        <input type="email" name="email" class="form-input"
+                                            value="<?= esc($emp['email'] ?? '') ?>" placeholder="name@company.com" style="border-radius: 6px;">
+                                    </div>
+                                    <button type="submit" class="btn btn-outline" style="width: 100%; border-radius: 6px;">
+                                        Update Email
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal: Add Salary Component (Proper Modal Integration) -->
+                <div class="modal-overlay" id="add-salary-component-modal">
+                    <div class="modal-container">
+                        <div class="modal-header">
+                            <div>
+                                <h3 style="margin: 0; font-size: 1.125rem;">Add Salary Component</h3>
+                                <p style="margin: 0.25rem 0 0; font-size: 0.75rem; color: var(--color-text-dim);">Define a new earning for this associate</p>
+                            </div>
+                            <button class="modal-close"
+                                onclick="document.getElementById('add-salary-component-modal').classList.remove('active')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="<?= site_url('employees/salary/component/add') ?>" method="POST">
+                                <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
+                                <input type="hidden" name="type" value="earning">
+                                
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.7rem;">Component Name</label>
+                                    <select name="component_name" id="component-name-select" class="form-input" required style="border-radius: 8px;">
+                                        <option value="Basic Salary">Basic Salary</option>
+                                        <option value="House Rent Allowance">House Rent Allowance (HRA)</option>
+                                        <option value="Travel Allowance">Travel Allowance</option>
+                                        <option value="Medical Allowance">Medical Allowance</option>
+                                        <option value="Bonus">Bonus</option>
+                                        <option value="Special Allowance">Special Allowance</option>
+                                        <option value="custom">-- Custom Component --</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" id="custom-name-group" style="display: none;">
+                                    <label class="form-label" style="font-size: 0.7rem;">Custom Component Name</label>
+                                    <input type="text" name="custom_name" class="form-input" placeholder="e.g. Project Incentive" style="border-radius: 8px;">
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label" style="font-size: 0.7rem;">Amount (INR)</label>
+                                    <div style="position: relative;">
+                                        <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--color-text-dim); font-weight: 700;">₹</span>
+                                        <input type="number" step="0.01" name="amount" class="form-input" placeholder="0.00" required style="padding-left: 2rem; border-radius: 8px; font-weight: 700;">
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.875rem; border-radius: 8px; font-weight: 700;">
+                                    Add to Structure
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -514,7 +680,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                                 <div>
                                                     <div
                                                         style="font-weight: 700; color: var(--color-primary); font-size: 0.9375rem;">
-                                                        <?= esc($doc['title']) ?></div>
+                                                        <?= esc($doc['title']) ?>
+                                                    </div>
                                                     <div
                                                         style="font-size: 0.75rem; color: var(--color-text-dim); margin-top: 0.25rem;">
                                                         <i class="fa-solid fa-file-lines" style="margin-right: 0.25rem;"></i>
@@ -593,10 +760,13 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
     <div class="modal-container">
         <div class="modal-header">
             <div>
-                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Manual Attendance Edit</h3>
-                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;" id="edit-date-display"></p>
+                <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Manual Attendance Edit
+                </h3>
+                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;"
+                    id="edit-date-display"></p>
             </div>
-            <button onclick="document.getElementById('edit-attendance-modal').classList.remove('active')" class="modal-close">
+            <button onclick="document.getElementById('edit-attendance-modal').classList.remove('active')"
+                class="modal-close">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -617,34 +787,37 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                   <div class="form-group">
-                       <label class="form-label">Attendance Status</label>
-                       <select name="status" id="edit-status-input" class="form-input" required>
-                           <option value="present">Present</option>
-                           <option value="absent">Absent</option>
-                           <option value="half_day">Half Day</option>
-                           <option value="work_from_home">Work from Home</option>
-                           <option value="paid_leave">Paid Leave</option>
-                           <option value="unpaid_leave">Unpaid Leave</option>
-                       </select>
-                   </div>
-                   <div class="form-group">
-                       <label class="form-label">Work Mode Override</label>
-                       <select name="work_mode" id="edit-workmode-input" class="form-input">
-                           <option value="">No Override (Auto)</option>
-                           <option value="wfo">WFO (Office)</option>
-                           <option value="wfh">WFH (Home)</option>
-                       </select>
-                   </div>
+                    <div class="form-group">
+                        <label class="form-label">Attendance Status</label>
+                        <select name="status" id="edit-status-input" class="form-input" required>
+                            <option value="present">Present</option>
+                            <option value="absent">Absent</option>
+                            <option value="half_day">Half Day</option>
+                            <option value="work_from_home">Work from Home</option>
+                            <option value="paid_leave">Paid Leave</option>
+                            <option value="unpaid_leave">Unpaid Leave</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Work Mode Override</label>
+                        <select name="work_mode" id="edit-workmode-input" class="form-input">
+                            <option value="">No Override (Auto)</option>
+                            <option value="wfo">WFO (Office)</option>
+                            <option value="wfh">WFH (Home)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="form-group mb-6">
-                   <small class="text-muted mt-1 block" style="font-size: 0.75rem;">WFH defaults to 8.5 full working hours if no times are set. Overrides force the work mode regardless of punch source.</small>
+                    <small class="text-muted mt-1 block" style="font-size: 0.75rem;">WFH defaults to 8.5 full working
+                        hours if no times are set. Overrides force the work mode regardless of punch source.</small>
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" onclick="document.getElementById('edit-attendance-modal').classList.remove('active')"
+                    <button type="button"
+                        onclick="document.getElementById('edit-attendance-modal').classList.remove('active')"
                         class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; gap: 0.5rem; background: var(--color-accent); border-color: var(--color-accent);">
+                    <button type="submit" class="btn btn-primary"
+                        style="padding: 0.75rem 1.5rem; gap: 0.5rem; background: var(--color-accent); border-color: var(--color-accent);">
                         <i class="fa-solid fa-check-double"></i>
                         Commit Update
                     </button>
@@ -660,9 +833,11 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
         <div class="modal-header">
             <div>
                 <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Edit Leave Balances</h3>
-                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;">Adjust the manual leave pool for this employee.</p>
+                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;">Adjust the manual
+                    leave pool for this employee.</p>
             </div>
-            <button onclick="document.getElementById('edit-balances-modal').classList.remove('active')" class="modal-close">
+            <button onclick="document.getElementById('edit-balances-modal').classList.remove('active')"
+                class="modal-close">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -672,23 +847,28 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
 
                 <div class="form-group mb-4">
                     <label class="form-label">Paid Leave Balance (Days)</label>
-                    <input type="number" name="paid_leave" step="0.5" class="form-input" placeholder="Current total pool" value="<?= $balanceMap['paid_leave']['total'] ?? '' ?>">
+                    <input type="number" name="paid_leave" step="0.5" class="form-input"
+                        placeholder="Current total pool" value="<?= $balanceMap['paid_leave']['total'] ?? '' ?>">
                 </div>
 
                 <div class="form-group mb-4">
                     <label class="form-label">Unpaid Leave Buffer (Days)</label>
-                    <input type="number" name="unpaid_leave" step="1" class="form-input" placeholder="Maximum unpaid allowed" value="<?= $balanceMap['unpaid_leave']['total'] ?? '' ?>">
+                    <input type="number" name="unpaid_leave" step="1" class="form-input"
+                        placeholder="Maximum unpaid allowed" value="<?= $balanceMap['unpaid_leave']['total'] ?? '' ?>">
                 </div>
 
                 <div class="form-group mb-6">
                     <label class="form-label">Comp-off Balance (Days)</label>
-                    <input type="number" name="comp_off" step="0.5" class="form-input" placeholder="Accumulated time bank" value="<?= $balanceMap['comp_off']['total'] ?? '' ?>">
+                    <input type="number" name="comp_off" step="0.5" class="form-input"
+                        placeholder="Accumulated time bank" value="<?= $balanceMap['comp_off']['total'] ?? '' ?>">
                 </div>
 
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" onclick="document.getElementById('edit-balances-modal').classList.remove('active')"
+                    <button type="button"
+                        onclick="document.getElementById('edit-balances-modal').classList.remove('active')"
                         class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; background: var(--color-accent); border-color: var(--color-accent);">
+                    <button type="submit" class="btn btn-primary"
+                        style="padding: 0.75rem 1.5rem; background: var(--color-accent); border-color: var(--color-accent);">
                         Update Balances
                     </button>
                 </div>
@@ -703,9 +883,11 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
         <div class="modal-header">
             <div>
                 <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Edit HR Profile</h3>
-                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;">Update core employee metadata and lock from API sync.</p>
+                <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;">Update core employee
+                    metadata and lock from API sync.</p>
             </div>
-            <button onclick="document.getElementById('edit-profile-modal').classList.remove('active')" class="modal-close">
+            <button onclick="document.getElementById('edit-profile-modal').classList.remove('active')"
+                class="modal-close">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
@@ -730,7 +912,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div class="form-group">
                         <label class="form-label">Joining Date</label>
-                        <input type="date" name="date_of_joining" class="form-input" value="<?= esc($emp['date_of_joining'] ?? '') ?>">
+                        <input type="date" name="date_of_joining" class="form-input"
+                            value="<?= esc($emp['date_of_joining'] ?? '') ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Employment Status</label>
@@ -747,39 +930,64 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     <div class="form-group">
                         <label class="form-label">Department</label>
                         <select name="department_id" class="form-input">
-                            <option value="">-- Select Department --</option>
-                            <?php foreach (($masters['departments'] ?? []) as $d): ?>
-                                <option value="<?= $d['id'] ?>" <?= ($emp['department_id'] ?? '') == $d['id'] ? 'selected' : '' ?>><?= esc($d['name']) ?></option>
-                            <?php endforeach; ?>
+                            <?php if (empty($masters['departments'])): ?>
+                                <option value="">-- No Departments Found --</option>
+                            <?php else: ?>
+                                <option value="">-- Select Department --</option>
+                                <?php foreach ($masters['departments'] as $d): ?>
+                                    <option value="<?= $d['id'] ?>" <?= ($emp['department_id'] ?? '') == $d['id'] ? 'selected' : '' ?>><?= esc($d['name']) ?></option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
+                        <?php if (empty($masters['departments'])): ?>
+                            <p style="font-size: 0.65rem; color: var(--color-danger); margin-top: 4px;">Add departments in Master > Org Structure first.</p>
+                        <?php endif; ?>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Designation</label>
                         <select name="designation_id" class="form-input">
-                            <option value="">-- Select Designation --</option>
-                            <?php foreach (($masters['designations'] ?? []) as $dg): ?>
-                                <option value="<?= $dg['id'] ?>" <?= ($emp['designation_id'] ?? '') == $dg['id'] ? 'selected' : '' ?>><?= esc($dg['name']) ?></option>
-                            <?php endforeach; ?>
+                            <?php if (empty($masters['designations'])): ?>
+                                <option value="">-- No Designations Found --</option>
+                            <?php else: ?>
+                                <option value="">-- Select Designation --</option>
+                                <?php foreach ($masters['designations'] as $dg): ?>
+                                    <option value="<?= $dg['id'] ?>" <?= ($emp['designation_id'] ?? '') == $dg['id'] ? 'selected' : '' ?>><?= esc($dg['name']) ?></option>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </select>
+                        <?php if (empty($masters['designations'])): ?>
+                            <p style="font-size: 0.65rem; color: var(--color-danger); margin-top: 4px;">Add designations in Master > Org Structure first.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
 
                 <div class="form-group mb-6">
                     <label class="form-label">Assigned Shift Schedule</label>
                     <select name="shift_id" class="form-input">
-                        <option value="">-- Use System Default --</option>
-                        <?php foreach (($masters['shifts'] ?? []) as $s): ?>
-                            <option value="<?= $s['id'] ?>" <?= ($emp['shift_id'] ?? '') == $s['id'] ? 'selected' : '' ?>>
-                                <?= esc($s['name']) ?> (<?= date('H:i', strtotime($s['start_time'])) ?> - <?= date('H:i', strtotime($s['end_time'])) ?>)
-                            </option>
-                        <?php endforeach; ?>
+                        <?php if (empty($masters['shifts'])): ?>
+                            <option value="">-- No Shifts Found --</option>
+                        <?php else: ?>
+                            <option value="">-- Use System Default --</option>
+                            <?php foreach ($masters['shifts'] as $s): ?>
+                                <option value="<?= $s['id'] ?>" <?= ($emp['shift_id'] ?? '') == $s['id'] ? 'selected' : '' ?>>
+                                    <?= esc($s['name']) ?> 
+                                    (<?= !empty($s['start_time']) ? date('H:i', strtotime($s['start_time'])) : '00:00' ?> -
+                                    <?= !empty($s['end_time']) ? date('H:i', strtotime($s['end_time'])) : '00:00' ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </select>
+                    <?php if (empty($masters['shifts'])): ?>
+                        <p style="font-size: 0.65rem; color: var(--color-danger); margin-top: 4px;">Add shifts in Master > Shift Master first.</p>
+                    <?php endif; ?>
                 </div>
 
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                    <button type="button" onclick="document.getElementById('edit-profile-modal').classList.remove('active')"
+                    <button type="button"
+                        onclick="document.getElementById('edit-profile-modal').classList.remove('active')"
                         class="btn btn-outline" style="padding: 0.75rem 1.5rem;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; background: var(--color-accent); border-color: var(--color-accent); gap: 0.5rem;">
+                    <button type="submit" class="btn btn-primary"
+                        style="padding: 0.75rem 1.5rem; background: var(--color-accent); border-color: var(--color-accent); gap: 0.5rem;">
                         <i class="fa-solid fa-floppy-disk"></i> Save & Lock Profile
                     </button>
                 </div>
@@ -788,13 +996,15 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
     </div>
 </div>
 
-<!-- Upload Modal --><div id="upload-modal" class="modal-overlay">
+<!-- Upload Modal -->
+<div id="upload-modal" class="modal-overlay">
     <div class="modal-container">
         <div class="modal-header">
             <div>
                 <h3 style="font-size: 1.25rem; font-weight: 700; color: var(--color-primary);">Upload Document</h3>
                 <p style="font-size: 0.875rem; color: var(--color-text-dim); margin-top: 0.25rem;">Add new files to
-                    <?= esc($empName) ?>'s registry</p>
+                    <?= esc($empName) ?>'s registry
+                </p>
             </div>
             <button onclick="document.getElementById('upload-modal').classList.remove('active')" class="modal-close">
                 <i class="fa-solid fa-xmark"></i>
@@ -917,6 +1127,9 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
         box-shadow: var(--shadow-xl);
         transform: scale(0.95);
         transition: transform 0.3s ease;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
     }
 
     .modal-overlay.active .modal-container {
@@ -929,6 +1142,7 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
+        flex-shrink: 0;
     }
 
     .modal-close {
@@ -952,6 +1166,8 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
 
     .modal-body {
         padding: 2rem;
+        overflow-y: auto;
+        flex: 1;
     }
 
     /* Premium Upload Area */
@@ -1080,6 +1296,29 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
 </style>
 
 <script>
+    document.getElementById('component-name-select').addEventListener('change', function() {
+        const customGroup = document.getElementById('custom-name-group');
+        if (this.value === 'custom') {
+            customGroup.style.display = 'block';
+            customGroup.querySelector('input').setAttribute('required', 'required');
+        } else {
+            customGroup.style.display = 'none';
+            customGroup.querySelector('input').removeAttribute('required');
+        }
+    });
+
+    // Tab Activation Logic (Supports Flashdata Redirects)
+    const sessionActiveTab = '<?= session()->getFlashdata('activeTab') ?>';
+    if (sessionActiveTab) {
+        document.querySelectorAll('.tab-trigger, .tab-pane').forEach(el => el.classList.remove('active'));
+        const targetBtn = document.querySelector(`.tab-trigger[data-target="${sessionActiveTab}"]`);
+        const targetPane = document.getElementById(sessionActiveTab);
+        if (targetBtn && targetPane) {
+            targetBtn.classList.add('active');
+            targetPane.classList.add('active');
+        }
+    }
+
     document.querySelectorAll('.tab-trigger').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.tab-trigger, .tab-pane').forEach(el => el.classList.remove('active'));

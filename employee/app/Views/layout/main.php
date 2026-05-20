@@ -18,7 +18,7 @@
         rel="stylesheet" />
 
     <!-- Premium Stylesheet -->
-    <link rel="stylesheet" href="<?= base_url('assets/css/premium.css') ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/premium.css') ?>?v=<?= time() ?>">
 
     <style>
         /* Contextual Helpers */

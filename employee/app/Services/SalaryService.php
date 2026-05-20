@@ -4,18 +4,16 @@ namespace App\Services;
 
 use App\Models\AttendanceDailyModel;
 use App\Models\EmployeeModel;
+use App\Models\EmployeeSalaryComponentModel;
 
 /**
  * SalaryService — Core Salary Calculation Engine (Dynamic Hourly Model)
- *
- * This service calculates salary based on:
- * 1. Target Hours to Date (excluding Sundays and 1st/3rd Saturdays)
- * 2. Deductive model for mid-month fairness
  */
 class SalaryService
 {
     private AttendanceDailyModel $attendanceModel;
     private EmployeeModel $employeeModel;
+    private EmployeeSalaryComponentModel $componentModel;
 
     private int $salaryBaseDays;
     private float $workDayHours;
@@ -24,6 +22,7 @@ class SalaryService
     {
         $this->attendanceModel = new AttendanceDailyModel();
         $this->employeeModel  = new EmployeeModel();
+        $this->componentModel = new EmployeeSalaryComponentModel();
 
         $this->salaryBaseDays = (int) env('SALARY_BASE_DAYS', 30);
         $this->workDayHours   = 8.5; 
@@ -38,7 +37,20 @@ class SalaryService
         $employee = $this->employeeModel->findByCode($empCode);
         if (!$employee) return null;
 
-        $salary = $employee['salary'] ?? $monthlySalary ?? (float) env('DEFAULT_MONTHLY_SALARY', 25000);
+        $components = $this->componentModel->getByEmployee($empCode);
+        $totalEarnings = 0;
+        $earningsList = [];
+        
+        if (!empty($components)) {
+            foreach ($components as $c) {
+                if ($c['type'] === 'earning') {
+                    $totalEarnings += (float)$c['amount'];
+                    $earningsList[] = ['name' => $c['component_name'], 'amount' => (float)$c['amount']];
+                }
+            }
+        }
+
+        $salary = $totalEarnings > 0 ? $totalEarnings : ($employee['salary'] ?? $monthlySalary ?? (float) env('DEFAULT_MONTHLY_SALARY', 25000));
         $records = $this->attendanceModel->getMonthly($empCode, $year, $month);
 
         $data = [
@@ -46,7 +58,8 @@ class SalaryService
             'name'               => $employee['name'],
             'department'         => $employee['department'] ?? null,
             'employee_type'      => $employee['employee_type'] ?? 'full_time',
-            'base_salary'        => $employee['salary'] ?? null,
+            'base_salary'        => $salary,
+            'earnings'           => $earningsList,
             'present_days'       => 0,
             'half_days'          => 0,
             'absent_days'        => 0,

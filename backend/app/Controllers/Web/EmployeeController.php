@@ -152,12 +152,17 @@ class EmployeeController extends BaseController
             $balanceModel = new \App\Models\LeaveBalanceModel();
             $leaveBalances = $balanceModel->getByEmployee($empCode);
 
+            // Fetch Salary Components
+            $componentModel = new \App\Models\EmployeeSalaryComponentModel();
+            $salaryComponents = $componentModel->getByEmployee($empCode);
+
             return view('pages/employee_detail', [
                 'pageTitle' => $employee['name'],
                 'activePage' => 'employees',
                 'employee' => $employee,
                 'attendanceRecords' => $attendanceRecords,
                 'salarySummary' => $salarySummary,
+                'salaryComponents' => $salaryComponents,
                 'documents' => $documents,
                 'leaveBalances' => $leaveBalances,
                 'month' => $month,
@@ -171,6 +176,63 @@ class EmployeeController extends BaseController
         } catch (\Throwable $e) {
             log_message('error', '[Web\\EmployeeController] show error: ' . $e->getMessage());
             return redirect()->to(site_url('employees'))->with('error', 'Failed to load employee details. Please ensure the database is connected.');
+        }
+    }
+
+    /**
+     * POST /employees/salary/component/add — Add dynamic salary component
+     */
+    public function addSalaryComponent()
+    {
+        $empCode = $this->request->getPost('emp_code');
+        $name = $this->request->getPost('component_name');
+        $customName = $this->request->getPost('custom_name');
+        $type = $this->request->getPost('type') ?: 'earning';
+        $amount = $this->request->getPost('amount');
+
+        $finalName = $name === 'custom' ? $customName : $name;
+
+        if (empty($empCode) || empty($finalName) || !is_numeric($amount)) {
+            return redirect()->back()->with('error', 'All fields are required and amount must be numeric.');
+        }
+
+        try {
+            $model = new \App\Models\EmployeeSalaryComponentModel();
+            $model->insert([
+                'emp_code' => $empCode,
+                'component_name' => $finalName,
+                'amount' => (float)$amount,
+                'type' => $type,
+                'is_active' => true
+            ]);
+
+            session()->setFlashdata('activeTab', 'salary');
+            return redirect()->back()->with('success', 'Salary component added successfully.');
+        } catch (\Throwable $e) {
+            log_message('error', '[Web\\EmployeeController] addSalaryComponent error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to add salary component.');
+        }
+    }
+
+    /**
+     * POST /employees/salary/component/delete — Remove dynamic salary component
+     */
+    public function deleteSalaryComponent()
+    {
+        $id = $this->request->getPost('id');
+        if (empty($id)) {
+            return redirect()->back()->with('error', 'Component ID is required.');
+        }
+
+        try {
+            $model = new \App\Models\EmployeeSalaryComponentModel();
+            $model->delete($id);
+
+            session()->setFlashdata('activeTab', 'salary');
+            return redirect()->back()->with('success', 'Salary component removed successfully.');
+        } catch (\Throwable $e) {
+            log_message('error', '[Web\\EmployeeController] deleteSalaryComponent error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to remove salary component.');
         }
     }
 
@@ -235,6 +297,7 @@ class EmployeeController extends BaseController
 
             $employeeModel->update($employee['id'], ['salary' => $salary]);
 
+            session()->setFlashdata('activeTab', 'salary');
             return redirect()->back()->with('success', 'Salary updated successfully.');
         } catch (\Throwable $e) {
             log_message('error', '[Web\\EmployeeController] updateSalary error: ' . $e->getMessage());

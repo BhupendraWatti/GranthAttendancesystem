@@ -75,6 +75,20 @@ $methodName = service('router')->methodName();
             <i class="fa-solid fa-rotate nav-icon"></i>
             Data Synchronization
         </a>
+
+        <div
+            style="padding: 1.5rem 1.5rem 0.5rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.3);">
+            Configuration Masters</div>
+
+        <a href="<?= site_url('master/shifts') ?>" class="<?= $activePage === 'master' && $methodName === 'shifts' ? 'active' : '' ?>">
+            <i class="fa-solid fa-clock nav-icon"></i>
+            Shift Master
+        </a>
+
+        <a href="<?= site_url('master/departments') ?>" class="<?= $activePage === 'master' && $methodName === 'departments' ? 'active' : '' ?>">
+            <i class="fa-solid fa-sitemap nav-icon"></i>
+            Org Structure
+        </a>
     </nav>
 
     <!-- Footer -->

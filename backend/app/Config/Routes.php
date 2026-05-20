@@ -47,6 +47,8 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
     // Employees
     $routes->get('employees', 'EmployeeController::index');
     $routes->post('employees/salary', 'EmployeeController::updateSalary');
+    $routes->post('employees/salary/component/add', 'EmployeeController::addSalaryComponent');
+    $routes->post('employees/salary/component/delete', 'EmployeeController::deleteSalaryComponent');
     $routes->post('employees/profile', 'EmployeeController::updateProfile');
     $routes->post('employees/leave-balances', 'EmployeeController::updateLeaveBalances');
     $routes->post('employees/email', 'EmployeeController::updateEmail');
