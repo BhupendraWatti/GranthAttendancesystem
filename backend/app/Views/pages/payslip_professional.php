@@ -41,6 +41,7 @@
         .company-details {
             text-align: right;
             font-size: 9pt;
+            margin-top: 30px;
             color: #000;
             line-height: 1.5;
         }
@@ -70,7 +71,7 @@
         .info-table th {
             width: 40%;
             background-color: #fcfcfc;
-            font-weight: normal;
+            font-weight: bold;
         }
         
         /* Salary Table */
@@ -81,6 +82,7 @@
         .salary-table th {
             background-color: #fcfcfc;
             font-weight: bold;
+            text-align: left;
         }
         .salary-table .amt {
             text-align: right;

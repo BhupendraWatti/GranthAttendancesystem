@@ -12,7 +12,7 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 10.5pt;
-            color: #333;
+            color: #333;com
             line-height: 1.4;
             margin: 0;
             padding: 0;
@@ -40,6 +40,7 @@
             flex: 1;
             font-size: 9.5pt;
             color: #000;
+            margin-top: 30px;
             padding-top: 5px;
         }
         .divider {
@@ -68,7 +69,7 @@
         .info-table th {
             width: 40%;
             background-color: #fcfcfc;
-            font-weight: normal;
+            font-weight: bold;
         }
         
         /* Salary Table */
@@ -79,6 +80,7 @@
         .salary-table th {
             background-color: #fcfcfc;
             font-weight: bold;
+            text-align: left;
         }
         .salary-table .amt {
             text-align: right;
@@ -135,7 +137,7 @@
         <div class="logo-box">
             <img src="<?= base_url('Granth logo.jpg') ?>" alt="Granth logo" class="logo">
         </div>
-        <div class="company-details">
+        <div style="margin-top: 30px;" class="company-details">
             Top Floor, 12/A, Krishna Parisar, Ujjain, Madhya Pradesh, India<br>
             Email: info@granthinfotech.in | Phone: +91 9179187199
         </div>
@@ -175,7 +177,7 @@
     <!-- Earnings & Deductions -->
     <table class="salary-table">
         <thead>
-            <tr>
+            <tr class="bold">
                 <th>Earnings</th>
                 <th class="amt">Calculated Amount</th>
             </tr>

@@ -41,6 +41,7 @@
         .company-details {
             text-align: right;
             font-size: 9pt;
+            margin-top: 30px;
             color: #000;
             line-height: 1.5;
         }
@@ -70,7 +71,7 @@
         .info-table th {
             width: 40%;
             background-color: #fcfcfc;
-            font-weight: normal;
+            font-weight: bold;
         }
         
         /* Salary Table */
@@ -81,6 +82,7 @@
         .salary-table th {
             background-color: #fcfcfc;
             font-weight: bold;
+            text-align: left;
         }
         .salary-table .amt {
             text-align: right;
@@ -156,7 +158,7 @@
         <div class="logo-box">
             <img src="<?= base_url('Granth logo.jpg') ?>" alt="Granth logo" class="logo">
         </div>
-        <div class="company-details">
+        <div style="margin-top: 30px;" class="company-details">
             Top Floor, 12/A, Krishna Parisar, Ujjain, Madhya Pradesh, India<br>
             Email: info@granthinfotech.in | Phone: +91 9179187199
         </div>
@@ -196,7 +198,7 @@
     <!-- Earnings & Deductions -->
     <table class="salary-table">
         <thead>
-            <tr>
+            <tr class="bold">
                 <th>Earnings</th>
                 <th class="amt">Calculated Amount</th>
             </tr>
