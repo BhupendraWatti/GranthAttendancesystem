@@ -846,21 +846,24 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                 <input type="hidden" name="emp_code" value="<?= esc($empCode) ?>">
 
                 <div class="form-group mb-4">
-                    <label class="form-label">Paid Leave Balance (Days)</label>
+                    <label class="form-label">Available Paid Leaves (Remaining)</label>
                     <input type="number" name="paid_leave" step="0.5" class="form-input"
-                        placeholder="Current total pool" value="<?= $balanceMap['paid_leave']['total'] ?? '' ?>">
+                        placeholder="Number of leaves employee can take" value="<?= $balanceMap['paid_leave']['remaining'] ?? '' ?>">
+                    <small class="text-muted" style="display:block; margin-top:0.25rem;">Leaves already taken: <?= $balanceMap['paid_leave']['used'] ?? 0 ?></small>
                 </div>
 
                 <div class="form-group mb-4">
-                    <label class="form-label">Unpaid Leave Buffer (Days)</label>
+                    <label class="form-label">Available Unpaid Leaves (Remaining)</label>
                     <input type="number" name="unpaid_leave" step="1" class="form-input"
-                        placeholder="Maximum unpaid allowed" value="<?= $balanceMap['unpaid_leave']['total'] ?? '' ?>">
+                        placeholder="Number of unpaid leaves allowed" value="<?= $balanceMap['unpaid_leave']['remaining'] ?? '' ?>">
+                    <small class="text-muted" style="display:block; margin-top:0.25rem;">Leaves already taken: <?= $balanceMap['unpaid_leave']['used'] ?? 0 ?></small>
                 </div>
 
                 <div class="form-group mb-6">
-                    <label class="form-label">Comp-off Balance (Days)</label>
+                    <label class="form-label">Available Comp-off (Remaining)</label>
                     <input type="number" name="comp_off" step="0.5" class="form-input"
-                        placeholder="Accumulated time bank" value="<?= $balanceMap['comp_off']['total'] ?? '' ?>">
+                        placeholder="Accumulated time bank remaining" value="<?= $balanceMap['comp_off']['remaining'] ?? '' ?>">
+                    <small class="text-muted" style="display:block; margin-top:0.25rem;">Leaves already taken: <?= $balanceMap['comp_off']['used'] ?? 0 ?></small>
                 </div>
 
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">

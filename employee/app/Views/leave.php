@@ -53,8 +53,8 @@
                                 <div style="display: flex; justify-content: space-between; margin-top: 0.375rem;">
                                     <span class="text-muted" style="font-size: 0.7rem; font-weight: 500;">Used:
                                         <?= esc($bal['used']) ?></span>
-                                    <span class="text-muted" style="font-size: 0.7rem; font-weight: 500;">Total:
-                                        <?= esc($bal['total']) ?></span>
+                                    <span class="text-muted" style="font-size: 0.7rem; font-weight: 500;">Remaining:
+                                        <?= esc($bal['remaining']) ?></span>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -142,7 +142,7 @@
                         <label class="form-label">Starting Date</label>
                         <div style="display: flex; gap: 0.5rem;">
                             <input type="date" name="from_date" class="form-input" style="flex: 1;" required
-                                min="<?= date('Y-m-d') ?>">
+                                min="<?= date('Y-m-01') ?>">
                             <select name="from_session" class="form-input" style="width: auto;">
                                 <option value="full">Full Day</option>
                             </select>
@@ -153,7 +153,7 @@
                         <label class="form-label">End Date</label>
                         <div style="display: flex; gap: 0.5rem;">
                             <input type="date" name="to_date" class="form-input" style="flex: 1;" required
-                                min="<?= date('Y-m-d') ?>">
+                                min="<?= date('Y-m-01') ?>">
                             <select name="to_session" class="form-input" style="width: auto;">
                                 <option value="full">Full Day</option>
                             </select>

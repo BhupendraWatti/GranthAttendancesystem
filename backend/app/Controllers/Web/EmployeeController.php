@@ -457,18 +457,25 @@ class EmployeeController extends BaseController
                 if ($value === null || $value === '') continue;
                 
                 $existing = $balanceModel->where('emp_code', $empCode)->where('leave_type', $type)->first();
-                $data = [
-                    'emp_code' => $empCode,
-                    'leave_type' => $type,
-                    'total' => (float)$value,
-                    'remaining' => (float)$value, // resetting remaining to match new total for simplicity
-                    'used' => 0,
-                    'updated_at' => date('Y-m-d H:i:s')
-                ];
-
                 if ($existing) {
+                    $newRemaining = (float)$value;
+                    $used = (float)$existing['used'];
+                    $newTotal = $newRemaining + $used;
+                    $data = [
+                        'total' => $newTotal,
+                        'remaining' => $newRemaining,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ];
                     $balanceModel->update($existing['id'], $data);
                 } else {
+                    $data = [
+                        'emp_code' => $empCode,
+                        'leave_type' => $type,
+                        'total' => (float)$value,
+                        'remaining' => (float)$value,
+                        'used' => 0,
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ];
                     $balanceModel->insert($data);
                 }
             }

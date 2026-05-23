@@ -102,9 +102,9 @@ class LeaveService
         $toDate = $data['to_date'];
         $leaveType = $data['leave_type']; // 'paid_leave' or 'unpaid_leave'
 
-        // 1. Validate: No past date
-        if ($fromDate < date('Y-m-d')) {
-            throw new \RuntimeException("Cannot apply for leave in the past.");
+        // 1. Validate: No past date of previous months
+        if ($fromDate < date('Y-m-01')) {
+            throw new \RuntimeException("Cannot apply for leave in previous months. Only dates in the present month are allowed.");
         }
 
         // 2. Validate: No overlap
@@ -246,6 +246,31 @@ class LeaveService
                         'total'      => $newRemaining, // Total now represents accumulated pool
                         'used'       => 0,            // Reset monthly usage
                         'remaining'  => $newRemaining,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            } elseif ($leaveType === 'unpaid_leave') {
+                $lastUpdate = strtotime($existing['updated_at'] ?? $existing['created_at'] ?? 'now');
+                $lastUpdateMonth = date('Y-m', $lastUpdate);
+                if ($lastUpdateMonth !== $currentMonth) {
+                    // Carry Forward Logic: Add 8.0 to existing remaining, reset used for new month
+                    $newRemaining = (float)$existing['remaining'] + 8.0;
+                    $this->leaveBalanceModel->update($existing['id'], [
+                        'total'      => $newRemaining,
+                        'used'       => 0,
+                        'remaining'  => $newRemaining,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                    ]);
+                }
+            } elseif ($leaveType === 'comp_off') {
+                // Comp-off expiration logic (rolling 90 days)
+                $lastUpdate = strtotime($existing['updated_at'] ?? $existing['created_at'] ?? 'now');
+                if ($lastUpdate < strtotime('-90 days')) {
+                    // If no activity in 90 days, balance expires
+                    $this->leaveBalanceModel->update($existing['id'], [
+                        'total'      => 0.0,
+                        'used'       => 0,
+                        'remaining'  => 0.0,
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
                 }

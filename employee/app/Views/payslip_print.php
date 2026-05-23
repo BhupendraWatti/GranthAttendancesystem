@@ -226,10 +226,8 @@
     <div class="signature-section">
         <div class="signature-box" style="text-align: left;">
             <div class="signature-area">
-                <p style="font-size: 8.5pt; margin: 0; color: #000; font-weight: bold; text-align: center;">
-                    GRANTH INFOTECH PVT. LTD.<br>
-                    <span style="font-size: 11pt; margin-top: 10px; display: block;">DIRECTOR</span>
-                </p>
+                <!-- Employer Signature Image -->
+                <img src="<?= base_url('assets/img/signature_seal_granth_infotech.png') ?>" alt="Employer Signature" style="max-width: 150px; max-height: 60px;">
             </div>
             <div class="signature-label">Employer Signature</div>
         </div>
