@@ -91,7 +91,26 @@ This ensures employee updates from API are reflected, not just name.
 - `line 20`: down migration existence check
 - `line 22`: drop index if present
 
+## 10) `app/Config/App.php`
+
+- `line 43`: set `indexPage` to empty string
+  - `public string $indexPage = '';`
+  - This ensures clean URLs (without `/index.php/`) are correctly generated and routed.
+- `line 60`: set `uriProtocol` to `'PATH_INFO'`
+  - `public string $uriProtocol = 'PATH_INFO';`
+  - This resolves LiteSpeed subfolder URL rewriting mismatches on Hostinger production servers.
+
 ---
+
+## Required env keys on Live (`employee/.env`)
+
+To prevent the local redirect loop and fix the 404 routing error:
+
+- **Set Base URL**:
+  ```env
+  app.baseURL = 'https://office.granthtech.com/'
+  ```
+  *(Make sure it uses `https://` and has a trailing slash `/`)*
 
 ## Optional env keys to set on live (`backend/.env`)
 
