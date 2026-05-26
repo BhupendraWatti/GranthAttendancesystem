@@ -27,6 +27,7 @@ class ShiftModel extends Model
     protected $updatedField  = 'updated_at';
 
     protected $validationRules = [
+        'id'         => 'permit_empty|is_natural_no_zero',
         'name'       => 'required|max_length[100]|is_unique[shifts.name,id,{id}]',
         'start_time' => 'required',
         'end_time'   => 'required',

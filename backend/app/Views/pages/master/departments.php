@@ -39,11 +39,15 @@
                                         <?= strtoupper($d['status']) ?>
                                     </span>
                                 </td>
-                                <td style="text-align: right;">
+                                <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
                                     <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
                                         onclick="openDeptModal(<?= $d['id'] ?>, '<?= esc($d['name']) ?>', '<?= $d['status'] ?>')">
                                         Edit
                                     </button>
+                                    <form action="<?= site_url('master/departments/delete') ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this department?');">
+                                        <input type="hidden" name="id" value="<?= $d['id'] ?>">
+                                        <button type="submit" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: red; color: red; background: white;">Delete</button>
+                                    </form> 
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -77,11 +81,15 @@
                             <tr>
                                 <td style="font-weight: 700;"><?= esc($ds['name']) ?></td>
                                 <td style="font-size: 0.8125rem; color: var(--color-text-dim);"><?= esc($ds['dept_name'] ?? '—') ?></td>
-                                <td style="text-align: right;">
+                                <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
                                     <button class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
                                         onclick="openDesigModal(<?= $ds['id'] ?>, '<?= esc($ds['name']) ?>', <?= $ds['department_id'] ?>, '<?= $ds['status'] ?>')">
                                         Edit
                                     </button>
+                                    <form action="<?= site_url('master/designations/delete') ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this designation?');">
+                                        <input type="hidden" name="id" value="<?= $ds['id'] ?>">
+                                        <button type="submit" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: var(--color-danger); color: var(--color-danger);">Delete</button>
+                                    </form>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

@@ -40,14 +40,33 @@ class MasterController extends BaseController
 
         $model = new ShiftModel();
         if ($id) {
-            $model->update($id, $data);
+            $data['id'] = $id; // Pass ID for is_unique validation
+            if (!$model->update($id, $data)) {
+                return redirect()->back()->with('error', implode(', ', $model->errors()));
+            }
             $msg = 'Shift updated successfully.';
         } else {
-            $model->insert($data);
+            if (!$model->insert($data)) {
+                return redirect()->back()->with('error', implode(', ', $model->errors()));
+            }
             $msg = 'New shift created successfully.';
         }
 
         return redirect()->back()->with('success', $msg);
+    }
+
+    /**
+     * POST /master/shifts/delete — Delete Shift
+     */
+    public function deleteShift()
+    {
+        $id = $this->request->getPost('id');
+        if ($id) {
+            $model = new ShiftModel();
+            $model->delete($id);
+            return redirect()->back()->with('success', 'Shift deleted successfully.');
+        }
+        return redirect()->back()->with('error', 'Invalid shift ID.');
     }
 
     /**
@@ -111,5 +130,33 @@ class MasterController extends BaseController
         }
 
         return redirect()->back()->with('success', 'Designation saved successfully.');
+    }
+
+    /**
+     * POST /master/departments/delete — Delete Department
+     */
+    public function deleteDepartment()
+    {
+        $id = $this->request->getPost('id');
+        if ($id) {
+            $model = new DepartmentModel();
+            $model->delete($id);
+            return redirect()->back()->with('success', 'Department deleted successfully.');
+        }
+        return redirect()->back()->with('error', 'Invalid department ID.');
+    }
+
+    /**
+     * POST /master/designations/delete — Delete Designation
+     */
+    public function deleteDesignation()
+    {
+        $id = $this->request->getPost('id');
+        if ($id) {
+            $model = new DesignationModel();
+            $model->delete($id);
+            return redirect()->back()->with('success', 'Designation deleted successfully.');
+        }
+        return redirect()->back()->with('error', 'Invalid designation ID.');
     }
 }

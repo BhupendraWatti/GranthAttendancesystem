@@ -91,9 +91,12 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
     $routes->group('master', function ($routes) {
         $routes->get('shifts', 'MasterController::shifts');
         $routes->post('shifts/save', 'MasterController::saveShift');
+        $routes->post('shifts/delete', 'MasterController::deleteShift');
         $routes->get('departments', 'MasterController::departments');
         $routes->post('departments/save', 'MasterController::saveDepartment');
+        $routes->post('departments/delete', 'MasterController::deleteDepartment');
         $routes->post('designations/save', 'MasterController::saveDesignation');
+        $routes->post('designations/delete', 'MasterController::deleteDesignation');
     });
 });
 

@@ -38,7 +38,7 @@
                                     <?= strtoupper($s['status']) ?>
                                 </span>
                             </td>
-                            <td style="text-align: right;">
+                            <td style="text-align: right; display: flex; gap: 0.5rem; justify-content: flex-end;">
                                 <button class="btn btn-outline edit-shift-btn" 
                                     data-id="<?= $s['id'] ?>"
                                     data-name="<?= esc($s['name']) ?>"
@@ -49,6 +49,10 @@
                                     data-intern="<?= $s['is_intern_shift'] ?>"
                                     data-status="<?= $s['status'] ?>"
                                     style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">Edit</button>
+                                <form action="<?= site_url('master/shifts/delete') ?>" method="POST" onsubmit="return confirm('Are you sure you want to delete this shift?');">
+                                    <input type="hidden" name="id" value="<?= $s['id'] ?>">
+                                    <button type="submit" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; border-color: red; color: red; background: white;">Delete</button>
+                                </form>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -143,6 +147,23 @@
             document.getElementById('shift-status').value = btn.dataset.status;
         });
     });
+
+    function calculateHours() {
+        const start = document.getElementById('shift-start').value;
+        const end = document.getElementById('shift-end').value;
+        if (start && end) {
+            const startTime = new Date(`1970-01-01T${start}:00Z`);
+            let endTime = new Date(`1970-01-01T${end}:00Z`);
+            if (endTime < startTime) {
+                endTime.setDate(endTime.getDate() + 1); // Crosses midnight
+            }
+            const diffHrs = (endTime - startTime) / (1000 * 60 * 60);
+            document.getElementById('shift-hours').value = diffHrs.toFixed(1);
+        }
+    }
+
+    document.getElementById('shift-start').addEventListener('change', calculateHours);
+    document.getElementById('shift-end').addEventListener('change', calculateHours);
 </script>
 
 <?= $this->endSection() ?>
