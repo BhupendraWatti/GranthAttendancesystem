@@ -437,7 +437,6 @@ class EmployeeController extends BaseController
     {
         $empCode = $this->request->getPost('emp_code');
         $paid = $this->request->getPost('paid_leave');
-        $unpaid = $this->request->getPost('unpaid_leave');
         $compoff = $this->request->getPost('comp_off');
 
         if (empty($empCode)) {
@@ -449,7 +448,6 @@ class EmployeeController extends BaseController
             
             $types = [
                 'paid_leave' => $paid,
-                'unpaid_leave' => $unpaid,
                 'comp_off' => $compoff
             ];
 

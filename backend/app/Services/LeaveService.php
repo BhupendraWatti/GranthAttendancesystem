@@ -31,7 +31,6 @@ class LeaveService
     public function initializeBalances(string $empCode): void
     {
         $this->ensureLeaveBalance($empCode, 'paid_leave');
-        $this->ensureLeaveBalance($empCode, 'unpaid_leave');
         $this->ensureLeaveBalance($empCode, 'comp_off');
     }
 
@@ -100,7 +99,7 @@ class LeaveService
         $empCode = $data['emp_code'];
         $fromDate = $data['from_date'];
         $toDate = $data['to_date'];
-        $leaveType = $data['leave_type']; // 'paid_leave' or 'unpaid_leave'
+        $leaveType = $data['leave_type']; // 'paid_leave' or 'comp_off'
 
         // 1. Validate: No past date of previous months
         if ($fromDate < date('Y-m-01')) {
@@ -249,19 +248,6 @@ class LeaveService
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
                 }
-            } elseif ($leaveType === 'unpaid_leave') {
-                $lastUpdate = strtotime($existing['updated_at'] ?? $existing['created_at'] ?? 'now');
-                $lastUpdateMonth = date('Y-m', $lastUpdate);
-                if ($lastUpdateMonth !== $currentMonth) {
-                    // Carry Forward Logic: Add 8.0 to existing remaining, reset used for new month
-                    $newRemaining = (float)$existing['remaining'] + 8.0;
-                    $this->leaveBalanceModel->update($existing['id'], [
-                        'total'      => $newRemaining,
-                        'used'       => 0,
-                        'remaining'  => $newRemaining,
-                        'updated_at' => date('Y-m-d H:i:s'),
-                    ]);
-                }
             } elseif ($leaveType === 'comp_off') {
                 // Comp-off expiration logic (rolling 90 days)
                 $lastUpdate = strtotime($existing['updated_at'] ?? $existing['created_at'] ?? 'now');
@@ -279,7 +265,6 @@ class LeaveService
             // Initial creation
             $total = 0.0;
             if ($leaveType === 'paid_leave') $total = 1.0;
-            elseif ($leaveType === 'unpaid_leave') $total = 8.0;
             elseif ($leaveType === 'comp_off') $total = 0.0;
 
             $this->leaveBalanceModel->insert([
@@ -318,7 +303,7 @@ class LeaveService
             $existing = $this->attendanceModel->where('emp_code', $request['emp_code'])->where('date', $ymd)->first();
             
             // Determine status based on leave type
-            $status = $request['leave_type']; // 'paid_leave' or 'unpaid_leave'
+            $status = $request['leave_type']; // 'paid_leave' or 'comp_off'
             if (($request['leave_type'] ?? '') === 'comp_off') {
                 $status = 'comp_off';
             }

@@ -87,11 +87,11 @@ class SalaryService
                 case 'present':  $byEmployee[$empCode]['present_days']++; break;
                 case 'half_day': $byEmployee[$empCode]['half_days']++; break;
                 case 'absent':   
+                case 'unpaid_leave':
                     if (!$isWeekend) $byEmployee[$empCode]['absent_days']++; 
                     break;
                 case 'work_from_home': $byEmployee[$empCode]['wfh_days']++; break;
                 case 'paid_leave': $byEmployee[$empCode]['paid_leave_days']++; break;
-                case 'unpaid_leave': $byEmployee[$empCode]['unpaid_leave_days']++; break;
                 case 'leave':    $byEmployee[$empCode]['paid_leave_days']++; break; 
                 case 'holiday':  $byEmployee[$empCode]['holiday_days']++; break;
                 case 'comp_off': $byEmployee[$empCode]['comp_off_days']++; break;
@@ -170,11 +170,11 @@ class SalaryService
                 case 'present':  $data['present_days']++; break;
                 case 'half_day': $data['half_days']++; break;
                 case 'absent':   
+                case 'unpaid_leave':
                     if (!$isWeekend) $data['absent_days']++; 
                     break;
                 case 'work_from_home': $data['wfh_days']++; break;
                 case 'paid_leave': $data['paid_leave_days']++; break;
-                case 'unpaid_leave': $data['unpaid_leave_days']++; break;
                 case 'leave':    $data['paid_leave_days']++; break;
                 case 'holiday':  $data['holiday_days']++; break;
                 case 'comp_off': $data['comp_off_days']++; break;

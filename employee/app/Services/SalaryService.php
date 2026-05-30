@@ -79,11 +79,11 @@ class SalaryService
                 case 'present':  $data['present_days']++; break;
                 case 'half_day': $data['half_days']++; break;
                 case 'absent':   
+                case 'unpaid_leave':
                     if (!$isWeekend) $data['absent_days']++; 
                     break;
                 case 'work_from_home': $data['wfh_days']++; break;
                 case 'paid_leave': $data['paid_leave_days']++; break;
-                case 'unpaid_leave': $data['unpaid_leave_days']++; break;
                 case 'leave':    $data['paid_leave_days']++; break;
                 case 'holiday':  $data['holiday_days']++; break;
                 case 'comp_off': $data['comp_off_days']++; break;

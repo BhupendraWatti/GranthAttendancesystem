@@ -21,6 +21,7 @@
                     <?php if (!empty($balances)): ?>
                         <?php foreach ($balances as $bal): ?>
                             <?php
+                            if ($bal['leave_type'] === 'unpaid_leave') continue;
                             $label = 'Balance';
                             $color = 'var(--color-text-dim)';
                             if ($bal['leave_type'] === 'paid_leave') {
@@ -110,14 +111,11 @@
                     <div style="grid-column: span 2;">
                         <?php
                         $paidLeaveRemaining = 0;
-                        $unpaidLeaveRemaining = 0;
                         $compOffRemaining = 0;
                         if (!empty($balances)) {
                             foreach ($balances as $bal) {
                                 if ($bal['leave_type'] === 'paid_leave')
                                     $paidLeaveRemaining = (float) $bal['remaining'];
-                                if ($bal['leave_type'] === 'unpaid_leave')
-                                    $unpaidLeaveRemaining = (float) $bal['remaining'];
                                 if ($bal['leave_type'] === 'comp_off')
                                     $compOffRemaining = (float) $bal['remaining'];
                             }
@@ -128,9 +126,6 @@
                             <option value="" disabled selected>Select Category</option>
                             <option style="front-color: gray;" value="paid_leave" <?= $paidLeaveRemaining <= 0 ? 'disabled' : '' ?>>Paid Leave (PL)
                                 <?= $paidLeaveRemaining <= 0 ? '' : '' ?>
-                            </option>
-                            <option style="front-color: gray;" value="unpaid_leave" <?= $unpaidLeaveRemaining <= 0 ? 'disabled' : '' ?>>Unpaid Leave
-                                <?= $unpaidLeaveRemaining <= 0 ? '' : '' ?>
                             </option>
                             <option style="front-color: gray;" value="comp_off" <?= $compOffRemaining <= 0 ? 'disabled' : '' ?>>Comp-off
                                 <?= $compOffRemaining <= 0 ? '' : '' ?>

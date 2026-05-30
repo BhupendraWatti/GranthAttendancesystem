@@ -18,7 +18,6 @@ $absentDays = 0;
 $halfDays = 0;
 $wfhDays = 0;
 $paidLeaveDays = 0;
-$unpaidLeaveDays = 0;
 $lateDays = 0;
 $holidayDays = 0;
 $leaveDays = 0;
@@ -38,7 +37,7 @@ foreach (($attendanceRecords ?? []) as $r) {
 
     if ($st === 'present')
         $presentDays++;
-    elseif ($st === 'absent')
+    elseif ($st === 'absent' || $r['status'] === 'unpaid_leave')
         $absentDays++;
     elseif ($r['status'] === 'half_day')
         $halfDays++;
@@ -46,8 +45,6 @@ foreach (($attendanceRecords ?? []) as $r) {
         $wfhDays++;
     elseif ($r['status'] === 'paid_leave')
         $paidLeaveDays++;
-    elseif ($r['status'] === 'unpaid_leave')
-        $unpaidLeaveDays++;
     elseif ($r['status'] === 'holiday')
         $holidayDays++;
     elseif ($r['status'] === 'leave')
@@ -226,9 +223,6 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                 </div>
                                 <div style="width: <?= $totalDays > 0 ? round($halfDays / $totalDays * 100) : 0 ?>%; background: var(--color-warning);"
                                     title="Half Day"></div>
-                                <div style="width: <?= $totalDays > 0 ? round($unpaidLeaveDays / $totalDays * 100) : 0 ?>%; background: #94a3b8;"
-                                    title="Unpaid Leave">
-                                </div>
                                 <div style="width: <?= $totalDays > 0 ? round($absentDays / $totalDays * 100) : 0 ?>%; background: var(--color-danger);"
                                     title="Absent"></div>
                             </div>
@@ -251,10 +245,6 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                                     <div
                                         style="width: 8px; height: 8px; border-radius: 2px; background: var(--color-warning);">
                                     </div> HALF DAY
-                                </span>
-                                <span style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <div style="width: 8px; height: 8px; border-radius: 2px; background: #94a3b8;">
-                                    </div> UNPAID
                                 </span>
                                 <span style="display: flex; align-items: center; gap: 0.5rem;">
                                     <div
@@ -303,7 +293,6 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
 
                             $categories = [
                                 'paid_leave' => ['label' => 'Paid Leave', 'color' => 'var(--color-success)'],
-                                'unpaid_leave' => ['label' => 'Unpaid Buffer', 'color' => 'var(--color-text-dim)'],
                                 'comp_off' => ['label' => 'Comp-off', 'color' => '#6366f1']
                             ];
 
@@ -795,7 +784,6 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                             <option value="half_day">Half Day</option>
                             <option value="work_from_home">Work from Home</option>
                             <option value="paid_leave">Paid Leave</option>
-                            <option value="unpaid_leave">Unpaid Leave</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -852,12 +840,6 @@ $effectiveDays = $presentDays + $wfhDays + $paidLeaveDays + ($halfDays * 0.5) + 
                     <small class="text-muted" style="display:block; margin-top:0.25rem;">Leaves already taken: <?= $balanceMap['paid_leave']['used'] ?? 0 ?></small>
                 </div>
 
-                <div class="form-group mb-4">
-                    <label class="form-label">Available Unpaid Leaves (Remaining)</label>
-                    <input type="number" name="unpaid_leave" step="1" class="form-input"
-                        placeholder="Number of unpaid leaves allowed" value="<?= $balanceMap['unpaid_leave']['remaining'] ?? '' ?>">
-                    <small class="text-muted" style="display:block; margin-top:0.25rem;">Leaves already taken: <?= $balanceMap['unpaid_leave']['used'] ?? 0 ?></small>
-                </div>
 
                 <div class="form-group mb-6">
                     <label class="form-label">Available Comp-off (Remaining)</label>
