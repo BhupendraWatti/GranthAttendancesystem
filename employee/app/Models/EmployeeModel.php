@@ -46,11 +46,24 @@ class EmployeeModel extends Model
      */
     public function getActiveWithMaster(): array
     {
-        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name')
+        return $this->select('employees.*, employees.status as status, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
                     ->join('departments', 'departments.id = employees.department_id', 'left')
                     ->join('designations', 'designations.id = employees.designation_id', 'left')
                     ->join('shifts', 'shifts.id = employees.shift_id', 'left')
                     ->where('employees.status', 'active')
+                    ->orderBy('employees.name', 'ASC')
+                    ->findAll();
+    }
+
+    /**
+     * Get all employees (regardless of status) with Master data
+     */
+    public function getAllWithMaster(): array
+    {
+        return $this->select('employees.*, employees.status as status, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
+                    ->join('departments', 'departments.id = employees.department_id', 'left')
+                    ->join('designations', 'designations.id = employees.designation_id', 'left')
+                    ->join('shifts', 'shifts.id = employees.shift_id', 'left')
                     ->orderBy('employees.name', 'ASC')
                     ->findAll();
     }
@@ -68,7 +81,7 @@ class EmployeeModel extends Model
      */
     public function findByCodeWithMaster(string $empCode): ?array
     {
-        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
+        return $this->select('employees.*, employees.status as status, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
                     ->join('departments', 'departments.id = employees.department_id', 'left')
                     ->join('designations', 'designations.id = employees.designation_id', 'left')
                     ->join('shifts', 'shifts.id = employees.shift_id', 'left')

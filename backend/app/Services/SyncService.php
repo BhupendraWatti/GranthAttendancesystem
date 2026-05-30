@@ -141,6 +141,13 @@ class SyncService
             return ['status' => 'skipped', 'reason' => 'Already running'];
         }
 
+        // Extend execution time for slow APIs
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        @ini_set('max_execution_time', '300');
+        ignore_user_abort(true);
+
         $syncId = $this->syncLogModel->startSync('incremental');
 
         try {
@@ -150,16 +157,32 @@ class SyncService
             $cursorId     = $this->syncLogModel->getLastRecordId();
             $lastRecordId = null;
             $today        = date('Y-m-d');
+            $fallbackDate = date('Y-m-d', strtotime('-7 days'));
 
             if (empty($cursorId)) {
-                log_message('info', '[SyncService] No LastRecord cursor; skipping DownloadLastPunchData, trying range endpoints for today');
-                $fetch               = $this->fetchPunchRangeWithFallbacks($today, $today, 'incremental_no_cursor');
-                $incrementalSource   = $fetch['source'] ?? self::SOURCE_RANGE;
-                $apiResponse         = ['success' => $fetch['success'], 'data' => $fetch['data'] ?? []];
+                log_message('info', '[SyncService] No LastRecord cursor; skipping DownloadLastPunchData, trying range endpoints day-by-day for last 3 days');
+                
+                $allData = [];
+                $allSuccess = false;
+                $finalError = 'Unknown error';
+                $incrementalSource = self::SOURCE_RANGE;
+                
+                for ($i = 3; $i >= 0; $i--) {
+                    $date = date('Y-m-d', strtotime("-{$i} days"));
+                    $fetch = $this->fetchPunchRangeWithFallbacks($date, $date, 'incremental_no_cursor');
+                    if ($fetch['success']) {
+                        $allSuccess = true;
+                        $incrementalSource = $fetch['source'];
+                        $allData = array_merge($allData, $fetch['data'] ?? []);
+                    } else {
+                        $finalError = $fetch['error'] ?? $finalError;
+                    }
+                }
+                
+                $apiResponse = ['success' => $allSuccess, 'data' => $allData];
 
-                if (!($apiResponse['success'] ?? false)) {
-                    $finalError = $fetch['error'] ?? 'Unknown error';
-                    log_message('info', "[SyncService] Incremental bootstrap (no cursor) failed. Completing with 0 punches. Error: {$finalError}");
+                if (!$allSuccess) {
+                    log_message('info', "[SyncService] Incremental bootstrap (no cursor) failed on all days. Completing with 0 punches. Error: {$finalError}");
                     $this->syncLogModel->completeSync($syncId, [
                         'records_fetched' => 0,
                         'last_record_id'  => null,
@@ -180,10 +203,24 @@ class SyncService
                 if (!($apiResponse['success'] ?? false)) {
                     $errorMsg = $apiResponse['error'] ?? 'Unknown error';
                     if ($this->isVendorTransientFailure($errorMsg)) {
-                        log_message('warning', "[SyncService] Incremental primary endpoint failed ({$errorMsg}); trying range fallbacks for today");
-                        $fetch               = $this->fetchPunchRangeWithFallbacks($today, $today, 'incremental_after_lastpunch_fail');
-                        $incrementalSource   = $fetch['source'] ?? self::SOURCE_RANGE;
-                        $apiResponse         = ['success' => $fetch['success'], 'data' => $fetch['data'] ?? []];
+                        $fromDate = date('Y-m-d', strtotime("-3 days"));
+                        $toDate   = date('Y-m-d');
+                        log_message('warning', "[SyncService] Incremental primary endpoint failed ({$errorMsg}); trying 4-day range fallback ({$fromDate} to {$toDate}) to bypass API bug");
+                        
+                        $allData = [];
+                        $allSuccess = false;
+                        $finalError = 'Unknown error';
+                        
+                        $fetch = $this->fetchPunchRangeWithFallbacks($fromDate, $toDate, 'incremental_after_lastpunch_fail_range');
+                        if ($fetch['success']) {
+                            $allSuccess = true;
+                            $incrementalSource = $fetch['source'];
+                            $allData = $fetch['data'] ?? [];
+                        } else {
+                            $finalError = $fetch['error'] ?? $finalError;
+                        }
+                        
+                        $apiResponse = ['success' => $allSuccess, 'data' => $allData];
                     }
 
                     if (!($apiResponse['success'] ?? false)) {
@@ -281,9 +318,12 @@ class SyncService
         $date = $date ?? date('Y-m-d');
 
         try {
-            // Fetch full day data
-            log_message('info', "[SyncService] Full sync for date: {$date}");
-            $fetch      = $this->fetchPunchRangeWithFallbacks($date, $date, 'full_single_day');
+            // To bypass the eTimeOffice single-day boundary bug (where fromDate = toDate fails/returns 0),
+            // we query a 2-day range (date - 1 day to date) and then filter the records in PHP to only keep this date.
+            $fromDate = date('Y-m-d', strtotime($date . ' -1 day'));
+            log_message('info', "[SyncService] Full sync for date: {$date} — fetching 2-day range ({$fromDate} to {$date}) to bypass API single-day bug");
+            
+            $fetch      = $this->fetchPunchRangeWithFallbacks($fromDate, $date, 'full_single_day_range');
             $fullSource = $fetch['source'] ?? self::SOURCE_RANGE;
             $apiResponse = ['success' => $fetch['success'], 'data' => $fetch['data'] ?? []];
 
@@ -306,6 +346,12 @@ class SyncService
 
             // Normalize
             $records = $this->normalizationService->normalizePunchData($apiResponse['data'] ?? [], $fullSource);
+
+            // Filter normalized records to only keep punches matching the target date
+            $records = array_filter($records, function ($record) use ($date) {
+                return !empty($record['punch_time']) && substr($record['punch_time'], 0, 10) === $date;
+            });
+            $records = array_values($records);
 
             // Validate
             $records = $this->validationService->validatePunchRecords($records);
@@ -352,6 +398,10 @@ class SyncService
 
     /**
      * Run full sync for a date range
+     *
+     * IMPORTANT: We fetch the ENTIRE chunk from eTimeOffice in ONE request
+     * (e.g., 3 days at once), then split records by date for per-day processing.
+     * This bypasses the eTimeOffice single-day boundary bug.
      */
     public function runFullRange(string $fromDate, string $toDate): array
     {
@@ -359,16 +409,27 @@ class SyncService
             return ['status' => 'skipped', 'reason' => 'Already running'];
         }
 
+        // Extend execution time for slow APIs across multiple days
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(300);
+        }
+        @ini_set('max_execution_time', '300');
+        ignore_user_abort(true);
+
         $syncId = $this->syncLogModel->startSync('full');
 
         try {
-            log_message('info', "[SyncService] Full range sync from {$fromDate} to {$toDate}");
-            $fetch = $this->fetchPunchRangeWithFallbacks($fromDate, $toDate, 'full_range');
+            log_message('info', "[SyncService] Full range sync from {$fromDate} to {$toDate} — fetching as ONE chunk from eTimeOffice");
 
-            if (!($fetch['success'] ?? false)) {
-                $errorMsg = $fetch['error'] ?? 'Unknown error';
-                if ($this->isVendorTransientFailure($errorMsg)) {
-                    log_message('info', "[SyncService] Full Range Sync: all range endpoints failed. Treating as 0 punches. Error: {$errorMsg}");
+            // STEP 1: Fetch the ENTIRE range in one API call (not day-by-day)
+            // This bypasses the eTimeOffice single-day boundary bug
+            $fetch = $this->fetchPunchRangeWithFallbacks($fromDate, $toDate, 'full_range_chunk');
+
+            if (!$fetch['success']) {
+                $finalError = $fetch['error'] ?? 'Unknown error';
+                log_message('warning', "[SyncService] Full range fetch failed: {$finalError}");
+
+                if ($this->isVendorTransientFailure($finalError)) {
                     $this->syncLogModel->completeSync($syncId, [
                         'records_fetched' => 0,
                         'records_saved'   => 0,
@@ -380,33 +441,67 @@ class SyncService
                         'message'         => 'Full range sync completed (No data available from API)',
                     ];
                 }
-                throw new \RuntimeException('API call failed: ' . $errorMsg);
+                throw new \RuntimeException('API call failed: ' . $finalError);
             }
 
             $rangeSource = $fetch['source'] ?? self::SOURCE_RANGE;
-            $records     = $this->normalizationService->normalizePunchData($fetch['data'] ?? [], $rangeSource);
-            $records = $this->validationService->validatePunchRecords($records);
-            $saved = $this->storePunchLogs($records);
-            $employeeSyncStats = $this->employeeSyncService->syncFromPunchRecords($records);
+
+            // STEP 2: Normalize all records at once
+            $allRecords = $this->normalizationService->normalizePunchData($fetch['data'] ?? [], $rangeSource);
+            $allRecords = $this->validationService->validatePunchRecords($allRecords);
+
+            log_message('info', "[SyncService] Full range normalized " . count($allRecords) . " records for {$fromDate} to {$toDate}");
+
+            if (empty($allRecords)) {
+                log_message('info', "[SyncService] No records returned by normalization for range {$fromDate} to {$toDate}");
+                $this->syncLogModel->completeSync($syncId, [
+                    'records_fetched' => 0,
+                    'records_saved'   => 0,
+                ]);
+                return [
+                    'status'          => 'success',
+                    'records_fetched' => 0,
+                    'records_saved'   => 0,
+                    'message'         => 'Sync completed — API returned 0 punch records for this range',
+                ];
+            }
+
+            // STEP 3: Store ALL punch logs in one batch
+            $totalSaved = $this->storePunchLogs($allRecords);
+
+            // STEP 4: Sync employees from all fetched records
+            $employeeSyncStats = $this->employeeSyncService->syncFromPunchRecords($allRecords);
             log_message('info', '[SyncService] Employee sync stats: ' . json_encode($employeeSyncStats));
 
-            $affectedDates = $this->getAffectedDates($records);
-            foreach ($affectedDates as $date) {
+            // STEP 5: Group records by date and process attendance per-day
+            $recordsByDate = [];
+            foreach ($allRecords as $record) {
+                if (!empty($record['punch_time'])) {
+                    $date = substr($record['punch_time'], 0, 10);
+                    $recordsByDate[$date][] = $record;
+                }
+            }
+
+            $allAffectedDates = array_keys($recordsByDate);
+            sort($allAffectedDates);
+
+            foreach ($allAffectedDates as $date) {
+                log_message('info', "[SyncService] Processing attendance for date: {$date} (" . count($recordsByDate[$date]) . " punches)");
                 $this->attendanceService->processDay($date);
                 $this->attendancePolicyService->generateForDate($date);
             }
 
             $this->syncLogModel->completeSync($syncId, [
-                'records_fetched' => count($records),
-                'records_saved'   => $saved,
+                'records_fetched' => count($allRecords),
+                'records_saved'   => $totalSaved,
             ]);
 
             $result = [
                 'status'          => 'success',
                 'sync_type'       => 'full_range',
-                'records_fetched' => count($records),
-                'records_saved'   => $saved,
-                'dates_processed' => $affectedDates,
+                'records_fetched' => count($allRecords),
+                'records_saved'   => $totalSaved,
+                'dates_processed' => $allAffectedDates,
                 'validation'      => $this->validationService->getSummary(),
             ];
 

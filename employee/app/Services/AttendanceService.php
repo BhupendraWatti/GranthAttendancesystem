@@ -150,11 +150,11 @@ class AttendanceService
                     'work_mode' => null,
                     'work_minutes' => 0,
                     'punch_count' => 0,
-                    'required_minutes' => $this->getRequiredMinutes($employeeType),
+                    'required_minutes' => $this->getRequiredMinutes($employeeType, $employee),
                     'employee_type' => $employeeType,
                 ];
             } else {
-                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType);
+                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType, $employee);
             }
 
             // 4. CREDIT COMP-OFF if work detected on weekend/holiday AND not already credited
@@ -199,6 +199,7 @@ class AttendanceService
      * @param string $employeeType 'full_time' or 'intern'
      * @param string|null $overrideMode Manual override ('wfh' or 'wfo')
      * @param string $dayType 'working_day', 'weekend', or 'holiday'
+     * @param array|null $employee Entire employee array containing shift parameters
      * @return array Attendance record ready for upsert
      */
     public function processEmployee(
@@ -207,9 +208,10 @@ class AttendanceService
         array $punches,
         string $employeeType = 'full_time',
         ?string $overrideMode = null,
-        string $dayType = 'working_day'
+        string $dayType = 'working_day',
+        ?array $employee = null
     ): array {
-        $requiredMinutes = $this->getRequiredMinutes($employeeType);
+        $requiredMinutes = $this->getRequiredMinutes($employeeType, $employee);
         $punchCount = count($punches);
 
         // No punches → Check for approved Leave before marking Absent
@@ -251,12 +253,12 @@ class AttendanceService
         $firstIn = $punches[0]['punch_time'];
         $lastOut = $punches[count($punches) - 1]['punch_time'];
 
-        // Calculate work minutes
+        // Calculate raw work minutes
         $workMinutes = $this->calculateWorkMinutes($firstIn, $lastOut);
 
         // Single punch → Half-day (force status)
         if ($punchCount === 1) {
-            $lateMinutes = $this->calculateLateMinutes($firstIn, $date);
+            $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $employee);
 
             return [
                 'emp_code' => $empCode,
@@ -277,8 +279,8 @@ class AttendanceService
         }
 
         // Multiple punches — calculate everything
-        $lateMinutes = $this->calculateLateMinutes($firstIn, $date);
-        $status = $this->determineStatus($workMinutes, $requiredMinutes);
+        $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $employee);
+        $status = $this->determineStatus($workMinutes, $requiredMinutes, $employee);
 
         return [
             'emp_code' => $empCode,
@@ -303,9 +305,10 @@ class AttendanceService
      *
      * @param int $workMinutes Actual work minutes
      * @param int $requiredMinutes Required minutes for this employee type
+     * @param array|null $employee Contains shift parameters
      * @return string 'present', 'half_day', or 'absent'
      */
-    public function determineStatus(int $workMinutes, int $requiredMinutes): string
+    public function determineStatus(int $workMinutes, int $requiredMinutes, ?array $employee = null): string
     {
         $graceMinutes = 30;
         $presentThreshold = $requiredMinutes - $graceMinutes;
@@ -344,11 +347,18 @@ class AttendanceService
      *
      * @param string $firstIn First punch time (Y-m-d H:i:s)
      * @param string $date Date (Y-m-d)
+     * @param array|null $employee Contains shift start time and flexible status
      * @return int Late minutes (0 if on time or early)
      */
-    private function calculateLateMinutes(string $firstIn, string $date): int
+    private function calculateLateMinutes(string $firstIn, string $date, ?array $employee = null): int
     {
-        $officeStart = new \DateTime($date . ' ' . $this->officeStartTime . ':00');
+        // Flexible employees do not get late minutes penalized as long as they hit hours
+        if (!empty($employee['is_flexible'])) {
+            return 0;
+        }
+
+        $startTimeStr = !empty($employee['start_time']) ? $employee['start_time'] : $this->officeStartTime;
+        $officeStart = new \DateTime($date . ' ' . $startTimeStr . ':00');
         $punchIn = new \DateTime($firstIn);
 
         if ($punchIn <= $officeStart) {
@@ -360,10 +370,13 @@ class AttendanceService
     }
 
     /**
-     * Get required work minutes based on employee type
+     * Get required work minutes based on employee type and shift settings
      */
-    public function getRequiredMinutes(string $employeeType): int
+    public function getRequiredMinutes(string $employeeType, ?array $employee = null): int
     {
+        if (!empty($employee['expected_hours'])) {
+            return (int) ($employee['expected_hours'] * 60);
+        }
         return ($employeeType === 'intern') ? $this->internMinutes : $this->fullTimeMinutes;
     }
 

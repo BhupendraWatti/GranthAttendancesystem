@@ -198,43 +198,112 @@ if ($dayType === 'weekend' && $st === 'absent' && empty($todayRow['first_in'])) 
         btn.disabled = true;
         btn.style.opacity = '0.5';
         icon.classList.add('rotating');
+        
+        // Save original text to restore later
+        const originalText = btn.innerHTML;
 
-        fetch(base + '/api/sync/run', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ type: 'full' })
-        })
-        .then(res => res.json())
-        .then(response => {
-            if (response.status === 'success') {
-                // Show success text
+        async function syncMultipleDays() {
+            try {
+                // We sync the last 7 days sequentially
+                let startDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+                let endDate = new Date();
+                
+                let totalDays = 8; // Including today
+                let successfulSyncs = 0;
+                let finalError = '';
+
+                // Chunking loop (3 days at a time) to bypass eTimeOffice single-day API bugs
+                let currentStart = new Date(startDate);
+                let chunks = [];
+                
+                while (currentStart <= endDate) {
+                    let currentEnd = new Date(currentStart);
+                    currentEnd.setDate(currentEnd.getDate() + 2); // 3-day chunk
+                    if (currentEnd > endDate) currentEnd = new Date(endDate);
+                    
+                    chunks.push({
+                        start: currentStart.toISOString().split('T')[0],
+                        end: currentEnd.toISOString().split('T')[0]
+                    });
+                    
+                    currentStart.setDate(currentStart.getDate() + 3);
+                }
+                
+                let currentChunk = 1;
+                let totalChunks = chunks.length;
+
+                for (let chunk of chunks) {
+                    btn.innerHTML = `<span class="material-symbols-outlined rotating" style="font-size: 1.25rem;">sync</span> Syncing (${currentChunk}/${totalChunks})`;
+                    
+                    try {
+                        let res = await fetch(base + '/api/sync/run', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                type: 'full_range', 
+                                from_date: chunk.start,
+                                to_date: chunk.end
+                            })
+                        });
+                        
+                        if (!res.ok) {
+                            let text = await res.text();
+                            throw new Error(text);
+                        }
+                        
+                        let response = await res.json();
+                        if (response.status === 'success' || response.status === 'skipped') {
+                            successfulSyncs++;
+                        } else {
+                            throw new Error(response.message || 'Unknown server error');
+                        }
+                    } catch (err) {
+                        console.warn(`[Sync] Failed for chunk ${chunk.start} - ${chunk.end}:`, err);
+                        finalError = err.message || 'Unknown error';
+                    }
+                    
+                    currentChunk++;
+                }
+                
+                // Final Evaluation
                 const msg = document.getElementById('sync-success-msg');
-                if (msg) msg.style.display = 'inline';
+                if (successfulSyncs > 0) {
+                    if (successfulSyncs === totalChunks) {
+                        if (msg) {
+                            msg.textContent = 'Sync Complete!';
+                            msg.style.display = 'inline';
+                        }
+                    } else {
+                        alert(`Partial Sync Complete: ${successfulSyncs}/${totalChunks} chunks succeeded. Some chunks timed out or failed.`);
+                    }
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    // All days failed
+                    throw new Error(finalError || 'All days failed to sync. eTimeOffice API may be completely offline.');
+                }
 
-                // Auto refresh the entire page after 1.5 seconds
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-            } else {
-                console.error('[Sync] Failed:', response.message);
-                alert('Sync failed. Please try again later.');
-                // End loading state immediately on failure
+            } catch (err) {
+                console.error('[Sync] Final Error:', err);
+                let errMsg = err.message || 'Unknown error';
+                if (errMsg.includes('<title>')) {
+                    const match = errMsg.match(/<title>(.*?)<\/title>/);
+                    if (match) errMsg = match[1];
+                } else {
+                    errMsg = errMsg.substring(0, 150);
+                }
+                alert('Sync Error: ' + errMsg);
+                
+                // Revert button
                 btn.disabled = false;
                 btn.style.opacity = '1';
-                icon.classList.remove('rotating');
+                btn.innerHTML = originalText;
             }
-        })
-        .catch(err => {
-            console.error('[Sync] Error:', err);
-            alert('Sync encountered an error.');
-            // End loading state immediately on error
-            btn.disabled = false;
-            btn.style.opacity = '1';
-            icon.classList.remove('rotating');
-        });
+        }
+        
+        syncMultipleDays();
     }
 
     // Refresh stats every 30 seconds

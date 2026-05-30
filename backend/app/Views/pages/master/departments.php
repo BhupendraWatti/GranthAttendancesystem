@@ -62,7 +62,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
             <h3 class="font-display" style="font-size: 1.125rem;">Designations</h3>
             <button onclick="openDesigModal()" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.8125rem;">
-                <i class="fa-solid fa-plus mr-1"></i> Add Desig
+                <i class="fa-solid fa-plus mr-1"></i> Add Designation
             </button>
         </div>
 

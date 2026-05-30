@@ -48,7 +48,7 @@ class LeaveService
         $attendance = $this->attendanceModel->db->table($this->attendanceModel->table)
             ->where('emp_code', $empCode)
             ->where('date', $date)
-            ->getForSharedWrite() 
+            ->get() 
             ->getRowArray();
 
         if ($attendance && !empty($attendance['is_compoff_credited'])) {

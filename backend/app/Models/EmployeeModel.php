@@ -30,6 +30,10 @@ class EmployeeModel extends Model
         'status',
         'employment_status',
         'is_profile_locked',
+        'otp_hash',
+        'otp_expires_at',
+        'otp_attempts',
+        'otp_last_sent_at',
     ];
 
     protected $validationRules = [
@@ -42,7 +46,7 @@ class EmployeeModel extends Model
      */
     public function getActiveWithMaster(): array
     {
-        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name')
+        return $this->select('employees.*, employees.status as status, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
                     ->join('departments', 'departments.id = employees.department_id', 'left')
                     ->join('designations', 'designations.id = employees.designation_id', 'left')
                     ->join('shifts', 'shifts.id = employees.shift_id', 'left')
@@ -52,12 +56,11 @@ class EmployeeModel extends Model
     }
 
     /**
-     * Get all employees sorted alphabetically with Master data (ignores status)
-     * Useful when query builder filters (like status) are dynamically applied.
+     * Get all employees (regardless of status) with Master data
      */
     public function getAllWithMaster(): array
     {
-        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name')
+        return $this->select('employees.*, employees.status as status, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
                     ->join('departments', 'departments.id = employees.department_id', 'left')
                     ->join('designations', 'designations.id = employees.designation_id', 'left')
                     ->join('shifts', 'shifts.id = employees.shift_id', 'left')
@@ -66,7 +69,7 @@ class EmployeeModel extends Model
     }
 
     /**
-     * Get all active employees (Alias for getActiveWithMaster for backward compatibility)
+     * Get all active employees (Alias for backward compatibility)
      */
     public function getActive(): array
     {
@@ -78,11 +81,11 @@ class EmployeeModel extends Model
      */
     public function findByCodeWithMaster(string $empCode): ?array
     {
-        return $this->select('employees.*, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
+        return $this->select('employees.*, employees.status as status, departments.name as dept_name, designations.name as desig_name, shifts.name as shift_name, shifts.start_time, shifts.end_time, shifts.grace_minutes, shifts.expected_hours')
                     ->join('departments', 'departments.id = employees.department_id', 'left')
                     ->join('designations', 'designations.id = employees.designation_id', 'left')
                     ->join('shifts', 'shifts.id = employees.shift_id', 'left')
-                    ->where('employees.emp_code', $empCode)
+                    ->where('emp_code', $empCode)
                     ->first();
     }
 
@@ -91,7 +94,7 @@ class EmployeeModel extends Model
      */
     public function findByCode(string $empCode): ?array
     {
-        return $this->where('employees.emp_code', $empCode)->first();
+        return $this->where('emp_code', $empCode)->first();
     }
 
     /**

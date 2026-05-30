@@ -17,7 +17,7 @@ class AttendancePolicyService
         $this->db = $db ?? \Config\Database::connect();
         $this->fullTimePresentHours = ((int) env('FULL_TIME_PRESENT_MINUTES', 420)) / 60;
         $this->fullTimeHalfDayHours = ((int) env('FULL_TIME_HALF_DAY_MINUTES', 264)) / 60;
-        $this->internPresentHours = ((int) env('INTERN_PRESENT_MINUTES', 330)) / 60;
+        $this->internPresentHours = ((int) env('INTERN_MINUTES', 330)) / 60;
         $this->internHalfDayHours = ((int) env('INTERN_HALF_DAY_MINUTES', 150)) / 60;
     }
 
@@ -74,8 +74,8 @@ class AttendancePolicyService
 
     private function classify(string $employeeType, float $hours): string
     {
-        // Convert grace minutes into hours
-        $graceHours = ((int) env('ATTENDANCE_GRACE_MINUTES', 30)) / 60;
+        // 30-minute grace
+        $graceHours = 0.5;
 
 
         if ($employeeType === 'intern') {
@@ -107,4 +107,5 @@ class AttendancePolicyService
 
 
     }
+
 }

@@ -87,7 +87,7 @@ class AttendanceService
 
         // 1. Check if date is a global holiday
         $isGlobalHoliday = $this->holidayModel->isHoliday($date);
-        
+
         // 2. Check if date is a weekend off
         $isWeekendOff = isWeekendOff($date);
 
@@ -139,7 +139,7 @@ class AttendanceService
 
             // If it's a non-working day (holiday/weekend), AND no punches, AND no manual override -> mark as dayType
             if (($isGlobalHoliday || $isWeekendOff) && empty($punches) && !$overrideMode) {
-                $status = ($isGlobalHoliday) ? 'holiday' : 'absent'; // Status remains 'absent' for database/salary purposes on weekend if no work
+                $status = ($isGlobalHoliday) ? 'holiday' : 'absent';
                 
                 $result = [
                     'emp_code' => $empCode,
@@ -150,12 +150,11 @@ class AttendanceService
                     'work_mode' => null,
                     'work_minutes' => 0,
                     'punch_count' => 0,
-                    'required_minutes' => $this->getRequiredMinutes($employeeType),
+                    'required_minutes' => $this->getRequiredMinutes($employeeType, $employee),
                     'employee_type' => $employeeType,
                 ];
             } else {
-                // Normal processing or Override processing
-                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType, $employee['shift_id'] ?? null);
+                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType, $employee);
             }
 
             // 4. CREDIT COMP-OFF if work detected on weekend/holiday AND not already credited
@@ -200,7 +199,7 @@ class AttendanceService
      * @param string $employeeType 'full_time' or 'intern'
      * @param string|null $overrideMode Manual override ('wfh' or 'wfo')
      * @param string $dayType 'working_day', 'weekend', or 'holiday'
-     * @param int|null $shiftId Assigned shift ID
+     * @param array|null $employee Entire employee array containing shift parameters
      * @return array Attendance record ready for upsert
      */
     public function processEmployee(
@@ -210,12 +209,12 @@ class AttendanceService
         string $employeeType = 'full_time',
         ?string $overrideMode = null,
         string $dayType = 'working_day',
-        ?int $shiftId = null
+        ?array $employee = null
     ): array {
-        $requiredMinutes = $this->getRequiredMinutes($employeeType);
+        $requiredMinutes = $this->getRequiredMinutes($employeeType, $employee);
         $punchCount = count($punches);
 
-        // No punches → Check for approved Leave/Comp-off before marking Absent
+        // No punches → Check for approved Leave before marking Absent
         if ($punchCount === 0) {
             $leave = $this->leaveRequestModel->where('emp_code', $empCode)
                 ->where('status', 'approved')
@@ -237,7 +236,7 @@ class AttendanceService
                 'status' => $status,
                 'attendance_status' => $status,
                 'day_type' => $dayType,
-                'work_mode' => $overrideMode, // Preserve override even if absent
+                'work_mode' => $overrideMode,
                 'punch_count' => 0,
                 'employee_type' => $employeeType,
                 'required_minutes' => $requiredMinutes,
@@ -254,12 +253,12 @@ class AttendanceService
         $firstIn = $punches[0]['punch_time'];
         $lastOut = $punches[count($punches) - 1]['punch_time'];
 
-        // Calculate work minutes
+        // Calculate raw work minutes
         $workMinutes = $this->calculateWorkMinutes($firstIn, $lastOut);
 
         // Single punch → Half-day (force status)
         if ($punchCount === 1) {
-            $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $shiftId);
+            $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $employee);
 
             return [
                 'emp_code' => $empCode,
@@ -271,7 +270,7 @@ class AttendanceService
                 'status' => 'half_day',
                 'attendance_status' => 'half_day',
                 'day_type' => $dayType,
-                'work_mode' => $overrideMode ?: 'wfo', // Default to WFO if punched in
+                'work_mode' => $overrideMode ?: 'wfo',
                 'punch_count' => 1,
                 'employee_type' => $employeeType,
                 'required_minutes' => $requiredMinutes,
@@ -280,8 +279,8 @@ class AttendanceService
         }
 
         // Multiple punches — calculate everything
-        $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $shiftId);
-        $status = $this->determineStatus($workMinutes, $requiredMinutes);
+        $lateMinutes = $this->calculateLateMinutes($firstIn, $date, $employee);
+        $status = $this->determineStatus($workMinutes, $requiredMinutes, $employee);
 
         return [
             'emp_code' => $empCode,
@@ -306,15 +305,19 @@ class AttendanceService
      *
      * @param int $workMinutes Actual work minutes
      * @param int $requiredMinutes Required minutes for this employee type
+     * @param array|null $employee Contains shift parameters
      * @return string 'present', 'half_day', or 'absent'
      */
-    public function determineStatus(int $workMinutes, int $requiredMinutes): string
+    public function determineStatus(int $workMinutes, int $requiredMinutes, ?array $employee = null): string
     {
         $graceMinutes = 30;
         $presentThreshold = $requiredMinutes - $graceMinutes;
-        $halfDayThreshold = $requiredMinutes === $this->internMinutes
+
+        $baseHalfDayThreshold = $requiredMinutes === $this->internMinutes
             ? $this->internHalfDayMinutes
             : $this->fullTimeHalfDayMinutes;
+        
+        $halfDayThreshold = $baseHalfDayThreshold - $graceMinutes;
 
         if ($workMinutes >= $presentThreshold) {
             return 'present';
@@ -344,29 +347,19 @@ class AttendanceService
      *
      * @param string $firstIn First punch time (Y-m-d H:i:s)
      * @param string $date Date (Y-m-d)
-     * @param int|null $shiftId Shift ID
+     * @param array|null $employee Contains shift start time and flexible status
      * @return int Late minutes (0 if on time or early)
      */
-    private function calculateLateMinutes(string $firstIn, string $date, ?int $shiftId = null): int
+    private function calculateLateMinutes(string $firstIn, string $date, ?array $employee = null): int
     {
-        $startTime = $this->officeStartTime;
-        $grace = 0;
-
-        if ($shiftId) {
-            $shiftModel = new \App\Models\ShiftModel();
-            $shift = $shiftModel->find($shiftId);
-            if ($shift) {
-                $startTime = substr($shift['start_time'], 0, 5); // HH:MM
-                $grace = (int) $shift['grace_minutes'];
-            }
+        // Flexible employees do not get late minutes penalized as long as they hit hours
+        if (!empty($employee['is_flexible'])) {
+            return 0;
         }
 
-        $officeStart = new \DateTime($date . ' ' . $startTime . ':00');
+        $startTimeStr = !empty($employee['start_time']) ? $employee['start_time'] : $this->officeStartTime;
+        $officeStart = new \DateTime($date . ' ' . $startTimeStr . ':00');
         $punchIn = new \DateTime($firstIn);
-
-        if ($grace > 0) {
-            $officeStart->modify("+{$grace} minutes");
-        }
 
         if ($punchIn <= $officeStart) {
             return 0;
@@ -377,10 +370,13 @@ class AttendanceService
     }
 
     /**
-     * Get required work minutes based on employee type
+     * Get required work minutes based on employee type and shift settings
      */
-    public function getRequiredMinutes(string $employeeType): int
+    public function getRequiredMinutes(string $employeeType, ?array $employee = null): int
     {
+        if (!empty($employee['expected_hours'])) {
+            return (int) ($employee['expected_hours'] * 60);
+        }
         return ($employeeType === 'intern') ? $this->internMinutes : $this->fullTimeMinutes;
     }
 
@@ -463,11 +459,6 @@ class AttendanceService
                     if (!isset($byEmployee[$empCode]['holiday_days']))
                         $byEmployee[$empCode]['holiday_days'] = 0;
                     $byEmployee[$empCode]['holiday_days']++;
-                    break;
-                case 'comp_off':
-                    if (!isset($byEmployee[$empCode]['comp_off_days']))
-                        $byEmployee[$empCode]['comp_off_days'] = 0;
-                    $byEmployee[$empCode]['comp_off_days']++;
                     break;
             }
 

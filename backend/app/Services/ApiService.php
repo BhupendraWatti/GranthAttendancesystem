@@ -304,11 +304,15 @@ class ApiService
                 $attemptTag = $queryStringOverride !== null ? ' [LastPunch-rawQS]' : '';
                 log_message('info', "[ApiService] Attempt {$attempt}: GET {$fullUrl}{$attemptTag}");
 
+                $startTime = microtime(true);
                 $response = $this->client->request('GET', $fullUrl, $options);
+                $endTime = microtime(true);
+                $responseTimeMs = round(($endTime - $startTime) * 1000);
+                
                 $statusCode = $response->getStatusCode();
                 $body = $response->getBody();
 
-                log_message('info', "[ApiService] Response status: {$statusCode}");
+                log_message('info', "[ApiService] Response status: {$statusCode} | Time: {$responseTimeMs}ms");
                 log_message('debug', "[ApiService] Response body: " . substr($body, 0, 500));
                 if ($statusCode >= 400) {
                     // Visible at default log threshold — eTimeOffice often returns HTML/JSON with the real error.
@@ -323,6 +327,10 @@ class ApiService
                         log_message('warning', "[ApiService] Non-JSON response, returning raw body");
                         return ['raw' => $body, 'status' => $statusCode];
                     }
+
+                    // Attempt to count records returned loosely for debugging
+                    $recordCount = is_array($decoded) ? count(reset($decoded) ?: []) : 0;
+                    log_message('info', "[ApiService] Successfully parsed JSON. Approximate root items: {$recordCount}");
 
                     return [
                         'success' => true,
