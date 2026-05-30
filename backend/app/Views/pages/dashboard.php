@@ -84,33 +84,60 @@
                 <thead>
                     <tr>
                         <th>Employee</th>
-                        <th>Identity</th>
-                        <th>Handshake</th>
+                        <th>Code</th>
+                        <th>First In</th>
+                        <th>Last Out</th>
+                        <th>Work Hrs</th>
                         <th>Status</th>
+                        <th>Late</th>
                     </tr>
                 </thead>
                 <tbody id="attendance-table-body">
-                    <?php if (!empty($recent_punches)): ?>
-                        <?php foreach ($recent_punches as $punch): ?>
+                    <?php if (!empty($attendance)): ?>
+                        <?php foreach ($attendance as $row): ?>
+                            <?php 
+                            $st = $row['attendance_status'] ?? $row['status'] ?? 'absent';
+                            $dayType = $row['day_type'] ?? 'working_day';
+                            if ($dayType === 'weekend' && $st === 'absent' && empty($row['first_in'])) {
+                                $st = 'weekend';
+                            }
+                            ?>
                             <tr>
-                                <td style="font-weight: 700;"><?= esc($punch['name']) ?></td>
-                                <td><code
-                                        style="font-family: var(--font-mono); font-size: 0.8rem;"><?= esc($punch['emp_code']) ?></code>
+                                <td>
+                                    <a href="<?= site_url('employees/' . esc($row['emp_code'])) ?>" style="font-weight:600;">
+                                        <?= esc($row['name'] ?? $row['emp_code']) ?>
+                                    </a>
                                 </td>
-                                <td style="font-family: var(--font-mono);"><?= date('h:i A', strtotime($punch['punch_time'])) ?>
+                                <td class="font-mono"><?= esc($row['emp_code']) ?></td>
+                                <td><?= $row['first_in'] ? date('h:i A', strtotime($row['first_in'])) : '<span class="text-muted">—</span>' ?></td>
+                                <td><?= $row['last_out'] ? date('h:i A', strtotime($row['last_out'])) : '<span class="text-muted">—</span>' ?></td>
+                                <td class="font-mono">
+                                    <?php
+                                        $hrs = floor(($row['work_minutes'] ?? 0) / 60);
+                                        $mins = ($row['work_minutes'] ?? 0) % 60;
+                                        echo "{$hrs}h {$mins}m";
+                                    ?>
                                 </td>
                                 <td>
-                                    <?php if (($punch['status'] ?? '') === 'late'): ?>
-                                        <span class="badge badge--warning">Late Arrival</span>
+                                    <span class="badge badge--<?= esc($st) ?>">
+                                        <?= esc(ucfirst(str_replace('_', ' ', $st))) ?>
+                                    </span>
+                                    <?php if (!empty($row['work_mode'])): ?>
+                                        <span class="badge badge--info" style="font-size:0.6rem; padding: 2px 4px;"><?= strtoupper(esc($row['work_mode'])) ?></span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <?php if (($row['late_minutes'] ?? 0) > 0): ?>
+                                        <span class="badge badge--late"><?= esc($row['late_minutes']) ?> min</span>
                                     <?php else: ?>
-                                        <span class="badge badge--success">On Time</span>
+                                        <span class="text-muted">—</span>
                                     <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     <?php else: ?>
                         <tr>
-                            <td colspan="4" style="text-align: center; padding: 4rem; color: var(--color-text-dim);">No
+                            <td colspan="7" style="text-align: center; padding: 4rem; color: var(--color-text-dim);">No
                                 active sessions detected for current period.</td>
                         </tr>
                     <?php endif; ?>

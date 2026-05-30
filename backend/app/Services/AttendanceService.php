@@ -128,57 +128,65 @@ class AttendanceService
                 continue;
             }
 
-            $punches = $grouped[$empCode] ?? [];
-            $employeeType = $employee['employee_type'] ?? 'full_time';
-            $overrideMode = $overrideMap[$empCode] ?? null;
+            try {
+                $punches = $grouped[$empCode] ?? [];
+                $employeeType = $employee['employee_type'] ?? 'full_time';
+                $overrideMode = $overrideMap[$empCode] ?? null;
 
-            // 3. Logic for Holiday/Weekend vs Punches/Overrides
-            $dayType = 'working_day';
-            if ($isGlobalHoliday) $dayType = 'holiday';
-            elseif ($isWeekendOff) $dayType = 'weekend';
+                // 3. Logic for Holiday/Weekend vs Punches/Overrides
+                $dayType = 'working_day';
+                if ($isGlobalHoliday) $dayType = 'holiday';
+                elseif ($isWeekendOff) $dayType = 'weekend';
 
-            // If it's a non-working day (holiday/weekend), AND no punches, AND no manual override -> mark as dayType
-            if (($isGlobalHoliday || $isWeekendOff) && empty($punches) && !$overrideMode) {
-                $status = ($isGlobalHoliday) ? 'holiday' : 'absent';
-                
-                $result = [
-                    'emp_code' => $empCode,
-                    'date' => $date,
-                    'status' => $status,
-                    'attendance_status' => $status,
-                    'day_type' => $dayType,
-                    'work_mode' => null,
-                    'work_minutes' => 0,
-                    'punch_count' => 0,
-                    'required_minutes' => $this->getRequiredMinutes($employeeType, $employee),
-                    'employee_type' => $employeeType,
-                ];
-            } else {
-                $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType, $employee);
-            }
-
-            // 4. CREDIT COMP-OFF if work detected on weekend/holiday AND not already credited
-            if (($dayType === 'weekend' || $dayType === 'holiday') && ($result['work_minutes'] ?? 0) > 0) {
-                // Check existing record for credit flag
-                $existing = $this->attendanceModel->where('emp_code', $empCode)->where('date', $date)->first();
-                if (!$existing || empty($existing['is_compoff_credited'])) {
-                    $this->leaveService->creditCompOff($empCode, $date);
-                    $result['is_compoff_credited'] = 1;
+                // If it's a non-working day (holiday/weekend), AND no punches, AND no manual override -> mark as dayType
+                if (($isGlobalHoliday || $isWeekendOff) && empty($punches) && !$overrideMode) {
+                    $status = ($isGlobalHoliday) ? 'holiday' : 'absent';
+                    
+                    $result = [
+                        'emp_code' => $empCode,
+                        'date' => $date,
+                        'status' => $status,
+                        'attendance_status' => $status,
+                        'day_type' => $dayType,
+                        'work_mode' => null,
+                        'work_minutes' => 0,
+                        'punch_count' => 0,
+                        'required_minutes' => $this->getRequiredMinutes($employeeType, $employee),
+                        'employee_type' => $employeeType,
+                    ];
                 } else {
-                    $result['is_compoff_credited'] = 1; // Preserve flag
+                    $result = $this->processEmployee($empCode, $date, $punches, $employeeType, $overrideMode, $dayType, $employee);
                 }
-            }
 
-            // Validate the result
-            $validationErrors = $this->validationService->validateAttendance($result);
-            if (!empty($validationErrors)) {
-                $result['validation_errors'] = $validationErrors;
-                $errors = array_merge($errors, $validationErrors);
-            }
+                // 4. CREDIT COMP-OFF if work detected on weekend/holiday AND not already credited
+                if (($dayType === 'weekend' || $dayType === 'holiday') && ($result['work_minutes'] ?? 0) > 0) {
+                    // Check existing record for credit flag
+                    $existing = $this->attendanceModel->where('emp_code', $empCode)->where('date', $date)->first();
+                    if (!$existing || empty($existing['is_compoff_credited'])) {
+                        $this->leaveService->creditCompOff($empCode, $date);
+                        $result['is_compoff_credited'] = 1;
+                    } else {
+                        $result['is_compoff_credited'] = 1; // Preserve flag
+                    }
+                }
 
-            // Upsert the attendance record
-            $this->attendanceModel->upsertAttendance($result);
-            $processed++;
+                // Validate the result
+                $validationErrors = $this->validationService->validateAttendance($result);
+                if (!empty($validationErrors)) {
+                    $result['validation_errors'] = $validationErrors;
+                    $errors = array_merge($errors, $validationErrors);
+                }
+
+                // Upsert the attendance record
+                $this->attendanceModel->upsertAttendance($result);
+                $processed++;
+            } catch (\Throwable $e) {
+                log_message('error', "[AttendanceService] Error processing attendance for employee {$empCode} on date {$date}: " . $e->getMessage());
+                $errors[] = [
+                    'type' => 'processing_error',
+                    'message' => "Employee {$empCode}: " . $e->getMessage()
+                ];
+            }
         }
 
         log_message('info', "[AttendanceService] Processed {$processed} employees for {$date}, " . count($errors) . " validation issues");
@@ -358,7 +366,10 @@ class AttendanceService
         }
 
         $startTimeStr = !empty($employee['start_time']) ? $employee['start_time'] : $this->officeStartTime;
-        $officeStart = new \DateTime($date . ' ' . $startTimeStr . ':00');
+        if (strlen($startTimeStr) === 5) {
+            $startTimeStr .= ':00';
+        }
+        $officeStart = new \DateTime($date . ' ' . $startTimeStr);
         $punchIn = new \DateTime($firstIn);
 
         if ($punchIn <= $officeStart) {

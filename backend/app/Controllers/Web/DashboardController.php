@@ -42,12 +42,18 @@ class DashboardController extends BaseController
         }
 
         return view('pages/dashboard', [
-            'pageTitle'   => 'Dashboard',
-            'activePage'  => 'dashboard',
-            'date'        => $date,
-            'summary'     => $summary,
-            'livePunches' => $livePunches,
-            'attendance'  => $attendance,
+            'pageTitle'       => 'Dashboard',
+            'activePage'      => 'dashboard',
+            'date'            => $date,
+            'total_employees' => $summary['total_employees'] ?? 0,
+            'present_today'   => $summary['present_today'] ?? 0,
+            'late_today'      => $summary['late_today'] ?? 0,
+            'wfh_today'       => $summary['wfh_today'] ?? 0,
+            'absent_today'    => $summary['absent_today'] ?? 0,
+            'attendance_rate' => $summary['attendance_rate'] ?? 0,
+            'half_day_today'  => $summary['half_day_today'] ?? 0,
+            'recent_punches'  => $livePunches,
+            'attendance'      => $attendance,
         ]);
     }
 }
