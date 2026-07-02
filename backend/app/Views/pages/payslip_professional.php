@@ -227,6 +227,12 @@
             </tr>
             
             <!-- Deductions -->
+            <?php if (($salary['admin_deduction'] ?? 0) > 0): ?>
+            <tr>
+                <td>Other Deductions (Advance/Early)</td>
+                <td class="amt"><?= number_format($salary['admin_deduction'], 2) ?></td>
+            </tr>
+            <?php endif; ?>
             <tr>
                 <td>Deductions (TDS/PF)</td>
                 <td class="amt"><?= number_format($salary['statutory_deductions'] ?? 0, 2) ?></td>

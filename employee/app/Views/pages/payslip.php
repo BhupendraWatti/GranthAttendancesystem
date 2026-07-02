@@ -123,9 +123,12 @@
             <div>
                 <h4 class="payslip-section-title">DEDUCTIONS</h4>
                 <table class="payslip-table">
+                    <?php if (($sal['admin_deduction'] ?? 0) > 0): ?>
+                    <tr><td>Other Deductions (Advance/Early)</td><td class="text-right font-mono"><?= $currency ?><?= number_format($sal['admin_deduction'], 2) ?></td></tr>
+                    <?php endif; ?>
                     <tr><td>Attendance Deduction</td><td class="text-right font-mono"><?= $currency ?><?= number_format($deduction, 2) ?></td></tr>
                     <tr><td>Late Arrival Fine</td><td class="text-right font-mono"><?= $currency ?>0.00</td></tr>
-                    <tr class="payslip-total-row"><td><strong>Total Deductions</strong></td><td class="text-right font-mono font-bold"><?= $currency ?><?= number_format($deduction, 2) ?></td></tr>
+                    <tr class="payslip-total-row"><td><strong>Total Deductions</strong></td><td class="text-right font-mono font-bold"><?= $currency ?><?= number_format($deduction + ($sal['admin_deduction'] ?? 0), 2) ?></td></tr>
                 </table>
             </div>
         </div>

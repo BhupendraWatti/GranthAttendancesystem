@@ -82,6 +82,7 @@ $currency = '₹';
                     <th style="text-align: center;">Service Hours</th>
                     <th style="text-align: center;">Registry Ratio</th>
                     <th style="text-align: right;">Adj. Deductions</th>
+                    <th style="text-align: right;">Other Deduction</th>
                     <th style="text-align: right;">Net Remuneration</th>
                     <th style="text-align: right;">Operation</th>
                 </tr>
@@ -126,6 +127,16 @@ $currency = '₹';
                                 style="text-align: right; color: var(--color-danger); font-family: var(--font-mono); font-weight: 600;">
                                 -<?= $currency ?><?= number_format($row['deduction'] ?? 0, 2) ?>
                             </td>
+                            <td style="text-align: right;">
+                                <form method="POST" action="<?= site_url('salary/save-deduction') ?>" style="margin: 0; display: inline-flex; align-items: center; justify-content: flex-end; gap: 0.25rem;">
+                                    <?= csrf_field() ?>
+                                    <input type="hidden" name="emp_code" value="<?= esc($row['emp_code']) ?>">
+                                    <input type="hidden" name="month" value="<?= $month ?>">
+                                    <input type="hidden" name="year" value="<?= $year ?>">
+                                    <input type="number" name="deduction_amount" class="form-input" style="width: 85px; padding: 0.25rem; font-size: 0.8rem; text-align: right;" value="<?= $row['admin_deduction'] ?? 0 ?>" min="0" step="0.01">
+                                    <button type="submit" class="btn btn-outline" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"><i class="fa-solid fa-save"></i></button>
+                                </form>
+                            </td>
                             <td
                                 style="text-align: right; font-weight: 800; font-family: var(--font-mono); color: var(--color-primary);">
                                 <?= $currency ?>        <?= number_format($row['net_salary'] ?? 0, 2) ?>
@@ -139,7 +150,7 @@ $currency = '₹';
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 6rem;">
+                        <td colspan="7" style="text-align: center; padding: 6rem;">
                             <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
                                 <i class="fa-solid fa-money-bill-transfer"
                                     style="font-size: 3rem; color: var(--color-border);"></i>

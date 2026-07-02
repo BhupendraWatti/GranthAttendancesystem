@@ -57,6 +57,7 @@ $routes->group('', ['filter' => 'session'], function ($routes) {
 
     // Salary
     $routes->get('salary', 'SalaryController::index');
+    $routes->post('salary/save-deduction', 'SalaryController::saveDeduction');
 
     // Payslip
     $routes->get('payslip/(:segment)', 'SalaryController::payslip/$1');

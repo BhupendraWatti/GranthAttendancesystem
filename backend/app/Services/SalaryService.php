@@ -203,19 +203,14 @@ class SalaryService
         helper('attendance');
         $today = date('Y-m-d');
         $isCurrentMonth = ($year == date('Y') && $month == date('m'));
-        $daysInMonth = (int)date('t', strtotime("$year-$month-01"));
-        $endDay = $isCurrentMonth ? (int)date('d') : $daysInMonth;
+        
+        // Treat every month as exactly 30 days
+        $daysInMonth = 30;
+        $endDay = $isCurrentMonth ? min(30, (int)date('d')) : 30;
 
-        // 1. Calculate Dynamic Target-to-Date
-        $targetToDateMin = 0;
-        for ($d = 1; $d <= $endDay; $d++) {
-            $currentDate = sprintf('%04d-%02d-%02d', $year, $month, $d);
-            
-            // Exclude Weekend Offs (Sundays, 1st/3rd Saturdays)
-            if (isWeekendOff($currentDate)) continue;
-            
-            $targetToDateMin += 510; // Working day (8.5h)
-        }
+        // Proportional target calculation based on 24 working days per month
+        $expectedWorkingDays = ($endDay / 30) * 24;
+        $targetToDateMin = (int) round($expectedWorkingDays * 510); // 8.5 hours per working day (510 minutes)
 
         $targetToDateHours = $targetToDateMin / 60;
         $actualWorkMin = (int) ($data['total_work_minutes'] ?? 0);
@@ -230,13 +225,13 @@ class SalaryService
             $deductionDays = $units * 0.5;
         }
 
-        // 3. Earnings based on Actual Days in Month (Professional Standard)
-        $dailyRate = $monthlySalary / $daysInMonth;
+        // 3. Earnings based on flat 30 days
+        $dailyRate = $monthlySalary / 30;
         
         // Base earned up to today
         $baseEarned = round($dailyRate * $endDay, 2); 
         
-        // Total deduction based on real daily rate
+        // Total deduction based on flat daily rate
         $totalDeduction = round($deductionDays * $dailyRate, 2);
         
         $netPayable = round($baseEarned - $totalDeduction, 2);
@@ -255,7 +250,7 @@ class SalaryService
             'net_salary'        => $netPayable,
             'effective_days'    => $effectiveDays,
             'days_elapsed'      => $endDay,
-            'working_days'      => round($targetToDateHours / 8.5, 1),
+            'working_days'      => round($expectedWorkingDays, 1),
             'ratio'             => $targetToDateMin > 0 ? round(min(1, $actualWorkMin / $targetToDateMin) * 100, 1) : 0,
         ]);
     }

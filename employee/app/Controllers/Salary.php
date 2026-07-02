@@ -15,6 +15,23 @@ class Salary extends BaseController
 
         $salary = (new SalaryService())->calculateEmployeeSalary($empCode, $year, $month);
 
+        // Fetch and apply admin deduction (table may not exist yet if admin hasn't opened salary page)
+        $adminDeduction = 0.0;
+        try {
+            $db = \Config\Database::connect();
+            $dRecord = $db->table('monthly_deductions')
+                ->where('emp_code', $empCode)
+                ->where('year', $year)
+                ->where('month', $month)
+                ->get()
+                ->getRowArray();
+            $adminDeduction = $dRecord ? (float) $dRecord['deduction_amount'] : 0.0;
+        } catch (\Throwable $e) {
+            log_message('warning', '[Salary] monthly_deductions not available: ' . $e->getMessage());
+        }
+        $salary['admin_deduction'] = $adminDeduction;
+        $salary['net_salary'] = round($salary['net_salary'] - $adminDeduction, 2);
+
         return view('salary', [
             'salary' => $salary,
             'year' => $year,
@@ -34,6 +51,23 @@ class Salary extends BaseController
         }
 
         $salary = (new SalaryService())->calculateEmployeeSalary($empCode, $year, $month);
+
+        // Fetch and apply admin deduction
+        $adminDeduction = 0.0;
+        try {
+            $db = \Config\Database::connect();
+            $dRecord = $db->table('monthly_deductions')
+                ->where('emp_code', $empCode)
+                ->where('year', $year)
+                ->where('month', $month)
+                ->get()
+                ->getRowArray();
+            $adminDeduction = $dRecord ? (float) $dRecord['deduction_amount'] : 0.0;
+        } catch (\Throwable $e) {
+            log_message('warning', '[Salary] monthly_deductions not available: ' . $e->getMessage());
+        }
+        $salary['admin_deduction'] = $adminDeduction;
+        $salary['net_salary'] = round($salary['net_salary'] - $adminDeduction, 2);
 
         return view('payslip', [
             'employee' => $employee,
@@ -55,6 +89,23 @@ class Salary extends BaseController
         }
 
         $salary = (new SalaryService())->calculateEmployeeSalary($empCode, $year, $month);
+
+        // Fetch and apply admin deduction
+        $adminDeduction = 0.0;
+        try {
+            $db = \Config\Database::connect();
+            $dRecord = $db->table('monthly_deductions')
+                ->where('emp_code', $empCode)
+                ->where('year', $year)
+                ->where('month', $month)
+                ->get()
+                ->getRowArray();
+            $adminDeduction = $dRecord ? (float) $dRecord['deduction_amount'] : 0.0;
+        } catch (\Throwable $e) {
+            log_message('warning', '[Salary] monthly_deductions not available: ' . $e->getMessage());
+        }
+        $salary['admin_deduction'] = $adminDeduction;
+        $salary['net_salary'] = round($salary['net_salary'] - $adminDeduction, 2);
 
         return view('payslip_print', [
             'employee' => $employee,
