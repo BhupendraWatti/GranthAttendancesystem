@@ -226,6 +226,13 @@
                 <td class="amt"><?= number_format($gross, 2) ?></td>
             </tr>
             
+            <?php if (($salary['bonus_amount'] ?? 0) > 0): ?>
+            <tr>
+                <td>Performance Bonus / Incentive</td>
+                <td class="amt"><?= number_format($salary['bonus_amount'], 2) ?></td>
+            </tr>
+            <?php endif; ?>
+            
             <!-- Deductions -->
             <?php if (($salary['admin_deduction'] ?? 0) > 0): ?>
             <tr>

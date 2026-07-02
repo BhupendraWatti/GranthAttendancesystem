@@ -28,10 +28,16 @@ class SalaryController extends BaseController
             year INT NOT NULL,
             month INT NOT NULL,
             deduction_amount DECIMAL(15,2) DEFAULT 0.00,
+            bonus_amount DECIMAL(15,2) DEFAULT 0.00,
             created_at DATETIME,
             updated_at DATETIME,
             UNIQUE KEY unique_emp_year_month (emp_code, year, month)
         )");
+
+        // Add bonus_amount column dynamically if it doesn't exist
+        if (!$this->db->fieldExists('bonus_amount', 'monthly_deductions')) {
+            $this->db->query("ALTER TABLE monthly_deductions ADD COLUMN bonus_amount DECIMAL(15,2) DEFAULT 0.00 AFTER deduction_amount");
+        }
     }
 
     /**
@@ -48,7 +54,7 @@ class SalaryController extends BaseController
             $salaryService = new SalaryService();
             $salaryData = $salaryService->calculateAllSalaries($year, $month);
 
-            // Fetch and apply monthly deductions
+            // Fetch and apply monthly deductions & bonuses
             $deductions = $this->db->table('monthly_deductions')
                 ->where('year', $year)
                 ->where('month', $month)
@@ -57,14 +63,19 @@ class SalaryController extends BaseController
             
             $deductionsMap = [];
             foreach ($deductions as $d) {
-                $deductionsMap[$d['emp_code']] = (float) $d['deduction_amount'];
+                $deductionsMap[$d['emp_code']] = [
+                    'deduction' => (float) $d['deduction_amount'],
+                    'bonus'     => (float) ($d['bonus_amount'] ?? 0.0)
+                ];
             }
 
             foreach ($salaryData as &$row) {
                 $empCode = $row['emp_code'];
-                $adminDeduction = $deductionsMap[$empCode] ?? 0.0;
+                $adminDeduction = $deductionsMap[$empCode]['deduction'] ?? 0.0;
+                $bonusAmount = $deductionsMap[$empCode]['bonus'] ?? 0.0;
                 $row['admin_deduction'] = $adminDeduction;
-                $row['net_salary'] = round($row['net_salary'] - $adminDeduction, 2);
+                $row['bonus_amount'] = $bonusAmount;
+                $row['net_salary'] = round($row['net_salary'] - $adminDeduction + $bonusAmount, 2);
             }
             unset($row); // prevent dangling reference
 
@@ -112,7 +123,7 @@ class SalaryController extends BaseController
 
             $salaryData = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
 
-            // Fetch and apply admin deduction
+            // Fetch and apply admin deduction & bonus
             $dRecord = $this->db->table('monthly_deductions')
                 ->where('emp_code', $empCode)
                 ->where('year', $year)
@@ -120,9 +131,11 @@ class SalaryController extends BaseController
                 ->get()
                 ->getRowArray();
             $adminDeduction = $dRecord ? (float) $dRecord['deduction_amount'] : 0.0;
+            $bonusAmount = $dRecord ? (float) ($dRecord['bonus_amount'] ?? 0.0) : 0.0;
 
             $salaryData['admin_deduction'] = $adminDeduction;
-            $salaryData['net_salary'] = round($salaryData['net_salary'] - $adminDeduction, 2);
+            $salaryData['bonus_amount'] = $bonusAmount;
+            $salaryData['net_salary'] = round($salaryData['net_salary'] - $adminDeduction + $bonusAmount, 2);
 
             return view('pages/payslip_professional', [
                 'pageTitle'  => "Payslip — {$employee['name']}",
@@ -161,7 +174,7 @@ class SalaryController extends BaseController
 
             $salaryData = $salaryService->calculateEmployeeSalary($empCode, $year, $month);
 
-            // Fetch and apply admin deduction
+            // Fetch and apply admin deduction & bonus
             $dRecord = $this->db->table('monthly_deductions')
                 ->where('emp_code', $empCode)
                 ->where('year', $year)
@@ -169,9 +182,11 @@ class SalaryController extends BaseController
                 ->get()
                 ->getRowArray();
             $adminDeduction = $dRecord ? (float) $dRecord['deduction_amount'] : 0.0;
+            $bonusAmount = $dRecord ? (float) ($dRecord['bonus_amount'] ?? 0.0) : 0.0;
 
             $salaryData['admin_deduction'] = $adminDeduction;
-            $salaryData['net_salary'] = round($salaryData['net_salary'] - $adminDeduction, 2);
+            $salaryData['bonus_amount'] = $bonusAmount;
+            $salaryData['net_salary'] = round($salaryData['net_salary'] - $adminDeduction + $bonusAmount, 2);
 
             return view('pages/payslip_print', [
                 'employee' => $employee,
@@ -232,6 +247,57 @@ class SalaryController extends BaseController
         } catch (\Throwable $e) {
             log_message('error', '[Web\\SalaryController] saveDeduction error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to save deduction.');
+        }
+    }
+
+    /**
+     * POST /salary/save-bonus — Save monthly performance bonus / incentive
+     */
+    public function saveBonus()
+    {
+        $empCode = $this->request->getPost('emp_code');
+        $month   = (int) $this->request->getPost('month');
+        $year    = (int) $this->request->getPost('year');
+        $amount  = (float) $this->request->getPost('bonus_amount');
+
+        if (empty($empCode) || empty($month) || empty($year)) {
+            return redirect()->back()->with('error', 'Invalid parameters.');
+        }
+
+        try {
+            $now = date('Y-m-d H:i:s');
+
+            $existing = $this->db->table('monthly_deductions')
+                ->where('emp_code', $empCode)
+                ->where('year', $year)
+                ->where('month', $month)
+                ->get()
+                ->getRowArray();
+
+            if ($existing) {
+                $this->db->table('monthly_deductions')
+                    ->where('id', $existing['id'])
+                    ->update([
+                        'bonus_amount' => $amount,
+                        'updated_at'   => $now
+                    ]);
+            } else {
+                $this->db->table('monthly_deductions')
+                    ->insert([
+                        'emp_code'         => $empCode,
+                        'year'             => $year,
+                        'month'            => $month,
+                        'bonus_amount'     => $amount,
+                        'deduction_amount' => 0.00,
+                        'created_at'       => $now,
+                        'updated_at'       => $now
+                    ]);
+            }
+
+            return redirect()->to(base_url("salary?month={$month}&year={$year}"))->with('success', 'Performance bonus updated successfully.');
+        } catch (\Throwable $e) {
+            log_message('error', '[Web\\SalaryController] saveBonus error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to save performance bonus.');
         }
     }
 }

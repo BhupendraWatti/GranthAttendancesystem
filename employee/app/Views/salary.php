@@ -44,15 +44,19 @@
                     <div style="font-size: 1.25rem; font-weight: 600;">
                         ₹<?= number_format($salary['base_salary'] ?? 0, 2) ?></div>
                 </div>
-                <!-- <div>
-                    <label style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.4); display: block; margin-bottom: 0.5rem;">Active Ratio</label>
-                    <div style="font-size: 1.25rem; font-weight: 600;"><?= esc($salary['present_days'] ?? 0) ?> / <?= esc($salary['working_days'] ?? 0) ?> <small style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">DAYS</small></div>
-                </div> -->
+                <?php if (($salary['bonus_amount'] ?? 0) > 0): ?>
+                <div>
+                    <label
+                        style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.4); display: block; margin-bottom: 0.5rem;">Performance Bonus</label>
+                    <div style="font-size: 1.25rem; font-weight: 600; color: #4ADE80;">
+                        +₹<?= number_format($salary['bonus_amount'], 2) ?></div>
+                </div>
+                <?php endif; ?>
                 <div>
                     <label
                         style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: rgba(255,255,255,0.4); display: block; margin-bottom: 0.5rem;">Deductions</label>
                     <div style="font-size: 1.25rem; font-weight: 600; color: #F87171;">
-                        -₹<?= number_format(($salary['base_salary'] ?? 0) - ($salary['net_salary'] ?? 0), 2) ?></div>
+                        -₹<?= number_format(($salary['deduction'] ?? 0) + ($salary['admin_deduction'] ?? 0), 2) ?></div>
                 </div>
             </div>
         </div>
@@ -79,14 +83,30 @@
                             <td style="text-align: right; font-weight: 600;">
                                 ₹<?= number_format($salary['base_salary'] ?? 0, 2) ?></td>
                         </tr>
+                        <?php if (($salary['bonus_amount'] ?? 0) > 0): ?>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--color-success);">Performance Bonus / Incentive</td>
+                            <td class="text-muted" style="font-size: 0.8125rem;">Admin-entered monthly incentive</td>
+                            <td style="text-align: right; font-weight: 600; color: var(--color-success);">
+                                +₹<?= number_format($salary['bonus_amount'], 2) ?></td>
+                        </tr>
+                        <?php endif; ?>
                         <tr>
                             <td style="font-weight: 600; color: var(--color-error);">Attendance Adjustment</td>
                             <td class="text-muted" style="font-size: 0.8125rem;">Prorated based on
                                 <?= $salary['present_days'] ?> active days</td>
                             <td style="text-align: right; font-weight: 600; color: var(--color-error);">
-                                -₹<?= number_format(($salary['base_salary'] ?? 0) - ($salary['net_salary'] ?? 0), 2) ?>
+                                -₹<?= number_format($salary['deduction'] ?? 0, 2) ?>
                             </td>
                         </tr>
+                        <?php if (($salary['admin_deduction'] ?? 0) > 0): ?>
+                        <tr>
+                            <td style="font-weight: 600; color: var(--color-error);">Other Deductions</td>
+                            <td class="text-muted" style="font-size: 0.8125rem;">Advance / Early salary recovery</td>
+                            <td style="text-align: right; font-weight: 600; color: var(--color-error);">
+                                -₹<?= number_format($salary['admin_deduction'], 2) ?></td>
+                        </tr>
+                        <?php endif; ?>
                         <tr style="background: var(--color-surface-muted);">
                             <td colspan="2"
                                 style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem;">

@@ -148,11 +148,19 @@
     </div>
 
     <!-- Net Salary -->
-    <div class="net-salary-box">
-        <div>
-            <div class="label">NET SALARY PAYABLE (A - B)</div>
+    <div class="net-salary-box" style="display: block;">
+        <?php if (($sal['bonus_amount'] ?? 0) > 0): ?>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-bottom: 10px;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.8;">Performance Bonus / Incentive</div>
+            <div style="font-size: 1.25rem; font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; color: #fff;"><?= $currency ?><?= number_format($sal['bonus_amount'], 2) ?></div>
         </div>
-        <div class="amount"><?= $currency ?><?= number_format($netSalary, 2) ?></div>
+        <?php endif; ?>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div class="label">NET SALARY PAYABLE (A - B <?= ($sal['bonus_amount'] ?? 0) > 0 ? '+ Incentive' : '' ?>)</div>
+            </div>
+            <div class="amount"><?= $currency ?><?= number_format($netSalary, 2) ?></div>
+        </div>
     </div>
 </div>
 
